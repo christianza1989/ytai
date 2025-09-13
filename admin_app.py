@@ -336,6 +336,7 @@ def api_start_generation():
     data = request.get_json()
     
     task_id = f"task_{int(time.time())}"
+    demo_mode = data.get('demo_mode', False)
     
     # Store task info
     system_state.generation_tasks[task_id] = {
@@ -346,25 +347,32 @@ def api_start_generation():
         'logs': [],
         'parameters': data,
         'created_at': datetime.now().isoformat(),
-        'result': None
+        'result': None,
+        'demo_mode': demo_mode
     }
     
     # Start generation in background thread
     def run_generation():
-        # Import and run the generation pipeline
-        from main import run_creation_pipeline
-        
         try:
             system_state.generation_tasks[task_id]['status'] = 'running'
             
-            # Mock implementation - replace with actual generation
-            for i in range(10):
-                system_state.generation_tasks[task_id]['progress'] = (i + 1) * 10
-                system_state.generation_tasks[task_id]['current_step'] = f'Step {i+1}/10'
-                time.sleep(1)
+            if demo_mode:
+                # Demo mode with realistic simulation
+                result = run_demo_generation(task_id, data)
+                system_state.generation_tasks[task_id]['result'] = result
+            else:
+                # Real generation pipeline
+                from main import run_creation_pipeline
+                
+                # Mock implementation - replace with actual generation
+                for i in range(10):
+                    system_state.generation_tasks[task_id]['progress'] = (i + 1) * 10
+                    system_state.generation_tasks[task_id]['current_step'] = f'Step {i+1}/10'
+                    time.sleep(1)
+                
+                system_state.generation_tasks[task_id]['result'] = {'success': True}
             
             system_state.generation_tasks[task_id]['status'] = 'completed'
-            system_state.generation_tasks[task_id]['result'] = {'success': True}
             
         except Exception as e:
             system_state.generation_tasks[task_id]['status'] = 'failed'
@@ -375,12 +383,368 @@ def api_start_generation():
     
     return jsonify({'success': True, 'task_id': task_id})
 
+def run_demo_generation(task_id, parameters):
+    """Run realistic demo generation with actual file creation"""
+    import shutil
+    import random
+    
+    # Update progress step by step
+    def update_progress(progress, step):
+        system_state.generation_tasks[task_id]['progress'] = progress
+        system_state.generation_tasks[task_id]['current_step'] = step
+        system_state.generation_tasks[task_id]['logs'].append(f"[{datetime.now().strftime('%H:%M:%S')}] {step}")
+        time.sleep(random.uniform(1, 3))  # Realistic timing
+    
+    try:
+        # Step 1: Initialize project
+        update_progress(10, "🎵 Inicijuojamas projektas...")
+        
+        project_name = f"demo_project_{int(time.time())}"
+        project_dir = Path('output') / project_name
+        project_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Step 2: Generate concept
+        update_progress(20, "🧠 Generuojama muzikos koncepcija...")
+        
+        concept = generate_demo_concept(parameters)
+        
+        # Step 3: Create lyrics
+        update_progress(35, "📝 Kuriami tekstai...")
+        
+        lyrics = generate_demo_lyrics(parameters.get('genre', 'pop'), concept)
+        
+        # Step 4: Generate audio tracks
+        update_progress(50, "🎼 Generuojami audio takeliai...")
+        
+        audio_files = create_demo_audio_files(project_dir, parameters)
+        
+        # Step 5: Create video content
+        update_progress(70, "🎥 Kuriamas video turinys...")
+        
+        video_files = create_demo_video_files(project_dir, audio_files)
+        
+        # Step 6: Generate cover art
+        update_progress(85, "🎨 Generuojama albumo viršelis...")
+        
+        cover_art = create_demo_cover_art(project_dir, concept)
+        
+        # Step 7: Finalize project
+        update_progress(95, "📦 Baigiamas projektas...")
+        
+        # Create metadata
+        metadata = {
+            'title': parameters.get('title', f'Demo Song {int(time.time())}'),
+            'mode': parameters.get('mode', 'demo'),
+            'genre': parameters.get('genre', 'demo'),
+            'concept': concept,
+            'lyrics': lyrics,
+            'created_at': datetime.now().isoformat(),
+            'tracks_created': len(audio_files),
+            'video_files': len(video_files),
+            'demo_mode': True,
+            'parameters_used': parameters
+        }
+        
+        with open(project_dir / 'metadata.json', 'w', encoding='utf-8') as f:
+            json.dump(metadata, f, indent=2, ensure_ascii=False)
+        
+        # Create project summary
+        create_demo_project_summary(project_dir, metadata)
+        
+        update_progress(100, "✅ Projektas baigtas sėkmingai!")
+        
+        return {
+            'success': True,
+            'project_name': project_name,
+            'project_path': str(project_dir),
+            'files_created': len(list(project_dir.rglob('*'))),
+            'audio_files': len(audio_files),
+            'video_files': len(video_files),
+            'metadata': metadata
+        }
+        
+    except Exception as e:
+        return {'success': False, 'error': str(e)}
+
+def generate_demo_concept(parameters):
+    """Generate realistic music concept"""
+    genre = parameters.get('genre', 'pop')
+    mood = parameters.get('mood', 'upbeat')
+    
+    concepts = {
+        'pop': [
+            "Vasaros nostalgijos ir jaunystės prisiminimų tema",
+            "Meilės istorija su šiuolaikišku skambesiu",
+            "Optimistiškas požiūris į ateities galimybes",
+            "Draugystės ir kartu praleisto laiko šventė"
+        ],
+        'rock': [
+            "Laisvės ir nepaklusnumo himnas",
+            "Gyvenimo iššūkių įveikos istorija",
+            "Energijos ir jėgos demonstracija",
+            "Klasikinio roko garsų modernizacija"
+        ],
+        'electronic': [
+            "Skaitmeninio amžiaus refleksijos",
+            "Kosmoso ir ateities vizijos",
+            "Šokių kultūros evoliucija",
+            "Technologijų ir emocijų sintezė"
+        ]
+    }
+    
+    available_concepts = concepts.get(genre, concepts['pop'])
+    return random.choice(available_concepts)
+
+def generate_demo_lyrics(genre, concept):
+    """Generate demo lyrics based on genre and concept"""
+    lyrics_templates = {
+        'pop': [
+            "Verse 1:\nSummer nights and city lights\nDancing till the morning bright\nMemories we'll never lose\nIn this moment, me and you\n\nChorus:\nWe're flying high above the clouds\nSinging our hearts out loud\nNothing can stop us now\nThis is our time somehow",
+            "Verse 1:\nWalking down this empty street\nHeartbeat matching to the beat\nEvery step takes me away\nFrom the pain of yesterday\n\nChorus:\nI'm breaking free from all the chains\nWashing away all of the stains\nStarting fresh, starting new\nThis is what I'm gonna do"
+        ],
+        'rock': [
+            "Verse 1:\nThunder rolling in the night\nLightning strikes with all its might\nStanding strong against the storm\nThis is where legends are born\n\nChorus:\nWe won't back down, we'll never fall\nBreaking through, we'll break the wall\nScream it out with all your soul\nRock and roll will make us whole",
+            "Verse 1:\nBorn to run, born to fight\nNever giving up the fight\nFuel the fire in your veins\nBreak away from all the chains\n\nChorus:\nRise up, stand tall\nWe'll conquer it all\nWith power and might\nWe'll light up the night"
+        ]
+    }
+    
+    available_lyrics = lyrics_templates.get(genre, lyrics_templates['pop'])
+    return random.choice(available_lyrics)
+
+def create_demo_audio_files(project_dir, parameters):
+    """Create realistic demo audio files based on genre"""
+    audio_files = []
+    track_count = parameters.get('track_count', 2)
+    genre = parameters.get('genre', 'pop')
+    
+    # Create audio directory
+    audio_dir = project_dir / 'audio'
+    audio_dir.mkdir(exist_ok=True)
+    
+    # Genre-specific source files
+    genre_files = {
+        'pop': ['pop_demo.mp3', 'demo_track_1.mp3'],
+        'rock': ['rock_demo.mp3', 'demo_track_2.mp3'],
+        'electronic': ['electronic_demo.mp3', 'demo_track_3.mp3'],
+        'demo': ['demo_track_1.mp3', 'demo_track_2.mp3', 'demo_track_3.mp3']
+    }
+    
+    mock_audio_dir = Path('mock_audio')
+    source_files = genre_files.get(genre, genre_files['demo'])
+    
+    if mock_audio_dir.exists():
+        for i in range(track_count):
+            # Select source file (cycle through available files)
+            source_filename = source_files[i % len(source_files)]
+            source_file = mock_audio_dir / source_filename
+            
+            if source_file.exists():
+                dest_file = audio_dir / f'{genre}_track_{i+1}.mp3'
+                shutil.copy2(source_file, dest_file)
+                audio_files.append(str(dest_file))
+            else:
+                # Fallback: create placeholder
+                dest_file = audio_dir / f'demo_track_{i+1}.mp3'
+                create_placeholder_audio(dest_file, f'{genre.title()} Demo Track {i+1}')
+                audio_files.append(str(dest_file))
+    else:
+        # Create placeholders if no mock files
+        for i in range(track_count):
+            audio_file = audio_dir / f'{genre}_demo_track_{i+1}.mp3'
+            create_placeholder_audio(audio_file, f'{genre.title()} Demo Track {i+1}')
+            audio_files.append(str(audio_file))
+    
+    return audio_files
+
+def create_placeholder_audio(file_path, title):
+    """Create a placeholder MP3 file with proper ID3 tags"""
+    with open(file_path, 'wb') as f:
+        # Write ID3v2 header with title
+        id3_header = b'ID3\x03\x00\x00\x00\x00\x00\x3F'  # ID3v2.3.0
+        
+        # TIT2 frame (title)
+        title_bytes = title.encode('utf-8')
+        title_frame = b'TIT2' + (len(title_bytes) + 1).to_bytes(4, 'big') + b'\x00\x00\x00' + title_bytes
+        
+        # TPE1 frame (artist)
+        artist = 'AI Demo Generator'
+        artist_bytes = artist.encode('utf-8')
+        artist_frame = b'TPE1' + (len(artist_bytes) + 1).to_bytes(4, 'big') + b'\x00\x00\x00' + artist_bytes
+        
+        f.write(id3_header + title_frame + artist_frame)
+        
+        # Minimal MP3 audio frame
+        f.write(b'\xff\xfb\x90\x00' + b'\x00' * 100)
+
+def create_demo_video_files(project_dir, audio_files):
+    """Create demo video files"""
+    video_files = []
+    video_dir = project_dir / 'video'
+    video_dir.mkdir(exist_ok=True)
+    
+    for i, audio_file in enumerate(audio_files):
+        video_file = video_dir / f'video_{i+1}.mp4'
+        # Create placeholder video file
+        with open(video_file, 'wb') as f:
+            # Write minimal MP4 header
+            f.write(b'\x00\x00\x00\x20ftypmp41')
+        video_files.append(str(video_file))
+    
+    return video_files
+
+def create_demo_cover_art(project_dir, concept):
+    """Create demo cover art"""
+    import base64
+    
+    images_dir = project_dir / 'images'
+    images_dir.mkdir(exist_ok=True)
+    
+    # Create a simple colored rectangle as cover art
+    cover_file = images_dir / 'cover.png'
+    
+    # Create minimal PNG file (1x1 pixel)
+    png_data = base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAI9jU8j6gAAAABJRU5ErkJggg==')
+    with open(cover_file, 'wb') as f:
+        f.write(png_data)
+    
+    return str(cover_file)
+
+def create_demo_project_summary(project_dir, metadata):
+    """Create human-readable project summary"""
+    summary_file = project_dir / 'PROJECT_SUMMARY.md'
+    
+    summary_content = f"""# Demo Projekto Santrauka
+
+## Projekto Informacija
+- **Pavadinimas:** {metadata['title']}
+- **Žanras:** {metadata['genre']}
+- **Sukurta:** {metadata['created_at']}
+- **Demo režimas:** ✅ Taip
+
+## Koncepcija
+{metadata['concept']}
+
+## Sukurti Failai
+- **Audio takeliai:** {metadata['tracks_created']}
+- **Video failai:** {metadata['video_files']}
+- **Albumo viršelis:** ✅ Sukurtas
+
+## Tekstai
+```
+{metadata['lyrics']}
+```
+
+## Naudoti Parametrai
+- **Režimas:** {metadata['mode']}
+- **Žanras:** {metadata['genre']}
+
+---
+*Šis projektas sukurtas demo režimu su simuliuotais duomenimis.*
+"""
+    
+    with open(summary_file, 'w', encoding='utf-8') as f:
+        f.write(summary_content)
+
 @app.route('/api/generate/status/<task_id>')
 @require_auth
 def api_generation_status(task_id):
     """Get generation task status"""
     task = system_state.generation_tasks.get(task_id, {})
     return jsonify(task)
+
+@app.route('/api/demo/quick-test', methods=['POST'])
+@require_auth
+def api_demo_quick_test():
+    """Start quick demo test with predefined parameters"""
+    demo_params = {
+        'title': 'Demo Greitas Testas',
+        'mode': 'demo',
+        'genre': 'pop',
+        'mood': 'upbeat',
+        'track_count': 2,
+        'demo_mode': True,
+        'test_type': 'quick'
+    }
+    
+    task_id = f"demo_quick_{int(time.time())}"
+    
+    # Store task info
+    system_state.generation_tasks[task_id] = {
+        'id': task_id,
+        'status': 'queued',
+        'progress': 0,
+        'current_step': 'Pradedamas greitas demo testas...',
+        'logs': [],
+        'parameters': demo_params,
+        'created_at': datetime.now().isoformat(),
+        'result': None,
+        'demo_mode': True
+    }
+    
+    # Start demo generation
+    def run_quick_demo():
+        try:
+            system_state.generation_tasks[task_id]['status'] = 'running'
+            result = run_demo_generation(task_id, demo_params)
+            system_state.generation_tasks[task_id]['result'] = result
+            system_state.generation_tasks[task_id]['status'] = 'completed'
+        except Exception as e:
+            system_state.generation_tasks[task_id]['status'] = 'failed'
+            system_state.generation_tasks[task_id]['result'] = {'success': False, 'error': str(e)}
+    
+    thread = threading.Thread(target=run_quick_demo, daemon=True)
+    thread.start()
+    
+    return jsonify({'success': True, 'task_id': task_id, 'demo_mode': True})
+
+@app.route('/api/demo/full-process', methods=['POST'])
+@require_auth
+def api_demo_full_process():
+    """Start comprehensive demo with all features"""
+    data = request.get_json() or {}
+    
+    demo_params = {
+        'title': data.get('title', 'Demo Pilnas Procesas'),
+        'mode': 'comprehensive_demo',
+        'genre': data.get('genre', 'electronic'),
+        'mood': data.get('mood', 'energetic'),
+        'track_count': data.get('track_count', 3),
+        'include_video': True,
+        'include_cover_art': True,
+        'demo_mode': True,
+        'test_type': 'comprehensive'
+    }
+    
+    task_id = f"demo_full_{int(time.time())}"
+    
+    # Store task info
+    system_state.generation_tasks[task_id] = {
+        'id': task_id,
+        'status': 'queued',
+        'progress': 0,
+        'current_step': 'Pradedamas pilnas demo procesas...',
+        'logs': [],
+        'parameters': demo_params,
+        'created_at': datetime.now().isoformat(),
+        'result': None,
+        'demo_mode': True
+    }
+    
+    # Start comprehensive demo
+    def run_full_demo():
+        try:
+            system_state.generation_tasks[task_id]['status'] = 'running'
+            result = run_demo_generation(task_id, demo_params)
+            system_state.generation_tasks[task_id]['result'] = result
+            system_state.generation_tasks[task_id]['status'] = 'completed'
+        except Exception as e:
+            system_state.generation_tasks[task_id]['status'] = 'failed'
+            system_state.generation_tasks[task_id]['result'] = {'success': False, 'error': str(e)}
+    
+    thread = threading.Thread(target=run_full_demo, daemon=True)
+    thread.start()
+    
+    return jsonify({'success': True, 'task_id': task_id, 'demo_mode': True})
 
 @app.route('/favicon.ico')
 def favicon():

@@ -17,6 +17,58 @@
     </div>
 </div>
 
+<!-- Demo Test Buttons -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-play-circle text-success me-2"></i>
+                    Demo / Test Režimas
+                </h5>
+                <p class="card-text text-muted mb-3">
+                    Išbandykite visą procesą be API prisijungimų. Sukuriami tikri failai su simuliuotais duomenimis.
+                </p>
+                <div class="row">
+                    <div class="col-md-6 mb-2">
+                        <button type="button" class="btn btn-success btn-lg w-100" id="quickDemoBtn">
+                            <i class="fas fa-bolt me-2"></i>
+                            Greitas Demo Testas
+                            <br><small class="text-light">~30 sekundžių, 2 takeliai</small>
+                        </button>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <button type="button" class="btn btn-info btn-lg w-100" id="fullDemoBtn">
+                            <i class="fas fa-star me-2"></i>
+                            Pilnas Demo Procesas
+                            <br><small class="text-light">~60 sekundžių, visi failai</small>
+                        </button>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="alert alert-info d-none" id="demoStatus">
+                        <div class="d-flex align-items-center">
+                            <div class="spinner-border spinner-border-sm text-info me-3" role="status"></div>
+                            <div>
+                                <div class="fw-bold" id="demoCurrentStep">Pradedamas demo...</div>
+                                <div class="progress mt-2" style="height: 20px;">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                         id="demoProgressBar" role="progressbar" style="width: 0%">
+                                        <span id="demoProgressText">0%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <small id="demoLogs" class="text-muted"></small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Generation Form -->
 <div class="row">
     <div class="col-lg-8 mb-4">
@@ -609,6 +661,198 @@
             icon: 'error'
         });
     }
+    
+    // Demo functionality
+    let currentDemoTaskId = null;
+    let demoPollingInterval = null;
+    
+    function startQuickDemo() {
+        const btn = document.getElementById('quickDemoBtn');
+        const originalText = btn.innerHTML;
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Pradedama...';
+        
+        fetch('/api/demo/quick-test', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                currentDemoTaskId = data.task_id;
+                showDemoStatus();
+                startDemoPolling();
+            } else {
+                showError('Demo pradėti nepavyko: ' + (data.message || 'Nežinoma klaida'));
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        })
+        .catch(error => {
+            showError('Demo pradėti nepavyko: ' + error.message);
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        });
+    }
+    
+    function startFullDemo() {
+        const btn = document.getElementById('fullDemoBtn');
+        const originalText = btn.innerHTML;
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Pradedama...';
+        
+        const params = {
+            title: 'Demo Pilnas Procesas',
+            genre: 'electronic',
+            mood: 'energetic',
+            track_count: 3
+        };
+        
+        fetch('/api/demo/full-process', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(params)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                currentDemoTaskId = data.task_id;
+                showDemoStatus();
+                startDemoPolling();
+            } else {
+                showError('Demo pradėti nepavyko: ' + (data.message || 'Nežinoma klaida'));
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        })
+        .catch(error => {
+            showError('Demo pradėti nepavyko: ' + error.message);
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        });
+    }
+    
+    function showDemoStatus() {
+        document.getElementById('demoStatus').classList.remove('d-none');
+        document.getElementById('quickDemoBtn').disabled = true;
+        document.getElementById('fullDemoBtn').disabled = true;
+    }
+    
+    function startDemoPolling() {
+        if (demoPollingInterval) {
+            clearInterval(demoPollingInterval);
+        }
+        
+        demoPollingInterval = setInterval(() => {
+            if (!currentDemoTaskId) return;
+            
+            fetch(`/api/generate/status/${currentDemoTaskId}`)
+            .then(response => response.json())
+            .then(data => {
+                updateDemoProgress(data);
+                
+                if (data.status === 'completed' || data.status === 'failed') {
+                    clearInterval(demoPollingInterval);
+                    handleDemoCompletion(data);
+                }
+            })
+            .catch(error => {
+                console.error('Demo polling error:', error);
+            });
+        }, 1000);
+    }
+    
+    function updateDemoProgress(task) {
+        const progressBar = document.getElementById('demoProgressBar');
+        const progressText = document.getElementById('demoProgressText');
+        const currentStep = document.getElementById('demoCurrentStep');
+        const logs = document.getElementById('demoLogs');
+        
+        progressBar.style.width = task.progress + '%';
+        progressText.textContent = task.progress + '%';
+        currentStep.textContent = task.current_step || 'Apdorojama...';
+        
+        if (task.logs && task.logs.length > 0) {
+            logs.innerHTML = task.logs.slice(-3).join('<br>');
+        }
+    }
+    
+    function handleDemoCompletion(task) {
+        if (task.status === 'completed' && task.result && task.result.success) {
+            showDemoSuccess(task.result);
+        } else {
+            showError('Demo nepavyko: ' + (task.result?.error || 'Nežinoma klaida'));
+        }
+        
+        resetDemoButtons();
+    }
+    
+    function showDemoSuccess(result) {
+        const resultHtml = `
+            <div class="alert alert-success">
+                <h5><i class="fas fa-check-circle me-2"></i>Demo sėkmingai baigtas!</h5>
+                <ul class="mb-0">
+                    <li><strong>Projektas:</strong> ${result.project_name}</li>
+                    <li><strong>Sukurti failai:</strong> ${result.files_created}</li>
+                    <li><strong>Audio takeliai:</strong> ${result.audio_files}</li>
+                    <li><strong>Video failai:</strong> ${result.video_files}</li>
+                </ul>
+                <div class="mt-3">
+                    <a href="/projects" class="btn btn-primary btn-sm">
+                        <i class="fas fa-folder me-1"></i>Peržiūrėti Projektus
+                    </a>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('demoStatus').innerHTML = resultHtml;
+        
+        Swal.fire({
+            title: 'Demo Baigtas!',
+            html: `
+                <div class="text-start">
+                    <p><strong>Projektas sukurtas:</strong> ${result.project_name}</p>
+                    <p><strong>Sukurti failai:</strong> ${result.files_created}</p>
+                    <p><strong>Audio takeliai:</strong> ${result.audio_files}</p>
+                    <p><strong>Video failai:</strong> ${result.video_files}</p>
+                </div>
+            `,
+            icon: 'success',
+            showCancelButton: true,
+            confirmButtonText: 'Peržiūrėti Projektus',
+            cancelButtonText: 'Uždaryti'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = '/projects';
+            }
+        });
+    }
+    
+    function resetDemoButtons() {
+        document.getElementById('quickDemoBtn').disabled = false;
+        document.getElementById('fullDemoBtn').disabled = false;
+        document.getElementById('quickDemoBtn').innerHTML = `
+            <i class="fas fa-bolt me-2"></i>
+            Greitas Demo Testas
+            <br><small class="text-light">~30 sekundžių, 2 takeliai</small>
+        `;
+        document.getElementById('fullDemoBtn').innerHTML = `
+            <i class="fas fa-star me-2"></i>
+            Pilnas Demo Procesas
+            <br><small class="text-light">~60 sekundžių, visi failai</small>
+        `;
+        currentDemoTaskId = null;
+    }
+    
+    // Demo event listeners
+    document.getElementById('quickDemoBtn').addEventListener('click', startQuickDemo);
+    document.getElementById('fullDemoBtn').addEventListener('click', startFullDemo);
     
     // Initialize
     updateModeSelection();
