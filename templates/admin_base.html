@@ -495,6 +495,13 @@
                             Content Creation
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'enhanced_channel_creation' %}active{% endif %}" href="{{ url_for('enhanced_channel_creation') }}">
+                                <i class="fas fa-plus-circle text-success"></i>
+                                Channel Generator
+                                <span class="badge bg-success ms-1">🎯 AI</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'generator' %}active{% endif %}" href="{{ url_for('generator') }}">
                                 <i class="fas fa-magic"></i>
                                 Music Generator
@@ -539,10 +546,10 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'unlimited_empire' %}active{% endif %}" href="{{ url_for('unlimited_empire') }}">
+                            <a class="nav-link {% if request.endpoint == 'unlimited_empire' %}active{% endif %}" href="/unlimited-empire">
                                 <i class="fas fa-infinity text-success"></i>
                                 Unlimited Empire
-                                <span class="badge bg-info ms-1">🚀</span>
+                                <span class="badge bg-info ms-1">🚀 Mass Gen</span>
                             </a>
                         </li>
 
