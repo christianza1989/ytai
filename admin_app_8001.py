@@ -1589,4 +1589,4 @@ if __name__ == '__main__':
     print("🔐 Default admin password: admin123")
     print("🌐 Access: http://localhost:8000")
     
-    app.run(host='0.0.0.0', port=8000, debug=True)
+    app.run(host='0.0.0.0', port=8001, debug=True)
