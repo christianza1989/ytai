@@ -316,7 +316,7 @@
                             </div>
                             <div class="d-flex justify-content-between">
                                 <span>🍌 Nano-Banana:</span>
-                                <span id="stabilityCost">~$0.039</span>
+                                <span id="nanoBananaCost">~$0.039</span>
                             </div>
                             <hr>
                             <div class="d-flex justify-content-between fw-bold">
@@ -410,26 +410,26 @@
         
         let sunoCost = '~0 credits';
         let geminiCost = '~$0.00';
-        let stabilityCost = '~$0.00';
+        let nanoBananaCost = '~$0.00';
         let totalCost = '~$0.00 (FREE)';
         
         if (mode === 'real') {
             const baseMultiplier = multipleVersions ? 2 : 1;
             sunoCost = `~${5 * baseMultiplier} credits`;
             geminiCost = `~$${(0.01 * baseMultiplier).toFixed(2)}`;
-            stabilityCost = document.getElementById('generateCover').checked ? `~$${(0.039 * baseMultiplier).toFixed(2)}` : '~$0.00';
+            nanoBananaCost = document.getElementById('generateCover').checked ? `~$${(0.039 * baseMultiplier).toFixed(2)}` : '~$0.00';
             
             const totalValue = (0.20 * baseMultiplier).toFixed(2);
             totalCost = `~$${totalValue}`;
         } else if (mode === 'hybrid') {
             geminiCost = '~$0.01';
-            stabilityCost = document.getElementById('generateCover').checked ? '~$0.039' : '~$0.00';
+            nanoBananaCost = document.getElementById('generateCover').checked ? '~$0.039' : '~$0.00';
             totalCost = '~$0.05';
         }
         
         document.getElementById('sunoCost').textContent = sunoCost;
         document.getElementById('geminiCost').textContent = geminiCost;
-        document.getElementById('stabilityCost').textContent = stabilityCost;
+        document.getElementById('nanoBananaCost').textContent = nanoBananaCost;
         document.getElementById('totalCost').textContent = totalCost;
     }
     

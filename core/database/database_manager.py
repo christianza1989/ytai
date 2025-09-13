@@ -1,664 +1,404 @@
-import os
-from typing import List, Optional, Dict, Any
-from sqlalchemy import create_engine, func
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.exc import SQLAlchemyError
-from datetime import datetime, timedelta
-import json
+"""
+Database Manager for AI Music Empire
+Handles all database operations for YouTube channels, content creation, and analytics
+"""
 
-from .models import Base, ContentCreation, YouTubeVideo, PerformanceMetric, YouTubeChannel
+import json
+import sqlite3
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker, scoped_session
+from datetime import datetime, timezone
+from typing import List, Dict, Optional, Any
+import logging
+
+from .models import Base, YouTubeChannel, ContentCreation, YouTubeVideo
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class DatabaseManager:
-    """Database manager for handling all database operations"""
-
-    def __init__(self):
-        # Get database URL from environment
-        self.database_url = os.getenv('DATABASE_URL', 'sqlite:///database.db')
-
-        # Create engine
-        self.engine = create_engine(
-            self.database_url,
-            echo=False,  # Set to True for debugging
-            connect_args={"check_same_thread": False} if self.database_url.startswith('sqlite') else {}
-        )
-
+    """Centralized database management for the AI Music Empire system"""
+    
+    def __init__(self, db_path: str = "database.db"):
+        """Initialize database connection and create tables if needed"""
+        self.db_path = db_path
+        self.engine = create_engine(f'sqlite:///{db_path}', echo=False)
+        
+        # Create all tables
+        Base.metadata.create_all(self.engine)
+        
         # Create session factory
-        self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
-
-        # Initialize database
-        self.init_db()
-
-    def init_db(self):
-        """Initialize database and create all tables"""
+        self.Session = scoped_session(sessionmaker(bind=self.engine))
+        
+        logger.info(f"Database initialized: {db_path}")
+    
+    def get_session(self):
+        """Get a database session"""
+        return self.Session()
+    
+    def close_session(self):
+        """Close the session"""
+        self.Session.remove()
+    
+    # =================== YouTube Channel Management ===================
+    
+    def create_youtube_channel(self, channel_data: Dict[str, Any]) -> Optional[int]:
+        """Create a new YouTube channel record"""
+        session = self.get_session()
         try:
-            print("🔧 Initializing database...")
-            Base.metadata.create_all(bind=self.engine)
-            print("✅ Database initialized successfully")
+            # Ensure JSON fields are properly serialized
+            if isinstance(channel_data.get('upload_schedule'), dict):
+                channel_data['upload_schedule'] = json.dumps(channel_data['upload_schedule'])
+            if isinstance(channel_data.get('secondary_genres'), list):
+                channel_data['secondary_genres'] = json.dumps(channel_data['secondary_genres'])
+            if isinstance(channel_data.get('style_preferences'), dict):
+                channel_data['style_preferences'] = json.dumps(channel_data['style_preferences'])
+            if isinstance(channel_data.get('privacy_settings'), dict):
+                channel_data['privacy_settings'] = json.dumps(channel_data['privacy_settings'])
+            
+            # Set timestamps
+            now = datetime.now(timezone.utc)
+            channel_data['created_at'] = now
+            channel_data['updated_at'] = now
+            
+            # Set default values for required fields
+            channel_data.setdefault('secondary_genres', '[]')
+            channel_data.setdefault('upload_schedule', '{}')
+            channel_data.setdefault('preferred_upload_time', '14:00')
+            channel_data.setdefault('timezone', 'Europe/Vilnius')
+            channel_data.setdefault('auto_upload', False)
+            channel_data.setdefault('auto_thumbnails', False)
+            channel_data.setdefault('auto_seo', False)
+            channel_data.setdefault('enable_analytics', False)
+            channel_data.setdefault('enable_monetization', False)
+            channel_data.setdefault('privacy_settings', 'private')
+            channel_data.setdefault('comments_enabled', True)
+            channel_data.setdefault('ratings_enabled', True)
+            channel_data.setdefault('notify_subscribers', False)
+            channel_data.setdefault('status', 'needs_setup')
+            channel_data.setdefault('subscribers', 0)
+            channel_data.setdefault('total_views', 0)
+            channel_data.setdefault('total_videos', 0)
+            channel_data.setdefault('monthly_revenue', 0.0)
+            channel_data.setdefault('error_count', 0)
+            
+            channel = YouTubeChannel(**channel_data)
+            session.add(channel)
+            session.commit()
+            
+            channel_id = channel.id
+            logger.info(f"Created YouTube channel: {channel_id}")
+            return channel_id
+            
         except Exception as e:
-            print(f"❌ Failed to initialize database: {e}")
-            raise
-
-    def get_db(self) -> Session:
-        """Get database session"""
-        return self.SessionLocal()
-
-    def close_db(self, db: Session):
-        """Close database session"""
-        db.close()
-
-    # Content Creation CRUD Operations
-    def add_content_creation(self, data: Dict[str, Any]) -> ContentCreation:
-        """Add new content creation to database"""
-        db = self.get_db()
-        try:
-            content_creation = ContentCreation.from_dict(data)
-            db.add(content_creation)
-            db.commit()
-            db.refresh(content_creation)
-            print(f"✅ Content creation added to database: {content_creation.title}")
-            return content_creation
-        except SQLAlchemyError as e:
-            db.rollback()
-            print(f"❌ Failed to add content creation: {e}")
-            raise
+            session.rollback()
+            logger.error(f"Error creating YouTube channel: {e}")
+            return None
         finally:
-            self.close_db(db)
-
-    def get_creation_by_id(self, creation_id: int) -> Optional[ContentCreation]:
-        """Get content creation by ID"""
-        db = self.get_db()
+            session.close()
+    
+    def get_youtube_channel(self, channel_id: int) -> Optional[Dict[str, Any]]:
+        """Get YouTube channel by ID"""
+        session = self.get_session()
         try:
-            return db.query(ContentCreation).filter(ContentCreation.id == creation_id).first()
+            channel = session.query(YouTubeChannel).filter_by(id=channel_id).first()
+            if channel:
+                return self._youtube_channel_to_dict(channel)
+            return None
+        except Exception as e:
+            logger.error(f"Error getting YouTube channel {channel_id}: {e}")
+            return None
         finally:
-            self.close_db(db)
-
-    def get_all_creations(self, limit: int = 50) -> List[ContentCreation]:
-        """Get all content creations"""
-        db = self.get_db()
+            session.close()
+    
+    def get_all_youtube_channels(self) -> List[Dict[str, Any]]:
+        """Get all YouTube channels"""
+        session = self.get_session()
         try:
-            return db.query(ContentCreation).order_by(ContentCreation.creation_date.desc()).limit(limit).all()
+            channels = session.query(YouTubeChannel).all()
+            return [self._youtube_channel_to_dict(channel) for channel in channels]
+        except Exception as e:
+            logger.error(f"Error getting YouTube channels: {e}")
+            return []
         finally:
-            self.close_db(db)
-
-    def update_creation_status(self, creation_id: int, new_status: str) -> bool:
-        """Update content creation status"""
-        db = self.get_db()
+            session.close()
+    
+    def update_youtube_channel(self, channel_id: int, updates: Dict[str, Any]) -> bool:
+        """Update YouTube channel"""
+        session = self.get_session()
         try:
-            creation = db.query(ContentCreation).filter(ContentCreation.id == creation_id).first()
-            if creation:
-                creation.status = new_status
-                db.commit()
-                print(f"✅ Content creation {creation_id} status updated to: {new_status}")
+            # Ensure JSON fields are properly serialized
+            if isinstance(updates.get('upload_schedule'), dict):
+                updates['upload_schedule'] = json.dumps(updates['upload_schedule'])
+            if isinstance(updates.get('secondary_genres'), list):
+                updates['secondary_genres'] = json.dumps(updates['secondary_genres'])
+            if isinstance(updates.get('style_preferences'), dict):
+                updates['style_preferences'] = json.dumps(updates['style_preferences'])
+            if isinstance(updates.get('privacy_settings'), dict):
+                updates['privacy_settings'] = json.dumps(updates['privacy_settings'])
+            
+            updates['updated_at'] = datetime.now(timezone.utc)
+            
+            result = session.query(YouTubeChannel).filter_by(id=channel_id).update(updates)
+            session.commit()
+            
+            if result > 0:
+                logger.info(f"Updated YouTube channel: {channel_id}")
                 return True
-            else:
-                print(f"❌ Content creation {creation_id} not found")
-                return False
-        except SQLAlchemyError as e:
-            db.rollback()
-            print(f"❌ Failed to update creation status: {e}")
+            return False
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Error updating YouTube channel {channel_id}: {e}")
             return False
         finally:
-            self.close_db(db)
-
-    # YouTube Video CRUD Operations
-    def add_youtube_video(self, creation_obj: ContentCreation, video_data: Dict[str, Any]) -> YouTubeVideo:
-        """Add YouTube video to database"""
-        db = self.get_db()
-        try:
-            # Add content_id to video data
-            video_data['content_id'] = creation_obj.id
-
-            youtube_video = YouTubeVideo.from_dict(video_data)
-            db.add(youtube_video)
-            db.commit()
-            db.refresh(youtube_video)
-            print(f"✅ YouTube video added to database: {youtube_video.title}")
-            return youtube_video
-        except SQLAlchemyError as e:
-            db.rollback()
-            print(f"❌ Failed to add YouTube video: {e}")
-            raise
-        finally:
-            self.close_db(db)
-
-    def get_video_by_youtube_id(self, youtube_video_id: str) -> Optional[YouTubeVideo]:
-        """Get YouTube video by YouTube video ID"""
-        db = self.get_db()
-        try:
-            return db.query(YouTubeVideo).filter(YouTubeVideo.video_id == youtube_video_id).first()
-        finally:
-            self.close_db(db)
-
-    def get_videos_by_creation_id(self, creation_id: int) -> List[YouTubeVideo]:
-        """Get all YouTube videos for a content creation"""
-        db = self.get_db()
-        try:
-            return db.query(YouTubeVideo).filter(YouTubeVideo.content_id == creation_id).all()
-        finally:
-            self.close_db(db)
-
-    def get_all_videos(self, limit: int = 100) -> List[YouTubeVideo]:
-        """Get all YouTube videos"""
-        db = self.get_db()
-        try:
-            return db.query(YouTubeVideo).order_by(YouTubeVideo.upload_date.desc()).limit(limit).all()
-        finally:
-            self.close_db(db)
-
-    # Performance Metrics CRUD Operations
-    def add_performance_metric(self, video_id: int, metrics_data: Dict[str, Any]) -> PerformanceMetric:
-        """Add performance metrics for a video"""
-        db = self.get_db()
-        try:
-            # Check if we already have metrics for today
-            today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-            today_end = today_start + timedelta(days=1)
-
-            existing_metric = db.query(PerformanceMetric)\
-                               .filter(PerformanceMetric.video_id == video_id)\
-                               .filter(PerformanceMetric.check_date >= today_start)\
-                               .filter(PerformanceMetric.check_date < today_end)\
-                               .first()
-
-            if existing_metric:
-                # Update existing metrics
-                existing_metric.view_count = metrics_data.get('view_count', existing_metric.view_count)
-                existing_metric.like_count = metrics_data.get('like_count', existing_metric.like_count)
-                existing_metric.comment_count = metrics_data.get('comment_count', existing_metric.comment_count)
-                existing_metric.check_date = datetime.utcnow()
-                db.commit()
-                db.refresh(existing_metric)
-                print(f"✅ Updated existing metrics for video {video_id}")
-                return existing_metric
-            else:
-                # Create new metrics entry
-                metrics_data['video_id'] = video_id
-                metric = PerformanceMetric.from_dict(metrics_data)
-                db.add(metric)
-                db.commit()
-                db.refresh(metric)
-                print(f"✅ Added new performance metrics for video {video_id}")
-                return metric
-
-        except SQLAlchemyError as e:
-            db.rollback()
-            print(f"❌ Failed to add/update performance metrics: {e}")
-            raise
-        finally:
-            self.close_db(db)
-
-    def get_latest_metrics_for_video(self, video_id: int) -> Optional[PerformanceMetric]:
-        """Get latest performance metrics for a video"""
-        db = self.get_db()
-        try:
-            return db.query(PerformanceMetric)\
-                    .filter(PerformanceMetric.video_id == video_id)\
-                    .order_by(PerformanceMetric.check_date.desc())\
-                    .first()
-        finally:
-            self.close_db(db)
-
-    def get_metrics_history_for_video(self, video_id: int, days: int = 30) -> List[PerformanceMetric]:
-        """Get performance metrics history for a video"""
-        db = self.get_db()
-        try:
-            cutoff_date = datetime.utcnow() - timedelta(days=days)
-            return db.query(PerformanceMetric)\
-                    .filter(PerformanceMetric.video_id == video_id)\
-                    .filter(PerformanceMetric.check_date >= cutoff_date)\
-                    .order_by(PerformanceMetric.check_date.desc())\
-                    .all()
-        finally:
-            self.close_db(db)
-
-    # Analytics and Reporting
-    def get_content_performance_summary(self) -> Dict[str, Any]:
-        """Get overall content performance summary"""
-        db = self.get_db()
-        try:
-            # Get total counts
-            total_creations = db.query(ContentCreation).count()
-            total_videos = db.query(YouTubeVideo).count()
-            total_views = db.query(PerformanceMetric).with_entities(
-                func.sum(PerformanceMetric.view_count)
-            ).scalar() or 0
-
-            # Get status breakdown
-            status_counts = db.query(ContentCreation.status, func.count(ContentCreation.id))\
-                             .group_by(ContentCreation.status).all()
-            status_breakdown = {status: count for status, count in status_counts}
-
-            # Get recent activity (last 7 days)
-            week_ago = datetime.utcnow() - timedelta(days=7)
-            recent_creations = db.query(ContentCreation)\
-                                .filter(ContentCreation.creation_date >= week_ago).count()
-            recent_videos = db.query(YouTubeVideo)\
-                             .filter(YouTubeVideo.upload_date >= week_ago).count()
-
-            return {
-                'total_creations': total_creations,
-                'total_videos': total_videos,
-                'total_views': total_views,
-                'status_breakdown': status_breakdown,
-                'recent_creations': recent_creations,
-                'recent_videos': recent_videos
-            }
-        finally:
-            self.close_db(db)
-
-    def get_top_performing_videos(self, limit: int = 10) -> List[Dict[str, Any]]:
-        """Get top performing videos by view count"""
-        db = self.get_db()
-        try:
-            # Get latest metrics for each video
-            subquery = db.query(
-                PerformanceMetric.video_id,
-                func.max(PerformanceMetric.check_date).label('latest_date')
-            ).group_by(PerformanceMetric.video_id).subquery()
-
-            results = db.query(
-                YouTubeVideo,
-                PerformanceMetric.view_count,
-                PerformanceMetric.like_count,
-                PerformanceMetric.comment_count
-            ).join(
-                PerformanceMetric,
-                db.and_(
-                    PerformanceMetric.video_id == YouTubeVideo.id,
-                    PerformanceMetric.check_date == subquery.c.latest_date
-                )
-            ).order_by(PerformanceMetric.view_count.desc()).limit(limit).all()
-
-            top_videos = []
-            for video, views, likes, comments in results:
-                top_videos.append({
-                    'video_id': video.video_id,
-                    'title': video.title,
-                    'youtube_url': video.youtube_url,
-                    'views': views,
-                    'likes': likes,
-                    'comments': comments,
-                    'upload_date': video.upload_date.isoformat() if video.upload_date else None
-                })
-
-            return top_videos
-        finally:
-            self.close_db(db)
-
-    def get_genre_performance_analysis(self) -> Dict[str, Any]:
-        """Analyze performance by genre"""
-        db = self.get_db()
-        try:
-            results = db.query(
-                ContentCreation.genre,
-                func.count(ContentCreation.id).label('creation_count'),
-                func.avg(PerformanceMetric.view_count).label('avg_views'),
-                func.avg(PerformanceMetric.like_count).label('avg_likes')
-            ).join(
-                YouTubeVideo, ContentCreation.id == YouTubeVideo.content_id
-            ).join(
-                PerformanceMetric, YouTubeVideo.id == PerformanceMetric.video_id
-            ).group_by(ContentCreation.genre).all()
-
-            genre_analysis = {}
-            for genre, count, avg_views, avg_likes in results:
-                if genre:  # Skip None values
-                    genre_analysis[genre] = {
-                        'creation_count': count,
-                        'avg_views': float(avg_views or 0),
-                        'avg_likes': float(avg_likes or 0)
-                    }
-
-            return genre_analysis
-        finally:
-            self.close_db(db)
-
-    # Utility methods
-    def cleanup_old_data(self, days_to_keep: int = 90):
-        """Clean up old performance metrics data"""
-        db = self.get_db()
-        try:
-            cutoff_date = datetime.utcnow() - timedelta(days=days_to_keep)
-            deleted_count = db.query(PerformanceMetric)\
-                             .filter(PerformanceMetric.check_date < cutoff_date)\
-                             .delete()
-            db.commit()
-            print(f"✅ Cleaned up {deleted_count} old performance metrics")
-            return deleted_count
-        except SQLAlchemyError as e:
-            db.rollback()
-            print(f"❌ Failed to cleanup old data: {e}")
-            return 0
-        finally:
-            self.close_db(db)
-
-    def export_data_to_json(self, filename: str = "database_export.json"):
-        """Export all data to JSON file for backup"""
-        db = self.get_db()
-        try:
-            data = {
-                'content_creations': [creation.to_dict() for creation in self.get_all_creations(1000)],
-                'youtube_videos': [video.to_dict() for video in self.get_all_videos(1000)],
-                'export_date': datetime.utcnow().isoformat()
-            }
-
-            with open(filename, 'w', encoding='utf-8') as f:
-                json.dump(data, f, indent=2, ensure_ascii=False)
-
-            print(f"✅ Database exported to {filename}")
-            return True
-        except Exception as e:
-            print(f"❌ Failed to export data: {e}")
-            return False
-        finally:
-            self.close_db(db)
-
-    def get_performance_summary_for_analysis(self) -> str:
-        """
-        Get comprehensive performance summary formatted for AI analysis
-
-        Returns:
-            Formatted string with all video performance data for analysis
-        """
-        db = self.get_db()
-        try:
-            # Get all videos with their latest performance metrics
-            results = db.query(
-                YouTubeVideo,
-                ContentCreation.genre,
-                ContentCreation.theme,
-                PerformanceMetric.view_count,
-                PerformanceMetric.like_count,
-                PerformanceMetric.comment_count,
-                PerformanceMetric.check_date
-            ).join(
-                ContentCreation, YouTubeVideo.content_id == ContentCreation.id
-            ).join(
-                PerformanceMetric, YouTubeVideo.id == PerformanceMetric.video_id
-            ).filter(
-                PerformanceMetric.check_date == db.query(
-                    func.max(PerformanceMetric.check_date)
-                ).filter(
-                    PerformanceMetric.video_id == YouTubeVideo.id
-                ).correlate(YouTubeVideo).as_scalar()
-            ).order_by(PerformanceMetric.view_count.desc()).all()
-
-            if not results:
-                return "No performance data available for analysis."
-
-            # Format data for AI analysis
-            analysis_data = []
-            for video, genre, theme, views, likes, comments, check_date in results:
-                video_info = {
-                    'title': video.title,
-                    'genre': genre,
-                    'theme': theme,
-                    'tags': video.tags if video.tags else [],
-                    'views': views,
-                    'likes': likes,
-                    'comments': comments,
-                    'upload_date': video.upload_date.isoformat() if video.upload_date else 'Unknown',
-                    'check_date': check_date.isoformat() if check_date else 'Unknown'
-                }
-                analysis_data.append(video_info)
-
-            # Create formatted text for AI analysis
-            formatted_text = "YOUTUBE VIDEO PERFORMANCE ANALYSIS DATA\n"
-            formatted_text += "=" * 50 + "\n\n"
-
-            for i, data in enumerate(analysis_data, 1):
-                formatted_text += f"Video {i}:\n"
-                formatted_text += f"  Title: '{data['title']}'\n"
-                formatted_text += f"  Genre: '{data['genre']}'\n"
-                formatted_text += f"  Theme: '{data['theme']}'\n"
-                formatted_text += f"  Tags: {', '.join([f'\"{tag}\"' for tag in data['tags']])}\n"
-                formatted_text += f"  Performance: {data['views']} views, {data['likes']} likes, {data['comments']} comments\n"
-                formatted_text += f"  Upload Date: {data['upload_date']}\n"
-                formatted_text += f"  Last Checked: {data['check_date']}\n\n"
-
-            # Add summary statistics
-            total_videos = len(analysis_data)
-            total_views = sum(data['views'] for data in analysis_data)
-            total_likes = sum(data['likes'] for data in analysis_data)
-            total_comments = sum(data['comments'] for data in analysis_data)
-
-            avg_views = total_views / total_videos if total_videos > 0 else 0
-            avg_likes = total_likes / total_videos if total_videos > 0 else 0
-            avg_comments = total_comments / total_videos if total_videos > 0 else 0
-
-            formatted_text += "SUMMARY STATISTICS:\n"
-            formatted_text += f"  Total Videos: {total_videos}\n"
-            formatted_text += f"  Total Views: {total_views:,}\n"
-            formatted_text += f"  Total Likes: {total_likes:,}\n"
-            formatted_text += f"  Total Comments: {total_comments:,}\n"
-            formatted_text += f"  Average Views: {avg_views:.1f}\n"
-            formatted_text += f"  Average Likes: {avg_likes:.1f}\n"
-            formatted_text += f"  Average Comments: {avg_comments:.1f}\n\n"
-
-            return formatted_text
-
-        except Exception as e:
-            print(f"❌ Failed to get performance summary for analysis: {e}")
-            return f"Error retrieving performance data: {e}"
-        finally:
-            self.close_db(db)
-
-    # YouTube Channels CRUD Operations
-    def add_youtube_channel(self, data: Dict[str, Any]) -> YouTubeChannel:
-        """Add a new YouTube channel"""
-        db = self.get_db()
-        try:
-            channel = YouTubeChannel.from_dict(data)
-            db.add(channel)
-            db.commit()
-            db.refresh(channel)
-            print(f"✅ Added YouTube channel: {channel.name}")
-            return channel
-        except Exception as e:
-            db.rollback()
-            print(f"❌ Failed to add YouTube channel: {e}")
-            raise
-        finally:
-            self.close_db(db)
-
-    def get_youtube_channel(self, channel_id: int) -> Optional[YouTubeChannel]:
-        """Get a YouTube channel by ID"""
-        db = self.get_db()
-        try:
-            channel = db.query(YouTubeChannel).filter(YouTubeChannel.id == channel_id).first()
-            return channel
-        except Exception as e:
-            print(f"❌ Failed to get YouTube channel {channel_id}: {e}")
-            return None
-        finally:
-            self.close_db(db)
-
-    def get_youtube_channel_by_youtube_id(self, youtube_channel_id: str) -> Optional[YouTubeChannel]:
-        """Get a YouTube channel by YouTube channel ID"""
-        db = self.get_db()
-        try:
-            channel = db.query(YouTubeChannel).filter(
-                YouTubeChannel.youtube_channel_id == youtube_channel_id
-            ).first()
-            return channel
-        except Exception as e:
-            print(f"❌ Failed to get YouTube channel by YouTube ID {youtube_channel_id}: {e}")
-            return None
-        finally:
-            self.close_db(db)
-
-    def get_all_youtube_channels(self, status: Optional[str] = None) -> List[YouTubeChannel]:
-        """Get all YouTube channels, optionally filtered by status"""
-        db = self.get_db()
-        try:
-            query = db.query(YouTubeChannel)
-            if status:
-                query = query.filter(YouTubeChannel.status == status)
-            channels = query.order_by(YouTubeChannel.created_at.desc()).all()
-            return channels
-        except Exception as e:
-            print(f"❌ Failed to get YouTube channels: {e}")
-            return []
-        finally:
-            self.close_db(db)
-
-    def update_youtube_channel(self, channel_id: int, data: Dict[str, Any]) -> Optional[YouTubeChannel]:
-        """Update a YouTube channel"""
-        db = self.get_db()
-        try:
-            channel = db.query(YouTubeChannel).filter(YouTubeChannel.id == channel_id).first()
-            if not channel:
-                return None
-
-            # Update fields
-            for key, value in data.items():
-                if hasattr(channel, key):
-                    if key in ['secondary_genres', 'style_preferences'] and isinstance(value, (list, dict)):
-                        # Handle JSON fields
-                        setattr(channel, key, json.dumps(value))
-                    else:
-                        setattr(channel, key, value)
-
-            channel.updated_at = datetime.now()
-            db.commit()
-            db.refresh(channel)
-            print(f"✅ Updated YouTube channel: {channel.name}")
-            return channel
-        except Exception as e:
-            db.rollback()
-            print(f"❌ Failed to update YouTube channel {channel_id}: {e}")
-            raise
-        finally:
-            self.close_db(db)
-
+            session.close()
+    
     def delete_youtube_channel(self, channel_id: int) -> bool:
-        """Delete a YouTube channel"""
-        db = self.get_db()
+        """Delete YouTube channel"""
+        session = self.get_session()
         try:
-            channel = db.query(YouTubeChannel).filter(YouTubeChannel.id == channel_id).first()
-            if not channel:
-                return False
-
-            channel_name = channel.name
-            db.delete(channel)
-            db.commit()
-            print(f"✅ Deleted YouTube channel: {channel_name}")
-            return True
+            result = session.query(YouTubeChannel).filter_by(id=channel_id).delete()
+            session.commit()
+            
+            if result > 0:
+                logger.info(f"Deleted YouTube channel: {channel_id}")
+                return True
+            return False
         except Exception as e:
-            db.rollback()
-            print(f"❌ Failed to delete YouTube channel {channel_id}: {e}")
+            session.rollback()
+            logger.error(f"Error deleting YouTube channel {channel_id}: {e}")
             return False
         finally:
-            self.close_db(db)
-
-    def get_active_channels_for_automation(self) -> List[YouTubeChannel]:
-        """Get all channels that are ready for automation"""
-        db = self.get_db()
+            session.close()
+    
+    def get_youtube_channels_by_status(self, status: str) -> List[Dict[str, Any]]:
+        """Get YouTube channels by status"""
+        session = self.get_session()
         try:
-            channels = db.query(YouTubeChannel).filter(
-                YouTubeChannel.status == 'active',
-                YouTubeChannel.auto_upload == True,
-                YouTubeChannel.api_key.isnot(None),
-                YouTubeChannel.client_id.isnot(None)
-            ).all()
-            return [c for c in channels if c.is_ready_for_automation()]
+            channels = session.query(YouTubeChannel).filter_by(status=status).all()
+            return [self._youtube_channel_to_dict(channel) for channel in channels]
         except Exception as e:
-            print(f"❌ Failed to get active channels for automation: {e}")
+            logger.error(f"Error getting YouTube channels by status {status}: {e}")
             return []
         finally:
-            self.close_db(db)
-
-    def update_channel_metrics(self, channel_id: int, metrics: Dict[str, Any]) -> bool:
-        """Update channel metrics from YouTube API"""
-        db = self.get_db()
+            session.close()
+    
+    def get_youtube_channels_statistics(self) -> Dict[str, Any]:
+        """Get YouTube channels statistics"""
+        session = self.get_session()
         try:
-            channel = db.query(YouTubeChannel).filter(YouTubeChannel.id == channel_id).first()
-            if not channel:
-                return False
-
-            channel.update_metrics(
-                subscribers=metrics.get('subscribers'),
-                total_views=metrics.get('total_views'),
-                total_videos=metrics.get('total_videos'),
-                monthly_revenue=metrics.get('monthly_revenue')
-            )
-            channel.last_sync = datetime.now()
+            total_channels = session.query(YouTubeChannel).count()
+            active_channels = session.query(YouTubeChannel).filter_by(status='active').count()
+            needs_setup = session.query(YouTubeChannel).filter_by(status='needs_setup').count()
             
-            db.commit()
-            return True
-        except Exception as e:
-            db.rollback()
-            print(f"❌ Failed to update channel metrics for {channel_id}: {e}")
-            return False
-        finally:
-            self.close_db(db)
-
-    def record_channel_error(self, channel_id: int, error_message: str) -> bool:
-        """Record an error for a channel"""
-        db = self.get_db()
-        try:
-            channel = db.query(YouTubeChannel).filter(YouTubeChannel.id == channel_id).first()
-            if not channel:
-                return False
-
-            channel.record_error(error_message)
-            db.commit()
-            return True
-        except Exception as e:
-            db.rollback()
-            print(f"❌ Failed to record error for channel {channel_id}: {e}")
-            return False
-        finally:
-            self.close_db(db)
-
-    def get_channels_statistics(self) -> Dict[str, Any]:
-        """Get comprehensive statistics for all channels"""
-        db = self.get_db()
-        try:
-            total_channels = db.query(YouTubeChannel).count()
-            active_channels = db.query(YouTubeChannel).filter(YouTubeChannel.status == 'active').count()
+            # Calculate total metrics
+            channels = session.query(YouTubeChannel).all()
+            total_subscribers = sum(ch.subscribers or 0 for ch in channels)
+            total_views = sum(ch.total_views or 0 for ch in channels)
+            total_videos = sum(ch.total_videos or 0 for ch in channels)
+            total_revenue = sum(ch.monthly_revenue or 0 for ch in channels)
             
-            # Aggregate metrics
-            total_subscribers = db.query(func.sum(YouTubeChannel.subscribers)).scalar() or 0
-            total_revenue = db.query(func.sum(YouTubeChannel.monthly_revenue)).scalar() or 0.0
-            total_videos = db.query(func.sum(YouTubeChannel.total_videos)).scalar() or 0
-            total_views = db.query(func.sum(YouTubeChannel.total_views)).scalar() or 0
-
-            # Channel status breakdown
-            status_counts = {}
-            status_results = db.query(
-                YouTubeChannel.status, 
-                func.count(YouTubeChannel.id)
-            ).group_by(YouTubeChannel.status).all()
-            
-            for status, count in status_results:
-                status_counts[status] = count
-
-            # Genre breakdown
-            genre_counts = {}
-            genre_results = db.query(
-                YouTubeChannel.primary_genre, 
-                func.count(YouTubeChannel.id)
-            ).group_by(YouTubeChannel.primary_genre).all()
-            
-            for genre, count in genre_results:
-                if genre:
-                    genre_counts[genre] = count
-
             return {
                 'total_channels': total_channels,
                 'active_channels': active_channels,
+                'needs_setup': needs_setup,
                 'total_subscribers': total_subscribers,
-                'total_revenue': total_revenue,
-                'total_videos': total_videos,
                 'total_views': total_views,
-                'status_breakdown': status_counts,
-                'genre_breakdown': genre_counts,
-                'avg_subscribers_per_channel': total_subscribers / max(total_channels, 1),
-                'avg_revenue_per_channel': total_revenue / max(active_channels, 1)
+                'total_videos': total_videos,
+                'total_monthly_revenue': total_revenue
             }
         except Exception as e:
-            print(f"❌ Failed to get channels statistics: {e}")
+            logger.error(f"Error getting YouTube channels statistics: {e}")
             return {}
         finally:
-            self.close_db(db)
+            session.close()
+    
+    def _youtube_channel_to_dict(self, channel: YouTubeChannel) -> Dict[str, Any]:
+        """Convert YouTubeChannel object to dictionary"""
+        try:
+            return {
+                'id': channel.id,
+                'name': channel.name,
+                'url': channel.url,
+                'youtube_channel_id': channel.youtube_channel_id,
+                'description': channel.description,
+                'api_key': channel.api_key,
+                'client_id': channel.client_id,
+                'client_secret': channel.client_secret,
+                'refresh_token': channel.refresh_token,
+                'primary_genre': channel.primary_genre,
+                'secondary_genres': json.loads(channel.secondary_genres or '[]'),
+                'target_audience': channel.target_audience,
+                'style_preferences': json.loads(channel.style_preferences or '{}'),
+                'upload_schedule': json.loads(channel.upload_schedule or '{}'),
+                'preferred_upload_time': channel.preferred_upload_time,
+                'timezone': channel.timezone,
+                'auto_upload': channel.auto_upload,
+                'auto_thumbnails': channel.auto_thumbnails,
+                'auto_seo': channel.auto_seo,
+                'enable_analytics': channel.enable_analytics,
+                'enable_monetization': channel.enable_monetization,
+                'privacy_settings': channel.privacy_settings,
+                'comments_enabled': channel.comments_enabled,
+                'ratings_enabled': channel.ratings_enabled,
+                'notify_subscribers': channel.notify_subscribers,
+                'status': channel.status,
+                'subscribers': channel.subscribers,
+                'total_views': channel.total_views,
+                'total_videos': channel.total_videos,
+                'monthly_revenue': channel.monthly_revenue,
+                'created_at': channel.created_at.isoformat() if channel.created_at else None,
+                'updated_at': channel.updated_at.isoformat() if channel.updated_at else None,
+                'last_upload': channel.last_upload.isoformat() if channel.last_upload else None,
+                'last_sync': channel.last_sync.isoformat() if channel.last_sync else None,
+                'last_error': channel.last_error,
+                'error_count': channel.error_count
+            }
+        except Exception as e:
+            logger.error(f"Error converting YouTube channel to dict: {e}")
+            return {}
+    
+    # =================== Content Creation Management ===================
+    
+    def create_content_creation(self, content_data: Dict[str, Any]) -> Optional[int]:
+        """Create a new content creation record"""
+        session = self.get_session()
+        try:
+            # Ensure JSON fields are properly serialized
+            if isinstance(content_data.get('brief_json'), dict):
+                content_data['brief_json'] = json.dumps(content_data['brief_json'])
+            
+            content = ContentCreation(**content_data)
+            session.add(content)
+            session.commit()
+            
+            content_id = content.id
+            logger.info(f"Created content creation: {content_id}")
+            return content_id
+            
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Error creating content creation: {e}")
+            return None
+        finally:
+            session.close()
+    
+    def get_content_creation(self, content_id: int) -> Optional[Dict[str, Any]]:
+        """Get content creation by ID"""
+        session = self.get_session()
+        try:
+            content = session.query(ContentCreation).filter_by(id=content_id).first()
+            if content:
+                return content.to_dict()
+            return None
+        except Exception as e:
+            logger.error(f"Error getting content creation {content_id}: {e}")
+            return None
+        finally:
+            session.close()
+    
+    def get_recent_content_creations(self, limit: int = 10) -> List[Dict[str, Any]]:
+        """Get recent content creations"""
+        session = self.get_session()
+        try:
+            contents = session.query(ContentCreation)\
+                           .order_by(ContentCreation.creation_date.desc())\
+                           .limit(limit).all()
+            return [content.to_dict() for content in contents]
+        except Exception as e:
+            logger.error(f"Error getting recent content creations: {e}")
+            return []
+        finally:
+            session.close()
+    
+    def update_content_creation_status(self, content_id: int, status: str) -> bool:
+        """Update content creation status"""
+        session = self.get_session()
+        try:
+            result = session.query(ContentCreation)\
+                          .filter_by(id=content_id)\
+                          .update({'status': status})
+            session.commit()
+            
+            if result > 0:
+                logger.info(f"Updated content creation status: {content_id} -> {status}")
+                return True
+            return False
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Error updating content creation status {content_id}: {e}")
+            return False
+        finally:
+            session.close()
+    
+    # =================== System Statistics ===================
+    
+    def get_system_statistics(self) -> Dict[str, Any]:
+        """Get comprehensive system statistics"""
+        session = self.get_session()
+        try:
+            # Content creation stats
+            total_content = session.query(ContentCreation).count()
+            completed_content = session.query(ContentCreation).filter_by(status='created').count()
+            uploaded_content = session.query(ContentCreation).filter_by(status='uploaded').count()
+            
+            # Recent projects
+            recent_contents = session.query(ContentCreation)\
+                                  .order_by(ContentCreation.creation_date.desc())\
+                                  .limit(5).all()
+            
+            return {
+                'total_content_created': total_content,
+                'completed_content': completed_content,
+                'uploaded_content': uploaded_content,
+                'recent_projects': [content.to_dict() for content in recent_contents],
+                'youtube_stats': self.get_youtube_channels_statistics()
+            }
+        except Exception as e:
+            logger.error(f"Error getting system statistics: {e}")
+            return {}
+        finally:
+            session.close()
+    
+    # =================== Utility Methods ===================
+    
+    def execute_raw_sql(self, sql: str, params: Dict[str, Any] = None) -> List[Dict[str, Any]]:
+        """Execute raw SQL query (use with caution)"""
+        try:
+            with self.engine.connect() as connection:
+                result = connection.execute(text(sql), params or {})
+                return [dict(row) for row in result.fetchall()]
+        except Exception as e:
+            logger.error(f"Error executing raw SQL: {e}")
+            return []
+    
+    def backup_database(self, backup_path: str) -> bool:
+        """Create a backup of the database"""
+        try:
+            import shutil
+            shutil.copy2(self.db_path, backup_path)
+            logger.info(f"Database backed up to: {backup_path}")
+            return True
+        except Exception as e:
+            logger.error(f"Error backing up database: {e}")
+            return False
+    
+    def get_active_channels_for_automation(self) -> List[Dict[str, Any]]:
+        """Get channels that are ready for 24/7 automation"""
+        session = self.get_session()
+        try:
+            # Get channels that have active status (have API keys set up)
+            channels = session.query(YouTubeChannel).filter_by(status='active').all()
+            return [self._youtube_channel_to_dict(channel) for channel in channels]
+        except Exception as e:
+            logger.error(f"Error getting active channels for automation: {e}")
+            return []
+        finally:
+            session.close()
+    
+    def cleanup_old_records(self, days_old: int = 30) -> int:
+        """Clean up old records (placeholder for future implementation)"""
+        # This would clean up old content creation records, logs, etc.
+        # Implementation depends on specific cleanup requirements
+        return 0

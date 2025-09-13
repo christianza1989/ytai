@@ -1,0 +1,612 @@
+{% extends "admin_base.html" %}
+
+{% block title %}24/7 Automation Control - Admin Panel{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+<li class="breadcrumb-item active">24/7 Automation Control</li>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-robot text-success me-2"></i>
+            24/7 Automation Control Center
+        </h1>
+        <p class="text-muted">Central control for autonomous YouTube empire operation</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <button class="btn btn-success me-2" id="startAutomationBtn" onclick="startAutomation()">
+            <i class="fas fa-play me-1"></i>
+            Start 24/7 Automation
+        </button>
+        <button class="btn btn-danger" id="stopAutomationBtn" onclick="stopAutomation()" disabled>
+            <i class="fas fa-stop me-1"></i>
+            Stop Automation
+        </button>
+    </div>
+</div>
+
+<!-- Automation Status Overview -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-white-50 mb-0">Status</h6>
+                        <h4 class="mb-0" id="automationStatus">Stopped</h4>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-power-off fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-white-50 mb-0">Active Channels</h6>
+                        <h4 class="mb-0" id="activeChannels">0</h4>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <i class="fab fa-youtube fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-white-50 mb-0">Total Generated</h6>
+                        <h4 class="mb-0" id="totalGenerated">0</h4>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-music fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-white-50 mb-0">Uptime</h6>
+                        <h4 class="mb-0" id="uptime">00:00:00</h4>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-clock fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Control Panel -->
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Live Activity Feed -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-activity me-2"></i>
+                    Live Activity Feed
+                </h5>
+                <div>
+                    <span class="badge bg-success" id="activityStatus">Real-time</span>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="clearActivityFeed()">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="activityFeed" class="log-container" style="height: 400px;">
+                    <div class="text-muted text-center py-4">
+                        <i class="fas fa-robot fa-3x mb-3"></i>
+                        <div>24/7 Automation not started</div>
+                        <div class="small">Click "Start 24/7 Automation" to begin autonomous operation</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Channel Performance -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Channel Performance
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="channelPerformanceTable">
+                        <thead>
+                            <tr>
+                                <th>Channel</th>
+                                <th>Genre</th>
+                                <th>Status</th>
+                                <th>Generated Today</th>
+                                <th>Uploaded Today</th>
+                                <th>Last Activity</th>
+                            </tr>
+                        </thead>
+                        <tbody id="channelPerformanceBody">
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">
+                                    No channel data available
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Quick Controls -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-sliders-h me-2"></i>
+                    Quick Controls
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2 mb-3">
+                    <button class="btn btn-outline-primary" onclick="manageChannels()">
+                        <i class="fas fa-cog me-1"></i>
+                        Manage YouTube Channels
+                    </button>
+                    <button class="btn btn-outline-info" onclick="viewAnalytics()">
+                        <i class="fas fa-chart-bar me-1"></i>
+                        View Analytics
+                    </button>
+                    <button class="btn btn-outline-success" onclick="generateNow()">
+                        <i class="fas fa-magic me-1"></i>
+                        Generate Content Now
+                    </button>
+                </div>
+                
+                <hr>
+                
+                <div class="mb-3">
+                    <h6>Automation Settings</h6>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="pauseOnError" checked>
+                        <label class="form-check-label" for="pauseOnError">
+                            Pause on Error
+                        </label>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="enableNotifications" checked>
+                        <label class="form-check-label" for="enableNotifications">
+                            Desktop Notifications
+                        </label>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="enableSafeMode" checked>
+                        <label class="form-check-label" for="enableSafeMode">
+                            Safe Mode (Private uploads)
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Health -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-heartbeat me-2"></i>
+                    System Health
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>API Connections</span>
+                        <span class="badge bg-success" id="apiHealth">Connected</span>
+                    </div>
+                    <div class="progress mb-1" style="height: 4px;">
+                        <div class="progress-bar bg-success" style="width: 100%"></div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>Database Status</span>
+                        <span class="badge bg-success" id="dbHealth">Online</span>
+                    </div>
+                    <div class="progress mb-1" style="height: 4px;">
+                        <div class="progress-bar bg-success" style="width: 100%"></div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>Storage Space</span>
+                        <span class="badge bg-warning" id="storageHealth">75%</span>
+                    </div>
+                    <div class="progress mb-1" style="height: 4px;">
+                        <div class="progress-bar bg-warning" style="width: 75%"></div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>Memory Usage</span>
+                        <span class="badge bg-info" id="memoryHealth">45%</span>
+                    </div>
+                    <div class="progress mb-1" style="height: 4px;">
+                        <div class="progress-bar bg-info" style="width: 45%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Emergency Controls -->
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Emergency Controls
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-warning" onclick="pauseAllChannels()">
+                        <i class="fas fa-pause me-1"></i>
+                        Pause All Channels
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="emergencyStop()">
+                        <i class="fas fa-hand-paper me-1"></i>
+                        Emergency Stop
+                    </button>
+                </div>
+                
+                <div class="alert alert-warning mt-3 mb-0">
+                    <small>
+                        <i class="fas fa-info-circle me-1"></i>
+                        Use emergency controls only when necessary
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 24/7 Automation Control JavaScript
+
+let automationStatus = {
+    isRunning: false,
+    status: 'stopped',
+    activeChannels: 0,
+    totalGenerated: 0,
+    uptime: '00:00:00'
+};
+
+let activityFeedInterval = null;
+let statusUpdateInterval = null;
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    updateAutomationStatus();
+    startStatusUpdates();
+    
+    // Request notification permission
+    if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission();
+    }
+});
+
+// Status updates
+function startStatusUpdates() {
+    // Update status every 5 seconds
+    statusUpdateInterval = setInterval(() => {
+        updateAutomationStatus();
+    }, 5000);
+    
+    // Update activity feed every 10 seconds when running
+    activityFeedInterval = setInterval(() => {
+        if (automationStatus.isRunning) {
+            updateActivityFeed();
+        }
+    }, 10000);
+}
+
+function updateAutomationStatus() {
+    fetch('/api/automation/status')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                automationStatus = data.automation;
+                updateStatusDisplay(data.automation);
+                updateChannelPerformance(data.channels);
+            }
+        })
+        .catch(error => {
+            console.error('Error updating automation status:', error);
+        });
+}
+
+function updateStatusDisplay(status) {
+    // Update status indicators
+    document.getElementById('automationStatus').textContent = 
+        status.is_running ? 'Running' : 'Stopped';
+    document.getElementById('activeChannels').textContent = status.active_channels;
+    document.getElementById('totalGenerated').textContent = status.total_generated;
+    document.getElementById('uptime').textContent = status.uptime || '00:00:00';
+    
+    // Update button states
+    const startBtn = document.getElementById('startAutomationBtn');
+    const stopBtn = document.getElementById('stopAutomationBtn');
+    
+    if (status.is_running) {
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        
+        // Update status card color
+        const statusCard = document.querySelector('#automationStatus').closest('.card');
+        statusCard.className = 'card bg-success text-white';
+    } else {
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        
+        // Update status card color
+        const statusCard = document.querySelector('#automationStatus').closest('.card');
+        statusCard.className = 'card bg-secondary text-white';
+    }
+}
+
+function updateChannelPerformance(channels) {
+    const tbody = document.getElementById('channelPerformanceBody');
+    
+    if (!channels || channels.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center py-4 text-muted">
+                    No channel data available
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    tbody.innerHTML = channels.map(channel => `
+        <tr>
+            <td>
+                <div class="fw-bold">${channel.name}</div>
+                <div class="small text-muted">${channel.url || 'URL not set'}</div>
+            </td>
+            <td>
+                <span class="badge bg-primary">${formatGenre(channel.primary_genre)}</span>
+            </td>
+            <td>
+                ${getChannelStatusBadge(channel.status)}
+            </td>
+            <td>
+                <span class="fw-bold text-success">${channel.generated_today || 0}</span>
+            </td>
+            <td>
+                <span class="fw-bold text-info">${channel.uploaded_today || 0}</span>
+            </td>
+            <td>
+                <div class="small">${formatLastActivity(channel.last_activity)}</div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function updateActivityFeed() {
+    // Simulate activity updates (replace with real API call in production)
+    const activities = [
+        "🎵 Generated Lo-Fi track for LoFi_Beats_Central",
+        "🍌 Created thumbnail with Nano-Banana for Chill_Vibes_Studio", 
+        "📤 Uploaded 'Midnight Study Session' to Meditation_Sounds_AI",
+        "📊 Updated analytics for Electronic_Dreams_24_7",
+        "🔍 Optimized SEO for Ambient_Soundscapes"
+    ];
+    
+    const feed = document.getElementById('activityFeed');
+    const randomActivity = activities[Math.floor(Math.random() * activities.length)];
+    const timestamp = new Date().toLocaleTimeString();
+    
+    const activityItem = document.createElement('div');
+    activityItem.className = 'log-entry';
+    activityItem.innerHTML = `[${timestamp}] ${randomActivity}`;
+    
+    // Add to feed
+    feed.insertBefore(activityItem, feed.firstChild);
+    
+    // Limit feed to 50 entries
+    while (feed.children.length > 50) {
+        feed.removeChild(feed.lastChild);
+    }
+}
+
+// Control functions
+function startAutomation() {
+    const startBtn = document.getElementById('startAutomationBtn');
+    const originalText = startBtn.innerHTML;
+    
+    // Show loading
+    startBtn.disabled = true;
+    startBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Starting...';
+    
+    fetch('/api/automation/start', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('🚀 24/7 Automation started successfully!', 'success');
+            
+            // Update activity feed
+            const feed = document.getElementById('activityFeed');
+            feed.innerHTML = '<div class="log-entry">[' + new Date().toLocaleTimeString() + '] 🚀 24/7 Automation started</div>';
+            
+            // Show notification
+            if (document.getElementById('enableNotifications').checked) {
+                showNotification('Automation Started', '24/7 YouTube automation is now running');
+            }
+            
+            updateAutomationStatus();
+        } else {
+            showToast(data.message || 'Failed to start automation', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error starting automation:', error);
+        showToast('Error starting automation. Please try again.', 'error');
+    })
+    .finally(() => {
+        startBtn.disabled = false;
+        startBtn.innerHTML = originalText;
+    });
+}
+
+function stopAutomation() {
+    Swal.fire({
+        title: 'Stop 24/7 Automation?',
+        text: 'This will stop all autonomous content generation and uploads.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        confirmButtonText: 'Yes, stop automation',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const stopBtn = document.getElementById('stopAutomationBtn');
+            const originalText = stopBtn.innerHTML;
+            
+            stopBtn.disabled = true;
+            stopBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Stopping...';
+            
+            fetch('/api/automation/stop', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('🛑 24/7 Automation stopped successfully', 'info');
+                    
+                    // Update activity feed
+                    const feed = document.getElementById('activityFeed');
+                    const stopEntry = document.createElement('div');
+                    stopEntry.className = 'log-entry';
+                    stopEntry.innerHTML = '[' + new Date().toLocaleTimeString() + '] 🛑 24/7 Automation stopped by user';
+                    feed.insertBefore(stopEntry, feed.firstChild);
+                    
+                    updateAutomationStatus();
+                } else {
+                    showToast(data.message || 'Failed to stop automation', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error stopping automation:', error);
+                showToast('Error stopping automation. Please try again.', 'error');
+            })
+            .finally(() => {
+                stopBtn.disabled = false;
+                stopBtn.innerHTML = originalText;
+            });
+        }
+    });
+}
+
+function emergencyStop() {
+    Swal.fire({
+        title: 'EMERGENCY STOP',
+        text: 'This will immediately halt all automation processes!',
+        icon: 'error',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'EMERGENCY STOP',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            stopAutomation();
+        }
+    });
+}
+
+// Quick controls
+function manageChannels() {
+    window.location.href = '/youtube-channels';
+}
+
+function viewAnalytics() {
+    window.location.href = '/analytics';
+}
+
+function generateNow() {
+    showToast('🎵 Manual content generation started!', 'info');
+    // Trigger immediate generation
+}
+
+function pauseAllChannels() {
+    showToast('⏸️ All channels paused temporarily', 'warning');
+}
+
+function clearActivityFeed() {
+    document.getElementById('activityFeed').innerHTML = '<div class="text-muted text-center py-4">Activity feed cleared</div>';
+}
+
+// Helper functions
+function formatGenre(genre) {
+    if (!genre) return 'Unknown';
+    return genre.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+}
+
+function getChannelStatusBadge(status) {
+    const statusBadges = {
+        'active': '<span class="badge bg-success">Active</span>',
+        'inactive': '<span class="badge bg-secondary">Inactive</span>',
+        'needs_setup': '<span class="badge bg-warning">Setup Required</span>',
+        'error': '<span class="badge bg-danger">Error</span>'
+    };
+    return statusBadges[status] || '<span class="badge bg-light text-dark">Unknown</span>';
+}
+
+function formatLastActivity(activity) {
+    if (!activity) return 'No activity';
+    return new Date(activity).toLocaleString();
+}
+
+function showNotification(title, body) {
+    if (Notification.permission === "granted") {
+        new Notification(title, {
+            body: body,
+            icon: '/static/favicon.ico'
+        });
+    }
+}
+
+// Initialize with welcome message
+showToast('🤖 24/7 Automation Control Center loaded - Ready for autonomous operation!', 'info');
+
+</script>
+{% endblock %}

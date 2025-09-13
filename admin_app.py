@@ -319,6 +319,12 @@ def youtube_channels_manager():
     """YouTube Channels Manager - Multi-channel management interface"""
     return render_template('youtube_channels.html')
 
+@app.route('/automation-control')
+@require_auth
+def automation_control():
+    """24/7 Automation Control Center"""
+    return render_template('automation_control.html')
+
 # API Endpoints
 @app.route('/api/system/status')
 @require_auth
@@ -816,10 +822,18 @@ def api_youtube_channels_list():
         
         channels_data = []
         for channel in channels:
-            channel_dict = channel.to_dict()
+            # channel is already a dictionary from database_manager
+            channel_dict = channel.copy() if isinstance(channel, dict) else channel.to_dict()
             # Format last_upload for display
-            if channel.last_upload:
-                channel_dict['last_upload'] = channel.last_upload.strftime('%Y-%m-%d')
+            if channel_dict.get('last_upload'):
+                try:
+                    if isinstance(channel_dict['last_upload'], str):
+                        # Already formatted
+                        pass
+                    else:
+                        channel_dict['last_upload'] = channel_dict['last_upload'].strftime('%Y-%m-%d')
+                except:
+                    channel_dict['last_upload'] = None
             else:
                 channel_dict['last_upload'] = None
             channels_data.append(channel_dict)
@@ -877,23 +891,24 @@ def api_youtube_channels_save():
         data = request.get_json() or {}
         db_manager = DatabaseManager()
         
-        # Prepare channel data
+        # Prepare channel data - support both field name formats
         channel_data = {
-            'name': data.get('channel_name'),
-            'url': data.get('channel_url'),
+            'name': data.get('name') or data.get('channel_name'),
+            'url': data.get('url') or data.get('channel_url'), 
             'youtube_channel_id': data.get('youtube_channel_id'),
             'description': data.get('description'),
             'primary_genre': data.get('primary_genre'),
             'secondary_genres': data.get('secondary_genres', []),
             'target_audience': data.get('target_audience'),
             'upload_schedule': data.get('upload_schedule'),
-            'preferred_upload_time': data.get('preferred_upload_time'),
-            'auto_upload': data.get('auto_upload') == 'on',
-            'auto_thumbnails': data.get('auto_thumbnails') == 'on',
-            'auto_seo': data.get('auto_seo') == 'on',
-            'enable_analytics': data.get('enable_analytics') == 'on',
-            'enable_monetization': data.get('enable_monetization') == 'on',
-            'privacy_settings': data.get('privacy_settings'),
+            'preferred_upload_time': data.get('preferred_upload_time', '14:00'),
+            'style_preferences': {'branding_style': data.get('branding_style')} if data.get('branding_style') else {},
+            'auto_upload': data.get('auto_upload') == 'on' or data.get('auto_upload') is True,
+            'auto_thumbnails': data.get('auto_thumbnails') == 'on' or data.get('auto_thumbnails') is True,
+            'auto_seo': data.get('auto_seo') == 'on' or data.get('auto_seo') is True,
+            'enable_analytics': data.get('enable_analytics') == 'on' or data.get('enable_analytics') is True,
+            'enable_monetization': data.get('enable_monetization') == 'on' or data.get('enable_monetization') is True,
+            'privacy_settings': data.get('privacy_settings', 'private'),
             'api_key': data.get('api_key'),
             'client_id': data.get('client_id'),
             'client_secret': data.get('client_secret'),
@@ -914,12 +929,15 @@ def api_youtube_channels_save():
                 return jsonify({'success': False, 'message': 'Channel not found'}), 404
         else:
             # Create new channel
-            channel = db_manager.add_youtube_channel(channel_data)
-            return jsonify({
-                'success': True, 
-                'message': 'Channel created successfully', 
-                'channel': channel.to_dict()
-            })
+            channel_id = db_manager.create_youtube_channel(channel_data)
+            if channel_id:
+                return jsonify({
+                    'success': True, 
+                    'message': 'Channel created successfully', 
+                    'channel_id': channel_id
+                })
+            else:
+                return jsonify({'success': False, 'message': 'Failed to create channel'}), 500
             
     except Exception as e:
         print(f"Error saving channel: {e}")
@@ -971,6 +989,82 @@ def api_youtube_channels_generate(channel_id):
     thread.start()
     
     return jsonify({'success': True, 'task_id': task_id, 'message': f'Content generation started for channel {channel_id}'})
+
+@app.route('/api/automation/start', methods=['POST'])
+@require_auth
+def api_automation_start():
+    """Start 24/7 automation for all channels"""
+    try:
+        from automation_controller import automation_controller
+        
+        success = automation_controller.start_24_7_automation()
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': '24/7 automation started successfully!',
+                'status': automation_controller.get_automation_status()
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'Failed to start automation. Check logs for details.'
+            }), 500
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error starting automation: {str(e)}'
+        }), 500
+
+@app.route('/api/automation/stop', methods=['POST'])
+@require_auth  
+def api_automation_stop():
+    """Stop 24/7 automation"""
+    try:
+        from automation_controller import automation_controller
+        
+        success = automation_controller.stop_24_7_automation()
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': '24/7 automation stopped successfully!',
+                'status': automation_controller.get_automation_status()
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'Failed to stop automation'
+            }), 500
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error stopping automation: {str(e)}'
+        }), 500
+
+@app.route('/api/automation/status')
+@require_auth
+def api_automation_status():
+    """Get current automation status"""
+    try:
+        from automation_controller import automation_controller
+        
+        status = automation_controller.get_automation_status()
+        performance = automation_controller.get_channel_performance()
+        
+        return jsonify({
+            'success': True,
+            'automation': status,
+            'channels': performance
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error getting automation status: {str(e)}'
+        }), 500
 
 @app.route('/api/youtube/channels/statistics')
 @require_auth
