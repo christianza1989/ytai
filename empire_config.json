@@ -1,0 +1,44 @@
+{
+  "generation_schedule": {
+    "interval_hours": 4,
+    "beats_per_session": 3,
+    "genres_rotation": [
+      "Lo-Fi Hip Hop",
+      "Trap",
+      "Chill Pop",
+      "Ambient",
+      "Deep House",
+      "Synthwave",
+      "Jazz Hip Hop",
+      "Drill"
+    ]
+  },
+  "upload_schedule": {
+    "stagger_minutes": 30,
+    "daily_limit_per_account": 5,
+    "peak_hours": [
+      14,
+      16,
+      18,
+      20
+    ]
+  },
+  "monetization": {
+    "auto_pricing": true,
+    "base_price": 25,
+    "premium_multiplier": 2.0,
+    "exclusive_multiplier": 8.0,
+    "dynamic_pricing": true
+  },
+  "optimization": {
+    "track_performance": true,
+    "auto_adjust_genres": true,
+    "performance_threshold": 100,
+    "optimize_interval_hours": 24
+  },
+  "safety": {
+    "max_daily_uploads": 50,
+    "cooldown_on_errors": 30,
+    "backup_interval_hours": 6
+  }
+}
