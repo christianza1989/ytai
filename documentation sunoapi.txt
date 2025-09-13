@@ -1,0 +1,2212 @@
+import requests
+
+url = "https://api.sunoapi.org/api/v1/generate"
+
+payload = {
+"prompt": "A calm and relaxing piano track with soft melodies",
+"style": "Classical",
+"title": "Peaceful Piano Meditation",
+"customMode": True,
+"instrumental": True,
+"model": "V3_5",
+"negativeTags": "Heavy Metal, Upbeat Drums",
+"vocalGender": "m",
+"styleWeight": 0.65,
+"weirdnessConstraint": 0.65,
+"audioWeight": 0.65,
+"callBackUrl": "https://api.example.com/callback"
+}
+headers = {
+"Authorization": "Bearer <token>",
+"Content-Type": "application/json"
+}
+
+response = requests.post(url, json=payload, headers=headers)
+
+print(response.json())
+
+Generate Suno AI Music
+
+Copy page
+
+POST
+/
+api
+/
+v1
+/
+generate
+
+Try it
+This is the key endpoint in the Suno API. Each request returns exactly 2 songs.
+Stream URL: Available in 30-40 seconds.
+Downloadable song URL: Ready in 2-3 minutes.
+Concurrency limit: 20 requests every 10 seconds. Exceeding this will result in request rejection. Please review the parameters carefully to ensure proper use.
+​
+Parameter Usage Guide
+When customMode is true (Custom Mode):
+If instrumental is true: style and title are required
+If instrumental is false: style, prompt, and title are required
+Prompt length limit:
+For V3_5 and V4 models: 3000 characters
+For V4_5 and V4_5PLUS models: 5000 characters
+Style length limit:
+For V3_5 and V4 models: 200 characters
+For V4_5 and V4_5PLUS models: 1000 characters
+title length limit: 80 characters
+When customMode is false (Non-custom Mode):
+Only prompt is required regardless of instrumental setting
+prompt length limit: 400 characters
+Other parameters should be left empty
+​
+Developer Notes
+Recommendation for First-Time Users: Start with customMode: false and instrumental: false, and only provide a prompt. This is the simplest setup to quickly test the API and experience the results.
+Generated files are retained for 15 days before being deleted
+Ensure all required fields are provided based on the customMode and instrumental settings to avoid errors
+Respect the character limits for prompt, style, and title to ensure successful processing
+Callback process has three stages: text (text generation), first (first track complete), complete (all tracks complete)
+You can use the Get Music Generation Details endpoint to actively check task status instead of waiting for callbacks
+Authorizations
+​
+Authorization
+stringheaderrequired
+🔑 API Authentication
+All endpoints require authentication using Bearer Token.
+
+Get API Key
+Visit the API Key Management Page to obtain your API Key
+Usage
+Add to request headers:
+
+Authorization: Bearer YOUR_API_KEY
+⚠️ Note:
+
+Keep your API Key secure and do not share it with others
+If you suspect your API Key has been compromised, reset it immediately from the management page
+Body
+application/json
+​
+customMode
+booleanrequired
+Enables Custom Mode for advanced audio generation settings.
+
+Set to true to use Custom Mode (requires style and title; prompt required if instrumental is false). The prompt will be strictly used as lyrics if instrumental is false.
+Set to false for Non-custom Mode (only prompt is required). Lyrics will be auto-generated based on the prompt.
+Example:
+true
+
+​
+instrumental
+booleanrequired
+Determines if the audio should be instrumental (no lyrics).
+
+In Custom Mode (customMode: true):
+If true: Only style and title are required.
+If false: style, title, and prompt are required (with prompt used as the exact lyrics).
+In Non-custom Mode (customMode: false): No impact on required fields (prompt only). Lyrics are auto-generated if instrumental is false.
+Example:
+true
+
+​
+model
+enum<string>required
+The model version to use for audio generation.
+
+Available options:
+V4_5: Superior genre blending with smarter prompts and faster output, up to 8 minutes.
+V4: Best audio quality with refined song structure, up to 4 minutes.
+V3_5: Solid arrangements with creative diversity, up to 4 minutes.
+Available options: V3_5, V4, V4_5
+Example:
+"V3_5"
+
+​
+callBackUrl
+string<uri>required
+The URL to receive task completion notifications when music generation is complete.
+
+For detailed callback format and implementation guide, see Music Generation Callbacks
+
+Alternatively, you can use the get music generation details endpoint to poll task status
+Example:
+"https://api.example.com/callback"
+
+​
+prompt
+string
+A description of the desired audio content.
+
+In Custom Mode (customMode: true): Required if instrumental is false. The prompt will be strictly used as the lyrics and sung in the generated track. Character limits by model:
+V3_5 & V4: Maximum 3000 characters
+V4_5 & V4_5PLUS: Maximum 5000 characters
+Example: "A calm and relaxing piano track with soft melodies"
+In Non-custom Mode (customMode: false): Always required. The prompt serves as the core idea, and lyrics will be automatically generated based on it (not strictly matching the input). Maximum 400 characters.
+Example: "A short relaxing piano tune"
+Example:
+"A calm and relaxing piano track with soft melodies"
+
+​
+style
+string
+The music style or genre for the audio.
+
+Required in Custom Mode (customMode: true). Examples: "Jazz", "Classical", "Electronic".
+For V3_5 and V4 models: Max length: 200 characters.
+For V4_5 and V4_5PLUS models: Max length: 1000 characters.
+Example: "Classical"
+In Non-custom Mode (customMode: false): Leave empty.
+Example:
+"Classical"
+
+​
+title
+string
+The title of the generated music track.
+
+Required in Custom Mode (customMode: true). Max length: 80 characters.
+Example: "Peaceful Piano Meditation"
+In Non-custom Mode (customMode: false): Leave empty.
+Example:
+"Peaceful Piano Meditation"
+
+​
+negativeTags
+string
+Music styles or traits to exclude from the generated audio.
+
+Optional. Use to avoid specific styles.
+Example: "Heavy Metal, Upbeat Drums"
+Example:
+"Heavy Metal, Upbeat Drums"
+
+​
+vocalGender
+enum<string>
+Preferred vocal gender for generated vocals. Optional.
+
+Available options: m, f
+Example:
+"m"
+
+​
+styleWeight
+number
+Weight of the provided style guidance. Range 0.00–1.00.
+
+Required range: 0 <= x <= 1Must be a multiple of 0.01
+Example:
+0.65
+
+​
+weirdnessConstraint
+number
+Constraint on creative deviation/novelty. Range 0.00–1.00.
+
+Required range: 0 <= x <= 1Must be a multiple of 0.01
+Example:
+0.65
+
+​
+audioWeight
+number
+Weight of the input audio influence (where applicable). Range 0.00–1.00.
+
+Required range: 0 <= x <= 1Must be a multiple of 0.01
+Example:
+0.65
+
+Response
+
+200
+
+application/json
+Request successful
+
+​
+code
+enum<integer>
+Status Codes
+✅ 200 - Request successful
+⚠️ 400 - Invalid parameters
+⚠️ 401 - Unauthorized access
+⚠️ 404 - Invalid request method or path
+⚠️ 405 - Rate limit exceeded
+⚠️ 413 - Theme or prompt too long
+⚠️ 429 - Insufficient credits
+⚠️ 430 - Your call frequency is too high. Please try again later.
+⚠️ 455 - System maintenance
+❌ 500 - Server error
+Available options: 200, 400, 401, 404, 405, 413, 429, 430, 455, 500
+Example:
+200
+
+​
+msg
+string
+Error message when code != 200
+
+Example:
+"success"
+
+​
+data
+object
+Show child attributes
+
+Suno API Quick Start
+Music Generation Callbacks
+Powered by Mintlify
+
+Music Generation Callbacks
+
+Copy page
+
+When music generation tasks are completed, the system will send results to your provided callback URL via POST request
+
+When you submit a task to the Music Generation API, you can use the callBackUrl parameter to set a callback URL. When the task is completed, the system will automatically push the results to your specified address.
+​
+Callback Mechanism Overview
+The callback mechanism eliminates the need to poll the API for task status. The system will proactively push task completion results to your server.
+​
+Callback Timing
+The system will send callback notifications in the following situations:
+Music generation task completed successfully
+Music generation task failed
+Errors occurred during task processing
+​
+Callback Method
+HTTP Method: POST
+Content Type: application/json
+Timeout Setting: 15 seconds
+​
+Callback Request Format
+When the task is completed, the system will send a POST request to your callBackUrl in the following format:
+
+Success Callback
+
+Failure Callback
+
+Copy
+{
+"code": 200,
+"msg": "All generated successfully.",
+"data": {
+"callbackType": "complete",
+"task_id": "2fac9f72",
+"data": [
+{
+"id": "8551662c",
+"audio_url": "https://example.cn/.mp3",
+"source_audio_url": "https://example.cn/.mp3",
+"stream_audio_url": "https://example.cn/",
+"source_stream_audio_url": "https://example.cn/",
+"image_url": "https://example.cn/.jpeg",
+"source_image_url": "https://example.cn/.jpeg",
+"prompt": "[Verse] Night city lights shining bright",
+"model_name": "chirp-v3-5",
+"title": "Iron Man",
+"tags": "electrifying, rock",
+"createTime": "2025-01-01 00:00:00",
+"duration": 198.44
+},
+{
+"id": "bd151873",
+"audio_url": "https://example.cn/.mp3",
+"source_audio_url": "https://example.cn/.mp3",
+"stream_audio_url": "https://example.cn/",
+"source_stream_audio_url": "https://example.cn/",
+"image_url": "https://example.cn/.jpeg",
+"source_image_url": "https://example.cn/****.jpeg",
+"prompt": "[Verse] Night city lights shining bright",
+"model_name": "chirp-v3-5",
+"title": "Iron Man",
+"tags": "electrifying, rock",
+"createTime": "2025-01-01 00:00:00",
+"duration": 228.28
+}
+]
+}
+}
+​
+Status Code Description
+​
+code
+integerrequired
+Callback status code indicating task processing result:
+Status Code	Description
+200	Success - Music generation completed
+400	Bad Request - Parameter error, content violation, etc.
+451	Download Failed - Unable to download related files
+500	Server Error - Please try again later
+​
+msg
+stringrequired
+Status message providing detailed status description
+​
+data.callbackType
+stringrequired
+Callback type indicating the current callback stage:
+text: Text generation completed
+first: First music track completed
+complete: All music tracks completed
+error: Task failed
+​
+data.task_id
+stringrequired
+Task ID, consistent with the taskId returned when you submitted the task
+​
+data.data
+array
+Music generation result information, returned on success
+​
+data.data[].id
+string
+Music unique identifier
+​
+data.data[].audio_url
+string
+Generated audio file URL
+​
+data.data[].source_audio_url
+string
+Original audio file URL
+​
+data.data[].stream_audio_url
+string
+Streaming audio URL
+​
+data.data[].source_stream_audio_url
+string
+Original streaming audio URL
+​
+data.data[].image_url
+string
+Cover image URL
+​
+data.data[].source_image_url
+string
+Original cover image URL
+​
+data.data[].prompt
+string
+Generation prompt/lyrics
+​
+data.data[].model_name
+string
+Model name used
+​
+data.data[].title
+string
+Music title
+​
+data.data[].tags
+string
+Music tags
+​
+data.data[].createTime
+string
+Creation time
+​
+data.data[].duration
+number
+Audio duration (seconds)
+​
+Callback Reception Examples
+Here are example codes for receiving callbacks in popular programming languages:
+Node.js
+Python
+PHP
+
+Copy
+const express = require('express');
+const app = express();
+
+app.use(express.json());
+
+app.post('/generate-music-callback', (req, res) => {
+const { code, msg, data } = req.body;
+
+console.log('Received music generation callback:', {
+taskId: data.task_id,
+callbackType: data.callbackType,
+status: code,
+message: msg
+});
+
+if (code === 200) {
+// Task completed successfully
+console.log('Music generation completed');
+const musicData = data.data || [];
+
+code
+Code
+download
+content_copy
+expand_less
+
+console.log(`Generated ${musicData.length} music tracks:`);
+musicData.forEach((music, index) => {
+  console.log(`Music ${index + 1}:`);
+  console.log(`  Title: ${music.title}`);
+  console.log(`  Duration: ${music.duration} seconds`);
+  console.log(`  Tags: ${music.tags}`);
+  console.log(`  Audio URL: ${music.audio_url}`);
+  console.log(`  Cover URL: ${music.image_url}`);
+});
+
+// Process generated music
+// Can download audio files, save locally, etc.
+
+} else {
+// Task failed
+console.log('Music generation failed:', msg);
+
+code
+Code
+download
+content_copy
+expand_less
+IGNORE_WHEN_COPYING_START
+IGNORE_WHEN_COPYING_END
+// Handle failure cases...
+if (code === 400) {
+  console.log('Parameter error or content violation');
+} else if (code === 451) {
+  console.log('File download failed');
+} else if (code === 500) {
+  console.log('Server internal error');
+}
+
+}
+
+// Return 200 status code to confirm callback received
+res.status(200).json({ status: 'received' });
+});
+
+app.listen(3000, () => {
+console.log('Callback server running on port 3000');
+});
+​
+Best Practices
+​
+Callback URL Configuration Recommendations
+Use HTTPS: Ensure your callback URL uses HTTPS protocol for secure data transmission
+Verify Source: Verify the legitimacy of the request source in callback processing
+Idempotent Processing: The same taskId may receive multiple callbacks, ensure processing logic is idempotent
+Quick Response: Callback processing should return a 200 status code as quickly as possible to avoid timeout
+Asynchronous Processing: Complex business logic should be processed asynchronously to avoid blocking callback response
+Audio Processing: Audio download and processing should be done in asynchronous tasks to avoid blocking callback response
+​
+Important Reminders
+Callback URL must be a publicly accessible address
+Server must respond within 15 seconds, otherwise it will be considered a timeout
+If 3 consecutive retries fail, the system will stop sending callbacks
+Please ensure the stability of callback processing logic to avoid callback failures due to exceptions
+Generated audio URLs may have time limits, recommend downloading and saving promptly
+Pay attention to content policy compliance to avoid generation failures due to policy violations
+
+Generate Music
+Upload And Cover Audio
+
+Copy page
+
+This API covers an audio track by transforming it into a new style while retaining its core melody. It incorporates Suno’s upload capability, enabling users to upload an audio file for processing. The expected result is a refreshed audio track with a new style, keeping the original melody intact.
+
+POST
+/
+api
+/
+v1
+/
+generate
+/
+upload-cover
+
+Try it
+​
+Parameter Usage Guide
+When customMode is true (Custom Mode):
+If instrumental is true: style, title and uploadUrl are required
+If instrumental is false: style, prompt, title and uploadUrl are required
+prompt length limit by model:
+V3_5 & V4: Maximum 3000 characters
+V4_5 & V4_5PLUS: Maximum 5000 characters
+style length limit by model:
+V3_5 & V4: Maximum 200 characters
+V4_5 & V4_5PLUS: Maximum 1000 characters
+title length limit by model:
+V3_5 & V4: Maximum 80 characters
+V4_5 & V4_5PLUS: Maximum 100 characters
+uploadUrl is used to specify the upload location of the audio file; ensure the uploaded audio does not exceed 8 minutes in length.
+When customMode is false (Non-custom Mode):
+Only prompt and uploadUrl are required regardless of instrumental setting
+prompt length limit: 400 characters
+Other parameters should be left empty
+​
+Developer Notes
+Recommended settings for new users: Set customMode to false, instrumental to false, and only provide prompt and uploadUrl. This is the simplest configuration to quickly test the API and experience the results.
+Generated files will be deleted after 15 days
+Ensure all required parameters are provided based on customMode and instrumental settings to avoid errors
+Pay attention to character limits for prompt, style, and title to ensure successful processing
+Callback process has three stages: text (text generation complete), first (first track complete), complete (all tracks complete)
+You can use the Get Music Generation Details endpoint to actively check task status instead of waiting for callbacks
+The uploadUrl parameter is used to specify the upload location of the audio file; please provide a valid URL.
+Authorizations
+​
+Authorization
+stringheaderrequired
+🔑 API Authentication
+All endpoints require authentication using Bearer Token.
+
+Get API Key
+Visit the API Key Management Page to obtain your API Key
+Usage
+Add to request headers:
+
+Authorization: Bearer YOUR_API_KEY
+⚠️ Note:
+
+Keep your API Key secure and do not share it with others
+If you suspect your API Key has been compromised, reset it immediately from the management page
+Body
+application/json
+​
+uploadUrl
+string<uri>required
+The URL for uploading audio files, required regardless of whether customMode and instrumental are true or false. Ensure the uploaded audio does not exceed 2 minutes in length.
+
+Example:
+"https://storage.example.com/upload"
+
+​
+customMode
+booleanrequired
+Enables Custom Mode for advanced audio generation settings.
+
+Set to true to use Custom Mode (requires style and title; prompt required if instrumental is false). The prompt will be strictly used as lyrics if instrumental is false.
+Set to false for Non-custom Mode (only prompt is required). Lyrics will be auto-generated based on the prompt.
+Example:
+true
+
+​
+instrumental
+booleanrequired
+Determines if the audio should be instrumental (no lyrics).
+
+In Custom Mode (customMode: true):
+If true: Only style and title are required.
+If false: style, title, and prompt are required (with prompt used as the exact lyrics).
+In Non-custom Mode (customMode: false): No impact on required fields (prompt only). Lyrics are auto-generated if instrumental is false.
+Example:
+true
+
+​
+model
+enum<string>required
+The model version to use for audio generation.
+
+Choose between: V3_5, V4, V4_5, or V4_5PLUS. Note: Ensure correct formatting (e.g., use "V3_5" or "V4", not "V3.5" or other variations).
+Available options: V3_5, V4, V4_5, V4_5PLUS
+Example:
+"V3_5"
+
+​
+callBackUrl
+string<uri>required
+The URL to receive task completion notifications when audio covering is complete.
+
+For detailed callback format and implementation guide, see Upload and Cover Audio Callbacks
+
+Alternatively, you can use the get music generation details endpoint to poll task status
+Example:
+"https://api.example.com/callback"
+
+​
+prompt
+string
+A description of the desired audio content.
+
+In Custom Mode (customMode: true): Required if instrumental is false. The prompt will be strictly used as the lyrics and sung in the generated track. Character limits by model:
+V3_5 & V4: Maximum 3000 characters
+V4_5 & V4_5PLUS: Maximum 5000 characters
+Example: "A calm and relaxing piano track with soft melodies"
+In Non-custom Mode (customMode: false): Always required. The prompt serves as the core idea, and lyrics will be automatically generated based on it (not strictly matching the input). Maximum 400 characters.
+Example: "A short relaxing piano tune"
+Example:
+"A calm and relaxing piano track with soft melodies"
+
+​
+style
+string
+The music style or genre for the audio.
+
+Required in Custom Mode (customMode: true). Examples: "Jazz", "Classical", "Electronic". Character limits by model:
+V3_5 & V4: Maximum 200 characters
+V4_5 & V4_5PLUS: Maximum 1000 characters
+Example: "Classical"
+In Non-custom Mode (customMode: false): Leave empty.
+Example:
+"Classical"
+
+​
+title
+string
+The title of the generated music track.
+
+Required in Custom Mode (customMode: true). Character limits by model:
+V3_5 & V4: Maximum 80 characters
+V4_5 & V4_5PLUS: Maximum 100 characters
+Example: "Peaceful Piano Meditation"
+In Non-custom Mode (customMode: false): Leave empty.
+Example:
+"Peaceful Piano Meditation"
+
+​
+negativeTags
+string
+Music styles or traits to exclude from the generated audio.
+
+Optional. Use to avoid specific styles.
+Example: "Heavy Metal, Upbeat Drums"
+Example:
+"Heavy Metal, Upbeat Drums"
+
+​
+vocalGender
+enum<string>
+Preferred vocal gender for generated vocals. Optional.
+
+Available options: m, f
+Example:
+"m"
+
+​
+styleWeight
+number
+Weight of the provided style guidance. Range 0.00–1.00.
+
+Required range: 0 <= x <= 1Must be a multiple of 0.01
+Example:
+0.65
+
+​
+weirdnessConstraint
+number
+Constraint on creative deviation/novelty. Range 0.00–1.00.
+
+Required range: 0 <= x <= 1Must be a multiple of 0.01
+Example:
+0.65
+
+​
+audioWeight
+number
+Weight of the input audio influence (where applicable). Range 0.00–1.00.
+
+Required range: 0 <= x <= 1Must be a multiple of 0.01
+Example:
+0.65
+
+Response
+
+200
+
+application/json
+Request successful
+
+​
+code
+enum<integer>
+Status Codes
+✅ 200 - Request successful
+⚠️ 400 - Invalid parameters
+⚠️ 401 - Unauthorized access
+⚠️ 404 - Invalid request method or path
+⚠️ 405 - Rate limit exceeded
+⚠️ 413 - Theme or prompt too long
+⚠️ 429 - Insufficient credits
+⚠️ 430 - Your call frequency is too high. Please try again later.
+⚠️ 455 - System maintenance
+❌ 500 - Server error
+Available options: 200, 400, 401, 404, 405, 413, 429, 430, 455, 500
+Example:
+200
+
+​
+msg
+string
+Error message when code != 200
+
+Example:
+"success"
+
+​
+data
+object
+
+import requests
+
+url = "https://api.sunoapi.org/api/v1/generate/upload-cover"
+
+payload = {
+"uploadUrl": "https://storage.example.com/upload",
+"prompt": "A calm and relaxing piano track with soft melodies",
+"style": "Classical",
+"title": "Peaceful Piano Meditation",
+"customMode": True,
+"instrumental": True,
+"model": "V3_5",
+"negativeTags": "Heavy Metal, Upbeat Drums",
+"vocalGender": "m",
+"styleWeight": 0.65,
+"weirdnessConstraint": 0.65,
+"audioWeight": 0.65,
+"callBackUrl": "https://api.example.com/callback"
+}
+headers = {
+"Authorization": "Bearer <token>",
+"Content-Type": "application/json"
+}
+
+response = requests.post(url, json=payload, headers=headers)
+
+print(response.json())
+
+Generate Music
+Add Instrumental
+
+Copy page
+
+This endpoint generates a musical accompaniment tailored to an uploaded audio file — typically a vocal stem or melody track. It helps users instantly flesh out their vocal ideas with high-quality backing music, all without needing a producer.
+
+POST
+/
+api
+/
+v1
+/
+generate
+/
+add-instrumental
+
+Try it
+​
+Key Capabilities
+Accepts uploadUrl of an existing audio file (usually vocals or stems).
+Supports fine-grained customization via parameters such as:
+tags and negativeTags (musical style controls)
+styleWeight, audioWeight, weirdnessConstraint (stylistic & creative blending)
+vocalGender, title, callBackUrl for metadata & workflow control  .
+Returns a taskId for tracking, and results are retained for 14 days. Callback workflow includes three stages: text, first, and complete  .
+​
+Typical Use Cases
+Singers or melody writers who want instant fuller arrangements around their vocal inputs.
+Applications like karaoke platforms, demo-generation tools, or co-creation interfaces that allow users to experiment with accompaniment styles easily.
+​
+Parameter Usage Guide
+Required parameters for all requests:
+uploadUrl: Valid audio file URL (MP3, WAV, or other supported formats)
+title: Title for the generated instrumental track (80 characters max)
+tags: Desired style and characteristics for the instrumental
+negativeTags: Styles or instruments to exclude
+callBackUrl: URL to receive completion notifications
+Optional parameters for enhanced control:
+vocalGender: Preferred vocal gender for any vocal elements (‘m’ or ‘f’)
+styleWeight: Style adherence weight (0.00-1.00)
+weirdnessConstraint: Creativity/novelty constraint (0.00-1.00)
+audioWeight: Audio consistency weight (0.00-1.00)
+Audio requirements:
+File Format: MP3, WAV, or other supported audio formats
+Quality: Higher quality input generally produces better instrumental results
+Accessibility: Ensure uploaded audio URLs are publicly accessible and stable
+​
+Developer Notes
+Generated instrumental files are retained for 15 days before being deleted
+Ensure you have proper rights to use the uploaded audio content
+Be specific with tags to get the desired instrumental style (e.g., “acoustic guitar, soft piano, ambient”)
+Use negative tags effectively to avoid unwanted elements
+Callback process has three stages: text (text generation), first (first track complete), complete (all tracks complete)
+You can use the Get Music Generation Details endpoint to actively check task status instead of waiting for callbacks
+Authorizations
+​
+Authorization
+stringheaderrequired
+🔑 API Authentication
+All endpoints require authentication using Bearer Token.
+
+Get API Key
+Visit the API Key Management Page to obtain your API Key
+Usage
+Add to request headers:
+
+Authorization: Bearer YOUR_API_KEY
+⚠️ Note:
+
+Keep your API Key secure and do not share it with others
+If you suspect your API Key has been compromised, reset it immediately from the management page
+Body
+application/json
+​
+uploadUrl
+string<uri>required
+The URL of the uploaded music file to add instrumental to.
+
+Required.
+Must be a valid audio file URL accessible by the system.
+The uploaded audio should be in a supported format (MP3, WAV, etc.).
+Example:
+"https://example.com/music.mp3"
+
+​
+title
+stringrequired
+The title of the music track.
+
+Required.
+This will be used as the title for the generated instrumental track.
+Example:
+"Relaxing Piano"
+
+​
+negativeTags
+stringrequired
+Music styles or traits to exclude from the generated instrumental.
+
+Required.
+Use to avoid specific styles or instruments in the instrumental version.
+Example: "Heavy Metal, Aggressive Drums"
+Example:
+"Heavy Metal, Aggressive Drums"
+
+​
+tags
+stringrequired
+Music style and characteristics for the instrumental.
+
+Required.
+Describe the desired style, mood, and instruments for the instrumental track.
+Example: "Relaxing Piano, Ambient, Peaceful"
+Example:
+"Relaxing Piano, Ambient, Peaceful"
+
+​
+callBackUrl
+string<uri>required
+The URL to receive task completion notifications when instrumental generation is complete. The callback process has three stages: text (text generation), first (first track complete), complete (all tracks complete). Note: In some cases, text and first stages may be skipped, directly returning complete.
+
+For detailed callback format and implementation guide, see Add Instrumental Callbacks
+
+Alternatively, you can use the Get Music Generation Details interface to poll task status
+Example:
+"https://api.example.com/callback"
+
+​
+vocalGender
+enum<string>
+Preferred vocal gender for any vocal elements. Optional. Allowed values: 'm' (male), 'f' (female).
+
+Available options: m, f
+Example:
+"m"
+
+​
+styleWeight
+number
+Style adherence weight. Optional. Range: 0-1. Two decimal places recommended.
+
+Required range: 0 <= x <= 1Must be a multiple of 0.01
+Example:
+0.61
+
+​
+weirdnessConstraint
+number
+Creativity/novelty constraint. Optional. Range: 0-1. Two decimal places recommended.
+
+Required range: 0 <= x <= 1Must be a multiple of 0.01
+Example:
+0.72
+
+​
+audioWeight
+number
+Relative weight of audio consistency versus other controls. Optional. Range: 0-1. Two decimal places recommended.
+
+Required range: 0 <= x <= 1Must be a multiple of 0.01
+Example:
+0.65
+
+Response
+
+200
+
+application/json
+Request successful
+
+​
+code
+enum<integer>
+Status Codes
+✅ 200 - Request successful
+⚠️ 400 - Invalid parameters
+⚠️ 401 - Unauthorized access
+⚠️ 404 - Invalid request method or path
+⚠️ 405 - Rate limit exceeded
+⚠️ 413 - Theme or prompt too long
+⚠️ 429 - Insufficient credits
+⚠️ 430 - Your call frequency is too high. Please try again later.
+⚠️ 455 - System maintenance
+❌ 500 - Server error
+Available options: 200, 400, 401, 404, 405, 413, 429, 430, 455, 500
+Example:
+200
+
+​
+msg
+string
+Error message when code != 200
+
+Example:
+"success"
+
+​
+data
+object
+
+import requests
+
+url = "https://api.sunoapi.org/api/v1/generate/add-instrumental"
+
+payload = {
+"uploadUrl": "https://example.com/music.mp3",
+"title": "Relaxing Piano",
+"negativeTags": "Heavy Metal, Aggressive Drums",
+"tags": "Relaxing Piano, Ambient, Peaceful",
+"callBackUrl": "https://api.example.com/callback",
+"vocalGender": "m",
+"styleWeight": 0.61,
+"weirdnessConstraint": 0.72,
+"audioWeight": 0.65
+}
+headers = {
+"Authorization": "Bearer <token>",
+"Content-Type": "application/json"
+}
+
+response = requests.post(url, json=payload, headers=headers)
+
+print(response.json())
+
+Generate Music
+Get Music Generation Details
+
+Copy page
+
+Retrieve detailed information about a music generation task, including status, parameters, and results.
+
+GET
+/
+api
+/
+v1
+/
+generate
+/
+record-info
+
+Try it
+​
+Status Descriptions
+PENDING: Task is waiting to be processed
+TEXT_SUCCESS: Lyrics/text generation completed successfully
+FIRST_SUCCESS: First track generation completed successfully
+SUCCESS: All tracks generated successfully
+CREATE_TASK_FAILED: Failed to create the generation task
+GENERATE_AUDIO_FAILED: Failed to generate music tracks
+CALLBACK_EXCEPTION: Error occurred during callback
+SENSITIVE_WORD_ERROR: Content contains prohibited words
+​
+Developer Notes
+For instrumental tracks (instrumental=true), no lyrics data will be included in the response
+Use this endpoint to check task status instead of waiting for callbacks
+Authorizations
+​
+Authorization
+stringheaderrequired
+🔑 API Authentication
+All endpoints require authentication using Bearer Token.
+
+Get API Key
+Visit the API Key Management Page to obtain your API Key
+Usage
+Add to request headers:
+
+Authorization: Bearer YOUR_API_KEY
+⚠️ Note:
+
+Keep your API Key secure and do not share it with others
+If you suspect your API Key has been compromised, reset it immediately from the management page
+Query Parameters
+​
+taskId
+stringrequired
+The task ID returned from the Generate Music or Extend Music endpoints. Used to identify the specific generation task to query.
+
+Response
+
+200
+
+application/json
+Request successful
+
+​
+code
+enum<integer>
+Status Codes
+✅ 200 - Request successful
+⚠️ 400 - Invalid parameters
+⚠️ 401 - Unauthorized access
+⚠️ 404 - Invalid request method or path
+⚠️ 405 - Rate limit exceeded
+⚠️ 413 - Theme or prompt too long
+⚠️ 429 - Insufficient credits
+⚠️ 430 - Your call frequency is too high. Please try again later.
+⚠️ 455 - System maintenance
+❌ 500 - Server error
+Available options: 200, 400, 401, 404, 405, 413, 429, 430, 455, 500
+Example:
+200
+
+​
+msg
+string
+Error message when code != 200
+
+Example:
+"success"
+
+import requests
+
+url = "https://api.sunoapi.org/api/v1/generate/record-info"
+
+headers = {"Authorization": "Bearer <token>"}
+
+response = requests.get(url, headers=headers)
+
+print(response.json())
+
+Generate Music
+Boost Music Style
+
+Copy page
+
+POST
+/
+api
+/
+v1
+/
+style
+/
+generate
+
+Try it
+This is an exclusive capability of V4_5. The style functionality of V4_5 has been significantly enhanced, as stated on the official website:
+One of the many advantages of the new 4.5 model is its ability to accommodate more detailed style instructions. In previous models, it was necessary to prioritize specific genre and style details, but now instructions can incorporate a more conversational prompt. Previously, optimal results might have been achieved with a prompt like: ‘deep house, emotional, melodic.’ Now, you can provide a prompt such as: ‘Create a melodic, emotional deep house song featuring organic textures and hypnotic rhythms. Begin with soft ambient layers, natural sounds, and a deep, steady groove. Gradually build with flowing melodic synths, warm basslines, and intricate, subtle percussion.’
+The ‘Boost Your Style’ feature will significantly enhance users’ ability to describe and control style. It is recommended for use.
+​
+Parameter Description
+content: Required, string type. Style description is required.
+Authorizations
+​
+Authorization
+stringheaderrequired
+🔑 API Authentication
+All endpoints require authentication using Bearer Token.
+
+Get API Key
+Visit the API Key Management Page to obtain your API Key
+Usage
+Add to request headers:
+
+Authorization: Bearer YOUR_API_KEY
+⚠️ Note:
+
+Keep your API Key secure and do not share it with others
+If you suspect your API Key has been compromised, reset it immediately from the management page
+Body
+application/json
+​
+content
+stringrequired
+Style description. Please describe in concise and clear language the music style you expect to generate. Example: 'Pop, Mysterious'
+
+Example:
+"Pop, Mysterious"
+
+Response
+
+200
+
+application/json
+Request successful
+
+​
+code
+enum<integer>
+Status Codes
+✅ 200 - Request successful
+⚠️ 400 - Invalid parameters
+⚠️ 401 - Unauthorized access
+⚠️ 404 - Invalid request method or path
+⚠️ 405 - Rate limit exceeded
+⚠️ 413 - Theme or prompt too long
+⚠️ 429 - Insufficient credits
+⚠️ 430 - Your call frequency is too high. Please try again later.
+⚠️ 455 - System maintenance
+❌ 500 - Server error
+Available options: 200, 400, 401, 404, 405, 413, 429, 430, 455, 500
+Example:
+200
+
+​
+msg
+string
+Error message when code != 200
+
+Example:
+"success"
+
+import requests
+
+url = "https://api.sunoapi.org/api/v1/style/generate"
+
+payload = { "content": "Pop, Mysterious" }
+headers = {
+"Authorization": "Bearer <token>",
+"Content-Type": "application/json"
+}
+
+response = requests.post(url, json=payload, headers=headers)
+
+print(response.json())
+
+Generate Music
+Generate Music Cover
+
+Copy page
+
+Create personalized cover images for generated music.
+
+POST
+/
+api
+/
+v1
+/
+suno
+/
+cover
+/
+generate
+
+Try it
+​
+Usage Guide
+Use this interface to create personalized cover images for generated music
+Requires the taskId of the original music task
+Each music task can only generate a Cover once; duplicate requests will return the existing taskId
+Results will be notified through the callback URL upon completion
+​
+Parameter Details
+taskId identifies the unique identifier of the original music generation task
+callBackUrl receives callback address for completion notifications
+​
+Developer Notes
+Cover image file URLs will be retained for 14 days
+If a Cover has already been generated for this music task, a 400 status code and existing taskId will be returned
+It’s recommended to call this interface after music generation is complete
+Usually generates 2 different style images for selection
+Authorizations
+​
+Authorization
+stringheaderrequired
+🔑 API Authentication
+All endpoints require authentication using Bearer Token.
+
+Get API Key
+Visit the API Key Management Page to obtain your API Key
+Usage
+Add to request headers:
+
+Authorization: Bearer YOUR_API_KEY
+⚠️ Note:
+
+Keep your API Key secure and do not share it with others
+If you suspect your API Key has been compromised, reset it immediately from the management page
+Body
+application/json
+​
+taskId
+stringrequired
+Original music task ID, should be the taskId returned by the music generation interface.
+
+Example:
+"73d6128b3523a0079df10da9471017c8"
+
+​
+callBackUrl
+string<uri>required
+URL address for receiving Cover generation task completion updates. This parameter is required for all Cover generation requests.
+
+The system will send POST requests to this URL when Cover generation is complete, including task status and results
+Your callback endpoint should be able to accept JSON payloads containing cover image URLs
+For detailed callback format and implementation guide, see Cover Generation Callbacks
+Alternatively, you can use the Get Cover Details interface to poll task status
+Example:
+"https://api.example.com/callback"
+
+Response
+
+200
+
+application/json
+Success
+
+​
+code
+enum<integer>
+Status code
+Response status code
+
+200: Success - Request processed successfully
+400: Validation error - Cover already generated for this task
+401: Unauthorized - Authentication credentials missing or invalid
+402: Insufficient credits - Account doesn't have enough credits for this operation
+404: Not found - Requested resource or endpoint doesn't exist
+409: Conflict - Cover record already exists
+422: Validation error - Request parameters failed validation checks
+429: Rate limited - Your call frequency is too high. Please try again later.
+455: Service unavailable - System currently undergoing maintenance
+500: Server error - Unexpected error occurred while processing request Build failed - Cover image generation failed
+Available options: 200, 400, 401, 402, 404, 409, 422, 429, 455, 500
+Example:
+200
+
+​
+msg
+string
+Status message
+Error message when code != 200
+
+Example:
+"success"
+
+import requests
+
+url = "https://api.sunoapi.org/api/v1/suno/cover/generate"
+
+payload = {
+"taskId": "73d6128b3523a0079df10da9471017c8",
+"callBackUrl": "https://api.example.com/callback"
+}
+headers = {
+"Authorization": "Bearer <token>",
+"Content-Type": "application/json"
+}
+
+response = requests.post(url, json=payload, headers=headers)
+
+print(response.json())
+
+Generate Lyrics
+Generate Lyrics
+
+Copy page
+
+Create lyrics for music using AI models without generating audio tracks.
+
+POST
+/
+api
+/
+v1
+/
+lyrics
+
+Try it
+​
+Usage Guide
+This endpoint generates only lyrics content based on your prompt
+Multiple lyrics variations will be returned for you to choose from
+Generated lyrics typically include song structure markers (e.g., [Verse], [Chorus])
+​
+Developer Notes
+Generated lyrics are retained for 15 days
+Callback has only one stage: complete (generation complete)
+Use this endpoint when you only need lyrics creation without music
+Results can be used as input for the Generate Music endpoint in custom mode
+Authorizations
+​
+Authorization
+stringheaderrequired
+🔑 API Authentication
+All endpoints require authentication using Bearer Token.
+
+Get API Key
+Visit the API Key Management Page to obtain your API Key
+Usage
+Add to request headers:
+
+Authorization: Bearer YOUR_API_KEY
+⚠️ Note:
+
+Keep your API Key secure and do not share it with others
+If you suspect your API Key has been compromised, reset it immediately from the management page
+Body
+application/json
+​
+prompt
+stringrequired
+Detailed description of the desired lyrics content.
+
+Be specific about themes, moods, styles, and song structure you want.
+The more detailed your prompt, the more closely the generated lyrics will match your vision.
+The maximum word limit is 200 words.
+Example:
+"A song about peaceful night in the city"
+
+​
+callBackUrl
+string<uri>required
+The URL to receive lyrics generation results when complete.
+
+Required.
+Unlike music generation, lyrics callback has only one stage: complete (generation finished).
+For detailed callback format and implementation guide, see Lyrics Generation Callbacks
+
+Alternatively, you can use the get lyrics generation details endpoint to poll task status
+Example:
+"https://api.example.com/callback"
+
+Response
+
+200
+
+application/json
+Request successful
+
+​
+code
+enum<integer>
+Status Codes
+✅ 200 - Request successful
+⚠️ 400 - Invalid parameters
+⚠️ 401 - Unauthorized access
+⚠️ 404 - Invalid request method or path
+⚠️ 405 - Rate limit exceeded
+⚠️ 413 - Theme or prompt too long
+⚠️ 429 - Insufficient credits
+⚠️ 430 - Your call frequency is too high. Please try again later.
+⚠️ 455 - System maintenance
+❌ 500 - Server error
+Available options: 200, 400, 401, 404, 405, 413, 429, 430, 455, 500
+Example:
+200
+
+​
+msg
+string
+Error message when code != 200
+
+Example:
+"success"
+
+import requests
+
+url = "https://api.sunoapi.org/api/v1/lyrics"
+
+payload = {
+"prompt": "A song about peaceful night in the city",
+"callBackUrl": "https://api.example.com/callback"
+}
+headers = {
+"Authorization": "Bearer <token>",
+"Content-Type": "application/json"
+}
+
+response = requests.post(url, json=payload, headers=headers)
+
+print(response.json())
+
+Generate Lyrics
+Lyrics Generation Callbacks
+
+Copy page
+
+When lyrics generation tasks are completed, the system will send results to your provided callback URL via POST request
+
+When you submit a task to the Lyrics Generation API, you can use the callBackUrl parameter to set a callback URL. When the task is completed, the system will automatically push the results to your specified address.
+​
+Callback Mechanism Overview
+The callback mechanism eliminates the need to poll the API for task status. The system will proactively push task completion results to your server.
+​
+Callback Timing
+The system will send callback notifications in the following situations:
+Lyrics generation task completed successfully
+Lyrics generation task failed
+Errors occurred during task processing
+​
+Callback Method
+HTTP Method: POST
+Content Type: application/json
+Timeout Setting: 15 seconds
+​
+Callback Request Format
+When the task is completed, the system will send a POST request to your callBackUrl in the following format:
+
+Success Callback
+
+Failure Callback
+
+Copy
+{
+"code": 200,
+"msg": "All generated successfully.",
+"data": {
+"callbackType": "complete",
+"taskId": "11dc****8b0f",
+"data": [
+{
+"text": "[Verse]\nWalking through the city's darkest night\nWith dreams burning like a blazing fire",
+"title": "Iron Man",
+"status": "complete",
+"errorMessage": ""
+},
+{
+"text": "[Verse]\nWind is calling out my name\nSteel armor shining in the light",
+"title": "Iron Man",
+"status": "complete",
+"errorMessage": ""
+}
+]
+}
+}
+​
+Status Code Description
+​
+code
+integerrequired
+Callback status code indicating task processing result:
+Status Code	Description
+200	Success - Lyrics generation completed
+400	Bad Request - Parameter error, content violation, etc.
+451	Download Failed - Unable to download related files
+500	Server Error - Please try again later
+​
+msg
+stringrequired
+Status message providing detailed status description
+​
+data.callbackType
+stringrequired
+Callback type indicating the current callback stage:
+complete: Lyrics generation completed
+error: Task failed
+​
+data.taskId
+stringrequired
+Task ID, consistent with the taskId returned when you submitted the task
+​
+data.data
+array
+Lyrics generation result information, returns multiple lyrics variants on success
+​
+data.data[].text
+string
+Generated lyrics content, including song structure markers (e.g., [Verse], [Chorus], etc.)
+​
+data.data[].title
+string
+Lyrics title
+​
+data.data[].status
+string
+Lyrics generation status:
+complete: Generation completed
+failed: Generation failed
+​
+data.data[].errorMessage
+string
+Error message, contains specific error description when status is failed
+​
+Callback Reception Examples
+Here are example codes for receiving callbacks in popular programming languages:
+Node.js
+Python
+PHP
+
+Copy
+const express = require('express');
+const app = express();
+
+app.use(express.json());
+
+app.post('/generate-lyrics-callback', (req, res) => {
+const { code, msg, data } = req.body;
+
+console.log('Received lyrics generation callback:', {
+taskId: data.taskId,
+callbackType: data.callbackType,
+status: code,
+message: msg
+});
+
+if (code === 200) {
+// Task completed successfully
+console.log('Lyrics generation completed');
+const lyricsData = data.data || [];
+
+code
+Code
+download
+content_copy
+expand_less
+IGNORE_WHEN_COPYING_START
+IGNORE_WHEN_COPYING_END
+console.log(`Generated ${lyricsData.length} lyrics variants:`);
+lyricsData.forEach((lyrics, index) => {
+  console.log(`Lyrics variant ${index + 1}:`);
+  console.log(`  Title: ${lyrics.title}`);
+  console.log(`  Status: ${lyrics.status}`);
+  if (lyrics.status === 'complete') {
+    console.log(`  Lyrics content:\n${lyrics.text}`);
+  } else {
+    console.log(`  Error message: ${lyrics.errorMessage}`);
+  }
+});
+
+// Process generated lyrics
+// Can save to database, files, etc.
+
+} else {
+// Task failed
+console.log('Lyrics generation failed:', msg);
+
+code
+Code
+download
+content_copy
+expand_less
+IGNORE_WHEN_COPYING_START
+IGNORE_WHEN_COPYING_END
+// Handle failure cases...
+if (code === 400) {
+  console.log('Parameter error or content violation');
+} else if (code === 451) {
+  console.log('File download failed');
+} else if (code === 500) {
+  console.log('Server internal error');
+}
+
+}
+
+// Return 200 status code to confirm callback received
+res.status(200).json({ status: 'received' });
+});
+
+app.listen(3000, () => {
+console.log('Callback server running on port 3000');
+});
+​
+Best Practices
+​
+Callback URL Configuration Recommendations
+Use HTTPS: Ensure your callback URL uses HTTPS protocol for secure data transmission
+Verify Source: Verify the legitimacy of the request source in callback processing
+Idempotent Processing: The same taskId may receive multiple callbacks, ensure processing logic is idempotent
+Quick Response: Callback processing should return a 200 status code as quickly as possible to avoid timeout
+Asynchronous Processing: Complex business logic should be processed asynchronously to avoid blocking callback response
+Lyrics Storage: Lyrics content should be saved to database or file system promptly
+​
+Important Reminders
+Callback URL must be a publicly accessible address
+Server must respond within 15 seconds, otherwise it will be considered a timeout
+If 3 consecutive retries fail, the system will stop sending callbacks
+Please ensure the stability of callback processing logic to avoid callback failures due to exceptions
+Pay attention to content policy compliance to avoid generation failures due to policy violations
+Lyrics content may contain special characters, pay attention to encoding handling
+
+Generate Lyrics
+Get Lyrics Generation Details
+
+Copy page
+
+Retrieve detailed information about a lyrics generation task, including status, parameters, and results.
+
+GET
+/
+api
+/
+v1
+/
+lyrics
+/
+record-info
+
+Try it
+​
+Status Descriptions
+PENDING: Task is waiting to be processed
+SUCCESS: Lyrics generated successfully
+CREATE_TASK_FAILED: Failed to create the task
+GENERATE_LYRICS_FAILED: Failed to generate lyrics
+CALLBACK_EXCEPTION: Error occurred during callback
+SENSITIVE_WORD_ERROR: Content contains prohibited words
+​
+Developer Notes
+Use this endpoint to check task status instead of waiting for callbacks
+This returns all generated lyrics variations from a single task
+Each lyrics variation includes a title and complete lyrics text
+Authorizations
+​
+Authorization
+stringheaderrequired
+🔑 API Authentication
+All endpoints require authentication using Bearer Token.
+
+Get API Key
+Visit the API Key Management Page to obtain your API Key
+Usage
+Add to request headers:
+
+Authorization: Bearer YOUR_API_KEY
+⚠️ Note:
+
+Keep your API Key secure and do not share it with others
+If you suspect your API Key has been compromised, reset it immediately from the management page
+Query Parameters
+​
+taskId
+stringrequired
+The task ID returned from the Generate Lyrics endpoint. Used to retrieve detailed information about a specific lyrics generation task.
+
+Response
+
+200
+
+application/json
+Request successful
+
+​
+code
+enum<integer>
+Status Codes
+✅ 200 - Request successful
+⚠️ 400 - Invalid parameters
+⚠️ 401 - Unauthorized access
+⚠️ 404 - Invalid request method or path
+⚠️ 405 - Rate limit exceeded
+⚠️ 413 - Theme or prompt too long
+⚠️ 429 - Insufficient credits
+⚠️ 430 - Your call frequency is too high. Please try again later.
+⚠️ 455 - System maintenance
+❌ 500 - Server error
+Available options: 200, 400, 401, 404, 405, 413, 429, 430, 455, 500
+Example:
+200
+
+​
+msg
+string
+Error message when code != 200
+
+Example:
+"success"
+
+Account Management
+Get Remaining Credits
+
+Copy page
+
+Retrieve the current balance of available credits for your account.
+
+GET
+/
+api
+/
+v1
+/
+generate
+/
+credit
+
+Try it
+​
+Usage Guide
+Credits are consumed when generating music, lyrics, or using other processing features.
+This endpoint allows you to check your current credit balance before initiating tasks.
+Returns a single integer value representing your available credits.
+No parameters required; authentication via API key is sufficient.
+​
+Developer Notes
+Monitor your credit balance regularly to avoid service interruptions.
+If credits are insufficient, generation tasks will fail with error code 429.
+Consider integrating this check before starting expensive generation operations.
+This endpoint is lightweight and can be called frequently as needed.
+Authorizations
+​
+Authorization
+stringheaderrequired
+🔑 API Authentication
+All endpoints require authentication using Bearer Token.
+
+Get API Key
+Visit the API Key Management Page to obtain your API Key
+Usage
+Add to request headers:
+
+Authorization: Bearer YOUR_API_KEY
+⚠️ Note:
+
+Keep your API Key secure and do not share it with others
+If you suspect your API Key has been compromised, reset it immediately from the management page
+Response
+
+200
+
+application/json
+Request successful
+
+​
+code
+enum<integer>
+Status Codes
+✅ 200 - Request successful
+⚠️ 400 - Invalid parameters
+⚠️ 401 - Unauthorized access
+⚠️ 404 - Invalid request method or path
+⚠️ 405 - Rate limit exceeded
+⚠️ 413 - Theme or prompt too long
+⚠️ 429 - Insufficient credits
+⚠️ 430 - Your call frequency is too high. Please try again later.
+⚠️ 455 - System maintenance
+❌ 500 - Server error
+Available options: 200, 400, 401, 404, 405, 413, 429, 430, 455, 500
+Example:
+200
+
+​
+msg
+string
+Error message when code != 200
+
+Example:
+"success"
+
+​
+data
+integer
+The number of credits currently available in your account.
+
+Each API operation consumes a specific number of credits depending on the feature.
+Additional credits can be purchased from your account dashboard.
+Example:
+100
+
+import requests
+
+url = "https://api.sunoapi.org/api/v1/generate/credit"
+
+headers = {"Authorization": "Bearer <token>"}
+
+response = requests.get(url, headers=headers)
+
+print(response.json())
+
+ile Upload API
+Base64 File Upload
+
+Copy page
+
+Upload temporary files via Base64 encoded data. Note: Uploaded files are temporary and automatically deleted after 3 days.
+
+POST
+/
+api
+/
+file-base64-upload
+
+Try it
+Upload temporary files via Base64 encoded data. Note: Uploaded files are temporary and automatically deleted after 3 days.
+​
+Features
+Supports Base64 encoded data and data URL format
+Automatic MIME type recognition and file extension inference
+Support for custom file names or auto-generation
+Returns complete file information and download links
+API Key authentication protection
+Uploaded files are temporary and automatically deleted after 3 days
+​
+Supported Formats
+Pure Base64 String: iVBORw0KGgoAAAANSUhEUgAA...
+Data URL Format: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
+​
+Usage Recommendations
+Recommended for small files like images
+For large files (>10MB), use the file stream upload API
+Base64 encoding increases data transmission by approximately 33%
+Authorizations
+​
+Authorization
+stringheaderrequired
+All APIs require authentication via Bearer Token.
+
+Get API Key:
+
+Visit API Key Management Page to get your API Key
+Usage:
+Add to request header:
+Authorization: Bearer YOUR_API_KEY
+
+Note:
+
+Keep your API Key secure and do not share it with others
+If you suspect your API Key has been compromised, reset it immediately in the management page
+Body
+application/json
+​
+base64Data
+stringrequired
+Base64 encoded file data. Supports pure Base64 strings or data URL format
+
+Example:
+"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
+
+​
+uploadPath
+stringrequired
+File upload path, without leading or trailing slashes
+
+Example:
+"images/base64"
+
+​
+fileName
+string
+File name (optional), including file extension. If not provided, a random filename will be generated. If the same filename already exists, the old file will be overwritten, but changes may not be immediately visible due to caching
+
+Example:
+"my-image.png"
+
+Response
+
+200
+
+application/json
+File uploaded successfully
+
+​
+success
+booleanrequired
+Whether the request was successful
+
+​
+code
+enum<integer>required
+Response status code
+
+Available options: 200, 400, 401, 405, 500
+​
+msg
+stringrequired
+Response message
+
+Example:
+"File uploaded successfully"
+curl --request POST 
+--url https://sunoapiorg.redpandaai.co/api/file-base64-upload 
+--header 'Authorization: Bearer <token>' 
+--header 'Content-Type: application/json' 
+--data '{
+"base64Data": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==",
+"uploadPath": "images/base64",
+"fileName": "test-image.png"
+}'
+File Upload API
+File Stream Upload
+
+Copy page
+
+POST
+/
+api
+/
+file-stream-upload
+
+Try it
+Upload temporary files via multipart/form-data format. Note: Uploaded files are temporary and automatically deleted after 3 days.
+​
+Features
+Supports binary stream upload for various file types
+Suitable for large file uploads with high transmission efficiency
+Automatic MIME type recognition
+Support for custom file names or using original file names
+Returns complete file information and download links
+API Key authentication protection
+Uploaded files are temporary and automatically deleted after 3 days
+​
+Usage Recommendations
+Recommended for large files (>10MB)
+Supports various formats: images, videos, documents, etc.
+Transmission efficiency is approximately 33% higher than Base64 format
+​
+Example Command
+
+Copy
+curl -X POST https://sunoapiorg.redpandaai.co/api/file-stream-upload 
+-H "Authorization: Bearer YOUR_API_KEY" 
+-F "file=@/path/to/your-file.jpg" 
+-F "uploadPath=images/user-uploads" 
+-F "fileName=custom-name.jpg"
+Authorizations
+​
+Authorization
+stringheaderrequired
+All APIs require authentication via Bearer Token.
+
+Get API Key:
+
+Visit API Key Management Page to get your API Key
+Usage:
+Add to request header:
+Authorization: Bearer YOUR_API_KEY
+
+Note:
+
+Keep your API Key secure and do not share it with others
+If you suspect your API Key has been compromised, reset it immediately in the management page
+Body
+multipart/form-data
+​
+file
+filerequired
+File to upload (binary data)
+
+​
+uploadPath
+stringrequired
+File upload path, without leading or trailing slashes
+
+Example:
+"images/user-uploads"
+
+​
+fileName
+string
+File name (optional), including file extension. If not provided, the original filename will be used. If the same filename already exists, the old file will be overwritten, but changes may not be immediately visible due to caching
+
+Example:
+"my-image.jpg"
+
+Response
+
+200
+
+application/json
+File uploaded successfully
+
+​
+success
+booleanrequired
+Whether the request was successful
+
+​
+code
+enum<integer>required
+Response status code
+
+Available options: 200, 400, 401, 405, 500
+​
+msg
+stringrequired
+Response message
+
+Example:
+"File uploaded successfully"
+
+import requests
+
+url = "https://sunoapiorg.redpandaai.co/api/file-stream-upload"
+
+files = { "file": "open('example-file', 'rb')" }
+payload = {
+"uploadPath": "images/user-uploads",
+"fileName": "my-image.jpg"
+}
+headers = {"Authorization": "Bearer <token>"}
+
+response = requests.post(url, data=payload, files=files, headers=headers)
+
+print(response.json())
+
+File Upload API
+URL File Upload
+
+Copy page
+
+POST
+/
+api
+/
+file-url-upload
+
+Try it
+Download files from URLs and upload them as temporary files. Note: Uploaded files are temporary and automatically deleted after 3 days.
+​
+Features
+Supports HTTP and HTTPS file links
+Automatically downloads remote files and uploads them
+Automatically extracts file names from URLs or uses custom file names
+Automatic MIME type recognition
+Returns complete file information and download links
+API Key authentication protection
+Uploaded files are temporary and automatically deleted after 3 days
+​
+Supported Protocols
+HTTP: http://example.com/file.jpg
+HTTPS: https://example.com/file.jpg
+​
+Use Cases
+Migrating files from other services
+Batch downloading and storing web resources
+Backing up remote files
+Caching external resources
+​
+Important Notes
+Ensure the provided URL is publicly accessible
+Download timeout is 30 seconds
+Recommended file size limit is 100MB
+Authorizations
+​
+Authorization
+stringheaderrequired
+All APIs require authentication via Bearer Token.
+
+Get API Key:
+
+Visit API Key Management Page to get your API Key
+Usage:
+Add to request header:
+Authorization: Bearer YOUR_API_KEY
+
+Note:
+
+Keep your API Key secure and do not share it with others
+If you suspect your API Key has been compromised, reset it immediately in the management page
+Body
+application/json
+​
+fileUrl
+string<uri>required
+File download URL, must be a valid HTTP or HTTPS address
+
+Example:
+"https://example.com/images/sample.jpg"
+
+​
+uploadPath
+stringrequired
+File upload path, without leading or trailing slashes
+
+Example:
+"images/downloaded"
+
+​
+fileName
+string
+File name (optional), including file extension. If not provided, a random filename will be generated. If the same filename already exists, the old file will be overwritten, but changes may not be immediately visible due to caching
+
+Example:
+"sample-image.jpg"
+
+Response
+
+200
+
+application/json
+File uploaded successfully
+
+​
+success
+booleanrequired
+Whether the request was successful
+
+​
+code
+enum<integer>required
+Response status code
+
+Available options: 200, 400, 401, 405, 500
+​
+msg
+stringrequired
+Response message
+
+Example:
+"File uploaded successfully"
+
+​
+data
+object
+Hide child attributes
+
+​
+data.fileName
+stringrequired
+File name
+
+Example:
+"uploaded-image.png"
+
+​
+data.filePath
+stringrequired
+Complete file path in storage
+
+Example:
+"images/user-uploads/uploaded-image.png"
+
+​
+data.downloadUrl
+string<uri>required
+File download URL
+
+Example:
+"https://tempfile.redpandaai.co/xxx/images/user-uploads/uploaded-image.png"
+
+​
+data.fileSize
+integerrequired
+File size in bytes
+
+Example:
+154832
+
+​
+data.mimeType
+stringrequired
+File MIME type
+
+Example:
+"image/png"
+
+​
+data.uploadedAt
+string<date-time>required
+Upload timestamp
+
+Example:
+"2025-01-01T12:00:00.000Z"
+
+Prasau isegzaminuok viska nuo a iki z. kursim plana.

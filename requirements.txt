@@ -1,0 +1,24 @@
+# Core dependencies
+python-dotenv>=1.0.0
+requests>=2.31.0
+google-generativeai>=0.3.0
+
+# Visual components
+stability-sdk>=0.8.0                 # For Stability AI image generation
+moviepy>=1.0.3                       # For video creation from audio + image
+Pillow>=10.0.0                       # For image analysis and processing
+
+# YouTube integration
+google-api-python-client>=2.100.0    # For YouTube Data API
+google-auth-oauthlib>=1.2.0          # For OAuth 2.0 authentication
+google-auth>=2.20.0                  # For Google authentication
+
+# Database and ORM
+sqlalchemy>=2.0.0                    # For database operations and ORM
+
+# Optional dependencies for future features
+# sqlalchemy>=2.0.0                  # For database operations
+
+# Development dependencies
+# pytest>=7.4.0                       # For testing
+# black>=23.0.0                      # For code formatting
