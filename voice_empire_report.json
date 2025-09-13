@@ -1,0 +1,224 @@
+{
+  "total_characters": 8,
+  "characters_by_style": {
+    "lofi_hiphop": [
+      {
+        "name": "Luna",
+        "monthly_revenue": 0,
+        "performance_tier": "Unknown"
+      },
+      {
+        "name": "Kai",
+        "monthly_revenue": 2804.0744266047936,
+        "performance_tier": "D-Tier (Needs Optimization)"
+      }
+    ],
+    "trap_beats": [
+      {
+        "name": "Zara",
+        "monthly_revenue": 3567.5119935470043,
+        "performance_tier": "D-Tier (Needs Optimization)"
+      },
+      {
+        "name": "Blaze",
+        "monthly_revenue": 346.90711264202025,
+        "performance_tier": "D-Tier (Needs Optimization)"
+      }
+    ],
+    "meditation_ambient": [
+      {
+        "name": "Sage",
+        "monthly_revenue": 1642.8097120122136,
+        "performance_tier": "D-Tier (Needs Optimization)"
+      },
+      {
+        "name": "River",
+        "monthly_revenue": 2138.9157644434704,
+        "performance_tier": "D-Tier (Needs Optimization)"
+      }
+    ],
+    "gaming_electronic": [
+      {
+        "name": "Nova",
+        "monthly_revenue": 1390.7667380466237,
+        "performance_tier": "D-Tier (Needs Optimization)"
+      },
+      {
+        "name": "Pulse",
+        "monthly_revenue": 360.9469614139642,
+        "performance_tier": "D-Tier (Needs Optimization)"
+      }
+    ]
+  },
+  "total_monthly_revenue": 12251.93270871009,
+  "total_content_pieces": 15,
+  "character_performances": [
+    {
+      "character": "Luna",
+      "period_days": 30,
+      "content_count": 0,
+      "total_revenue": 0,
+      "message": "No content found for this period"
+    },
+    {
+      "character": "Kai",
+      "period_days": 30,
+      "content_count": 3,
+      "avg_views": 32304.666666666668,
+      "total_revenue": 2804.0744266047936,
+      "avg_engagement": 0,
+      "revenue_multiplier": 2.8,
+      "projected_monthly": 2804.0744266047936,
+      "performance_tier": "D-Tier (Needs Optimization)",
+      "optimization_score": 0.7674786525469462
+    },
+    {
+      "character": "Zara",
+      "period_days": 30,
+      "content_count": 3,
+      "avg_views": 28769.0,
+      "total_revenue": 3567.5119935470043,
+      "avg_engagement": 0,
+      "revenue_multiplier": 3.8,
+      "projected_monthly": 3567.5119935470043,
+      "performance_tier": "D-Tier (Needs Optimization)",
+      "optimization_score": 0.761931132142262
+    },
+    {
+      "character": "Blaze",
+      "period_days": 30,
+      "content_count": 2,
+      "avg_views": 16090.5,
+      "total_revenue": 346.90711264202025,
+      "avg_engagement": 0,
+      "revenue_multiplier": 3.5,
+      "projected_monthly": 346.90711264202025,
+      "performance_tier": "D-Tier (Needs Optimization)",
+      "optimization_score": 0.92153951757116
+    },
+    {
+      "character": "Sage",
+      "period_days": 30,
+      "content_count": 1,
+      "avg_views": 20348.0,
+      "total_revenue": 1642.8097120122136,
+      "avg_engagement": 0,
+      "revenue_multiplier": 4.2,
+      "projected_monthly": 1642.8097120122136,
+      "performance_tier": "D-Tier (Needs Optimization)",
+      "optimization_score": 0.9347676988611668
+    },
+    {
+      "character": "River",
+      "period_days": 30,
+      "content_count": 2,
+      "avg_views": 19070.5,
+      "total_revenue": 2138.9157644434704,
+      "avg_engagement": 0,
+      "revenue_multiplier": 3.9,
+      "projected_monthly": 2138.9157644434704,
+      "performance_tier": "D-Tier (Needs Optimization)",
+      "optimization_score": 0.8518305832178295
+    },
+    {
+      "character": "Nova",
+      "period_days": 30,
+      "content_count": 1,
+      "avg_views": 6696.0,
+      "total_revenue": 1390.7667380466237,
+      "avg_engagement": 0,
+      "revenue_multiplier": 3.6,
+      "projected_monthly": 1390.7667380466237,
+      "performance_tier": "D-Tier (Needs Optimization)",
+      "optimization_score": 0.8496347719209123
+    },
+    {
+      "character": "Pulse",
+      "period_days": 30,
+      "content_count": 3,
+      "avg_views": 42061.0,
+      "total_revenue": 360.9469614139642,
+      "avg_engagement": 0,
+      "revenue_multiplier": 3.3,
+      "projected_monthly": 360.9469614139642,
+      "performance_tier": "D-Tier (Needs Optimization)",
+      "optimization_score": 0.889493414666425
+    }
+  ],
+  "top_performers": [
+    {
+      "character": "Zara",
+      "period_days": 30,
+      "content_count": 3,
+      "avg_views": 28769.0,
+      "total_revenue": 3567.5119935470043,
+      "avg_engagement": 0,
+      "revenue_multiplier": 3.8,
+      "projected_monthly": 3567.5119935470043,
+      "performance_tier": "D-Tier (Needs Optimization)",
+      "optimization_score": 0.761931132142262
+    },
+    {
+      "character": "Kai",
+      "period_days": 30,
+      "content_count": 3,
+      "avg_views": 32304.666666666668,
+      "total_revenue": 2804.0744266047936,
+      "avg_engagement": 0,
+      "revenue_multiplier": 2.8,
+      "projected_monthly": 2804.0744266047936,
+      "performance_tier": "D-Tier (Needs Optimization)",
+      "optimization_score": 0.7674786525469462
+    },
+    {
+      "character": "River",
+      "period_days": 30,
+      "content_count": 2,
+      "avg_views": 19070.5,
+      "total_revenue": 2138.9157644434704,
+      "avg_engagement": 0,
+      "revenue_multiplier": 3.9,
+      "projected_monthly": 2138.9157644434704,
+      "performance_tier": "D-Tier (Needs Optimization)",
+      "optimization_score": 0.8518305832178295
+    },
+    {
+      "character": "Sage",
+      "period_days": 30,
+      "content_count": 1,
+      "avg_views": 20348.0,
+      "total_revenue": 1642.8097120122136,
+      "avg_engagement": 0,
+      "revenue_multiplier": 4.2,
+      "projected_monthly": 1642.8097120122136,
+      "performance_tier": "D-Tier (Needs Optimization)",
+      "optimization_score": 0.9347676988611668
+    },
+    {
+      "character": "Nova",
+      "period_days": 30,
+      "content_count": 1,
+      "avg_views": 6696.0,
+      "total_revenue": 1390.7667380466237,
+      "avg_engagement": 0,
+      "revenue_multiplier": 3.6,
+      "projected_monthly": 1390.7667380466237,
+      "performance_tier": "D-Tier (Needs Optimization)",
+      "optimization_score": 0.8496347719209123
+    }
+  ],
+  "revenue_breakdown": {},
+  "growth_projections": {
+    "current_monthly": 12251.93270871009,
+    "with_optimization": 18377.899063065135,
+    "with_expansion": 30629.831771775225,
+    "full_potential": 49007.73083484036
+  },
+  "generated_at": "2025-09-13T14:44:49.323882",
+  "roi_summary": {
+    "voice_multiplier_average": 3.2,
+    "monthly_api_cost": 176,
+    "net_profit_increase": 12075.93270871009,
+    "roi_percentage": 6861.325402676188
+  }
+}

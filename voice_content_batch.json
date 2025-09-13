@@ -1,0 +1,160 @@
+{
+  "batch_size": 15,
+  "successful_generations": 15,
+  "content_pieces": [
+    {
+      "character": "Kai",
+      "channel_style": "lofi_hiphop",
+      "content_type": "meditation_intro",
+      "script": "Greetings, peaceful warriors. Kai here, and vibes speak louder than words. This sonic meditation inv...",
+      "audio_url": "https://mock-audio-storage.com/voice_kai_1688/4033.mp3",
+      "duration": 17.2,
+      "revenue_multiplier": 2.8,
+      "projected_revenue": 705.9548774179672
+    },
+    {
+      "character": "Zara",
+      "channel_style": "trap_beats",
+      "content_type": "meditation_intro",
+      "script": "Hello beautiful souls, this is Zara. this beat hits different. Today's journey takes us into the rea...",
+      "audio_url": "https://mock-audio-storage.com/voice_zara_5664/7555.mp3",
+      "duration": 16.5,
+      "revenue_multiplier": 3.8,
+      "projected_revenue": 793.828365732405
+    },
+    {
+      "character": "Blaze",
+      "channel_style": "trap_beats",
+      "content_type": "hype_intro",
+      "script": "What's good fam, Blaze here! engineered for impact! We just dropped some fire and it's time to turn ...",
+      "audio_url": "https://mock-audio-storage.com/voice_blaze_3816/8503.mp3",
+      "duration": 13.100000000000001,
+      "revenue_multiplier": 3.5,
+      "projected_revenue": 236.06460261716737
+    },
+    {
+      "character": "River",
+      "channel_style": "meditation_ambient",
+      "content_type": "track_description",
+      "script": "River speaking. nature's frequency heals. Every note in this composition was designed to elevate you...",
+      "audio_url": "https://mock-audio-storage.com/voice_river_9779/2162.mp3",
+      "duration": 16.1,
+      "revenue_multiplier": 3.9,
+      "projected_revenue": 572.0769767997217
+    },
+    {
+      "character": "Pulse",
+      "channel_style": "gaming_electronic",
+      "content_type": "meditation_intro",
+      "script": "Greetings, peaceful warriors. Pulse here, and frequency optimized. This sonic meditation invites you...",
+      "audio_url": "https://mock-audio-storage.com/voice_pulse_6479/2414.mp3",
+      "duration": 16.400000000000002,
+      "revenue_multiplier": 3.3,
+      "projected_revenue": 619.4535300298364
+    },
+    {
+      "character": "River",
+      "channel_style": "meditation_ambient",
+      "content_type": "track_description",
+      "script": "Hey everyone, River here. nature's frequency heals. This musical journey embodies the essence of pur...",
+      "audio_url": "https://mock-audio-storage.com/voice_river_9779/9798.mp3",
+      "duration": 13.600000000000001,
+      "revenue_multiplier": 3.9,
+      "projected_revenue": 977.3804779743277
+    },
+    {
+      "character": "Sage",
+      "channel_style": "meditation_ambient",
+      "content_type": "meditation_intro",
+      "script": "Hello beautiful souls, this is Sage. let go and be present. Today's journey takes us into the realm ...",
+      "audio_url": "https://mock-audio-storage.com/voice_sage_2462/3846.mp3",
+      "duration": 16.2,
+      "revenue_multiplier": 4.2,
+      "projected_revenue": 943.7173336603723
+    },
+    {
+      "character": "Kai",
+      "channel_style": "lofi_hiphop",
+      "content_type": "track_description",
+      "script": "Kai speaking. this beat tells a story. Every note in this composition was designed to elevate your f...",
+      "audio_url": "https://mock-audio-storage.com/voice_kai_1688/4081.mp3",
+      "duration": 15.8,
+      "revenue_multiplier": 2.8,
+      "projected_revenue": 552.6615390915914
+    },
+    {
+      "character": "Blaze",
+      "channel_style": "trap_beats",
+      "content_type": "meditation_intro",
+      "script": "Hello beautiful souls, this is Blaze. beats that break barriers. Today's journey takes us into the r...",
+      "audio_url": "https://mock-audio-storage.com/voice_blaze_3816/8883.mp3",
+      "duration": 16.7,
+      "revenue_multiplier": 3.5,
+      "projected_revenue": 312.88306090413124
+    },
+    {
+      "character": "Nova",
+      "channel_style": "gaming_electronic",
+      "content_type": "meditation_intro",
+      "script": "Hello beautiful souls, this is Nova. victory sounds like this. Today's journey takes us into the rea...",
+      "audio_url": "https://mock-audio-storage.com/voice_nova_7536/1890.mp3",
+      "duration": 16.5,
+      "revenue_multiplier": 3.6,
+      "projected_revenue": 897.5079420072584
+    },
+    {
+      "character": "Zara",
+      "channel_style": "trap_beats",
+      "content_type": "meditation_intro",
+      "script": "Hello beautiful souls, this is Zara. this beat hits different. Today's journey takes us into the rea...",
+      "audio_url": "https://mock-audio-storage.com/voice_zara_5664/1041.mp3",
+      "duration": 16.5,
+      "revenue_multiplier": 3.8,
+      "projected_revenue": 437.90113146337484
+    },
+    {
+      "character": "Kai",
+      "channel_style": "lofi_hiphop",
+      "content_type": "meditation_intro",
+      "script": "Hello beautiful souls, this is Kai. rhythm is life. Today's journey takes us into the realm of tranq...",
+      "audio_url": "https://mock-audio-storage.com/voice_kai_1688/4985.mp3",
+      "duration": 15.4,
+      "revenue_multiplier": 2.8,
+      "projected_revenue": 428.89197613348745
+    },
+    {
+      "character": "Pulse",
+      "channel_style": "gaming_electronic",
+      "content_type": "track_description",
+      "script": "Pulse speaking. neural beats activated. Every note in this composition was designed to elevate your ...",
+      "audio_url": "https://mock-audio-storage.com/voice_pulse_6479/7736.mp3",
+      "duration": 15.9,
+      "revenue_multiplier": 3.3,
+      "projected_revenue": 943.559442762774
+    },
+    {
+      "character": "Zara",
+      "channel_style": "trap_beats",
+      "content_type": "meditation_intro",
+      "script": "Greetings, peaceful warriors. Zara here, and feel that bass drop. This sonic meditation invites you ...",
+      "audio_url": "https://mock-audio-storage.com/voice_zara_5664/4034.mp3",
+      "duration": 16.3,
+      "revenue_multiplier": 3.8,
+      "projected_revenue": 442.7326658497009
+    },
+    {
+      "character": "Pulse",
+      "channel_style": "gaming_electronic",
+      "content_type": "meditation_intro",
+      "script": "Hello beautiful souls, this is Pulse. gaming consciousness elevated. Today's journey takes us into t...",
+      "audio_url": "https://mock-audio-storage.com/voice_pulse_6479/5061.mp3",
+      "duration": 17.1,
+      "revenue_multiplier": 3.3,
+      "projected_revenue": 556.5998396796011
+    }
+  ],
+  "total_projected_revenue": 9421.213762123714,
+  "average_revenue_per_piece": 628.0809174749143,
+  "estimated_monthly_impact": 37684.85504849486,
+  "generation_timestamp": "2025-09-13T14:44:49.318722"
+}

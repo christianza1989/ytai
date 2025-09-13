@@ -351,6 +351,13 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'voice_empire' %}active{% endif %}" href="{{ url_for('voice_empire') }}">
+                                <i class="fas fa-microphone-alt text-primary"></i>
+                                Voice Cloning Empire
+                                <span class="badge bg-warning ms-1">🎭+$4.5K</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'api_config' %}active{% endif %}" href="{{ url_for('api_config') }}">
                                 <i class="fas fa-cog"></i>
                                 API Config

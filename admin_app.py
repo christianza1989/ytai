@@ -11,6 +11,7 @@ import time
 import threading
 from pathlib import Path
 from datetime import datetime, timedelta
+from functools import wraps
 from flask import Flask, render_template, request, jsonify, send_from_directory, flash, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
@@ -27,6 +28,9 @@ from core.utils.file_manager import FileManager
 from core.analytics.collector import AnalyticsCollector
 from core.analytics.analyzer import PerformanceAnalyzer
 
+# Import new voice cloning system
+from voice_cloning_empire import VoiceCloningEmpire
+
 load_dotenv()
 
 app = Flask(__name__)
@@ -40,6 +44,7 @@ class SystemState:
         self.active_sessions = {}
         self.api_status = {}
         self.batch_operations = {}
+        self.voice_empire = VoiceCloningEmpire()  # Initialize voice cloning system
         
     def update_api_status(self):
         """Update API connection status"""
@@ -754,6 +759,12 @@ def youtube_empire():
     """YouTube Empire management page"""
     return render_template('youtube_empire.html')
 
+@app.route('/voice-empire')
+@require_auth
+def voice_empire():
+    """Voice Cloning Empire management page"""
+    return render_template('voice_empire.html')
+
 @app.route('/api/youtube/channels')
 @require_auth
 def api_youtube_channels():
@@ -1118,6 +1129,176 @@ def api_batch_generate_thumbnails():
             'total_annual_roi': round(total_roi * 12, 2)
         })
         
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# ============================================
+# VOICE CLONING EMPIRE API ROUTES
+# ============================================
+
+@app.route('/api/voice/characters')
+@require_auth
+def get_voice_characters():
+    """Get all voice characters"""
+    try:
+        empire_report = state.voice_empire.generate_empire_report()
+        return jsonify({
+            'success': True,
+            'characters': empire_report['characters_by_style'],
+            'total_characters': empire_report['total_characters'],
+            'monthly_revenue': empire_report['total_monthly_revenue'],
+            'roi_summary': empire_report['roi_summary']
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/voice/initialize', methods=['POST'])
+@require_auth
+def initialize_voice_empire():
+    """Initialize all voice characters"""
+    try:
+        result = state.voice_empire.initialize_all_characters()
+        return jsonify({
+            'success': True,
+            'message': 'Voice empire initialized successfully',
+            'data': result
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/voice/generate-content', methods=['POST'])
+@require_auth
+def generate_voice_content():
+    """Generate voice content batch"""
+    try:
+        data = request.get_json()
+        count = data.get('count', 10)
+        
+        result = state.voice_empire.generate_voice_content_batch(count)
+        
+        if 'error' in result:
+            return jsonify({
+                'success': False,
+                'error': result['error']
+            }), 400
+            
+        return jsonify({
+            'success': True,
+            'message': f'Generated {result["successful_generations"]} voice content pieces',
+            'data': result
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/voice/character-performance/<character_name>')
+@require_auth
+def get_character_performance(character_name):
+    """Get performance metrics for specific character"""
+    try:
+        days = request.args.get('days', 30, type=int)
+        performance = state.voice_empire.get_character_performance(character_name, days)
+        
+        return jsonify({
+            'success': True,
+            'performance': performance
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/voice/empire-report')
+@require_auth
+def get_voice_empire_report():
+    """Get comprehensive voice empire report"""
+    try:
+        report = state.voice_empire.generate_empire_report()
+        return jsonify({
+            'success': True,
+            'report': report
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/voice/generate-script', methods=['POST'])
+@require_auth
+def generate_character_script():
+    """Generate script for character"""
+    try:
+        data = request.get_json()
+        character_name = data.get('character_name')
+        content_type = data.get('content_type', 'track_description')
+        music_context = data.get('music_context', {})
+        
+        if not character_name:
+            return jsonify({
+                'success': False,
+                'error': 'Character name is required'
+            }), 400
+            
+        script = state.voice_empire.generate_character_script(
+            character_name, content_type, music_context
+        )
+        
+        if 'error' in script:
+            return jsonify({
+                'success': False,
+                'error': script['error']
+            }), 400
+            
+        return jsonify({
+            'success': True,
+            'script': script
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/voice/synthesize', methods=['POST'])
+@require_auth
+def synthesize_character_voice():
+    """Synthesize voice for character"""
+    try:
+        data = request.get_json()
+        character_name = data.get('character_name')
+        script = data.get('script')
+        
+        if not character_name or not script:
+            return jsonify({
+                'success': False,
+                'error': 'Character name and script are required'
+            }), 400
+            
+        audio_data = state.voice_empire.synthesize_voice(character_name, script)
+        
+        if 'error' in audio_data:
+            return jsonify({
+                'success': False,
+                'error': audio_data['error']
+            }), 400
+            
+        return jsonify({
+            'success': True,
+            'audio': audio_data
+        })
     except Exception as e:
         return jsonify({
             'success': False,
