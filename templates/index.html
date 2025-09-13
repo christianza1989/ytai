@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="grid">
+    <!-- API Configuration Status -->
+    <div class="card">
+        <h2>🔑 API Konfigūracija</h2>
+        <div style="margin: 1rem 0;">
+            <p><span class="status-indicator {% if config.suno_api %}status-ok{% else %}status-error{% endif %}"></span>
+               Suno API: {% if config.suno_api %}Sukonfigūruota{% else %}Nesukonfigūruota{% endif %}</p>
+            
+            <p><span class="status-indicator {% if config.gemini_api %}status-ok{% else %}status-error{% endif %}"></span>
+               Gemini AI: {% if config.gemini_api %}Sukonfigūruota{% else %}Nesukonfigūruota{% endif %}</p>
+            
+            <p><span class="status-indicator {% if config.stability_api %}status-ok{% else %}status-error{% endif %}"></span>
+               Stability AI: {% if config.stability_api %}Sukonfigūruota{% else %}Nesukonfigūruota{% endif %}</p>
+        </div>
+        
+        {% if not (config.suno_api and config.gemini_api) %}
+        <div class="alert alert-warning">
+            <strong>⚠️ Įspėjimas:</strong> Ne visi API raktai sukonfigūruoti. 
+            Redaguokite <code>.env</code> failą, kad pridėtumėte trūkstamus raktus.
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Generation Controls -->
+    <div class="card">
+        <h2>🎵 Muzikos Generavimas</h2>
+        
+        {% if generation_status.running %}
+            <div class="alert alert-warning">
+                <strong>🔄 Generavimas vyksta...</strong><br>
+                Dabartinis žingsnis: {{ generation_status.current_step }}<br>
+                <a href="/status" class="btn btn-secondary">Peržiūrėti Progresą</a>
+            </div>
+        {% else %}
+            <form method="POST" action="/generate">
+                <div class="form-group">
+                    <label for="mode">Generavimo Režimas:</label>
+                    <select name="mode" class="form-control" required>
+                        <option value="mock">🧪 Testavimo režimas (Mock duomenys)</option>
+                        {% if config.suno_api and config.gemini_api %}
+                        <option value="real">🔑 Realus režimas (API raktai)</option>
+                        {% endif %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="genre">Žanras:</label>
+                    <select name="genre" class="form-control" required>
+                        <option value="Lo-Fi Hip Hop">Lo-Fi Hip Hop</option>
+                        <option value="Ambient">Ambient</option>
+                        <option value="Chill Hop">Chill Hop</option>
+                        <option value="Synthwave">Synthwave</option>
+                        <option value="Jazz">Jazz</option>
+                        <option value="Electronic">Electronic</option>
+                        <option value="Classical">Classical</option>
+                        <option value="Rock">Rock</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="theme">Tema/Nuotaika:</label>
+                    <input type="text" name="theme" class="form-control" 
+                           placeholder="Pavyzdžiui: rainy night in Tokyo" 
+                           value="rainy night in Tokyo" required>
+                </div>
+                
+                <button type="submit" class="btn">🚀 Pradėti Generavimą</button>
+            </form>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Recent Outputs -->
+{% if recent_outputs %}
+<div class="card">
+    <h2>📂 Paskutiniai Rezultatai</h2>
+    <div class="grid">
+        {% for output in recent_outputs %}
+        <div class="card">
+            <h3>🎵 {{ output.metadata.title or output.name }}</h3>
+            <p><strong>Sukurta:</strong> 
+               {% if output.metadata.created_at %}
+                   {{ output.metadata.created_at[:19] | replace('T', ' ') }}
+               {% else %}
+                   Nežinoma
+               {% endif %}
+            </p>
+            {% if output.metadata.genre %}
+            <p><strong>Žanras:</strong> {{ output.metadata.genre }}</p>
+            {% endif %}
+            {% if output.metadata.tracks_created %}
+            <p><strong>Takeliai:</strong> {{ output.metadata.tracks_created }}</p>
+            {% endif %}
+            <a href="/outputs" class="btn btn-secondary">Peržiūrėti</a>
+        </div>
+        {% endfor %}
+    </div>
+    <div style="text-align: center; margin-top: 1rem;">
+        <a href="/outputs" class="btn btn-secondary">Peržiūrėti Visus Rezultatus</a>
+    </div>
+</div>
+{% endif %}
+
+<!-- Quick Actions -->
+<div class="card">
+    <h2>⚡ Greitieji Veiksmai</h2>
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <a href="/status" class="btn btn-secondary">📊 Peržiūrėti Būseną</a>
+        <a href="/outputs" class="btn btn-secondary">📂 Visi Rezultatai</a>
+        <button onclick="window.location.reload()" class="btn btn-warning">🔄 Atnaujinti Puslapį</button>
+    </div>
+</div>
+
+<!-- Instructions -->
+<div class="card">
+    <h2>📖 Instrukcijos</h2>
+    <div style="line-height: 1.6;">
+        <h3>🧪 Testavimo Režimas</h3>
+        <p>Naudoja mock duomenis testavimui. Nereikia API raktų. Puikus pradžiai!</p>
+        
+        {% if config.suno_api and config.gemini_api %}
+        <h3>🔑 Realus Režimas</h3>
+        <p>Naudoja tikrus API raktus muzikos ir teksto generavimui. <strong>Naudoja kreditus!</strong></p>
+        {% else %}
+        <h3>🔧 API Konfigūracija</h3>
+        <p>Norėdami naudoti realų režimą, redaguokite <code>.env</code> failą:</p>
+        <ul>
+            <li><strong>SUNO_API_KEY</strong> - Gauti iš <a href="https://api.sunoapi.org" target="_blank">api.sunoapi.org</a></li>
+            <li><strong>GEMINI_API_KEY</strong> - Gauti iš <a href="https://makersuite.google.com/app/apikey" target="_blank">Google AI Studio</a></li>
+            <li><strong>STABLE_DIFFUSION_API_KEY</strong> - Gauti iš <a href="https://api.stability.ai" target="_blank">Stability AI</a></li>
+        </ul>
+        {% endif %}
+        
+        <h3>🎵 Proceso Etapai</h3>
+        <ol>
+            <li><strong>Kūrybinės idėjos generavimas</strong> - AI sugeneruoja temą ir tekstą</li>
+            <li><strong>Muzikos generavimas</strong> - Suno API sukuria audio failus</li>
+            <li><strong>Viršelio kūrimas</strong> - AI sugeneruoja albumo viršelį</li>
+            <li><strong>Failų organizavimas</strong> - Visi failai išsaugomi struktūrizuotai</li>
+        </ol>
+    </div>
+</div>
+{% endblock %}

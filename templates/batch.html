@@ -1,0 +1,694 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Batch Operations - Admin Panel{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+<li class="breadcrumb-item active">Batch Operations</li>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-tasks text-primary me-2"></i>
+            Batch Operations
+        </h1>
+        <p class="text-muted">Run multiple music generation tasks efficiently</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <button class="btn btn-outline-secondary me-2" onclick="loadTemplate()">
+            <i class="fas fa-file-import me-1"></i>
+            Load Template
+        </button>
+        <button class="btn btn-primary" onclick="showNewBatchModal()">
+            <i class="fas fa-plus me-1"></i>
+            New Batch
+        </button>
+    </div>
+</div>
+
+<!-- Batch Operations Tabs -->
+<div class="row">
+    <div class="col-12">
+        <ul class="nav nav-tabs" id="batchTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="create-tab" data-bs-toggle="tab" data-bs-target="#create" type="button" role="tab">
+                    <i class="fas fa-plus me-2"></i>Create Batch
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="running-tab" data-bs-toggle="tab" data-bs-target="#running" type="button" role="tab">
+                    <i class="fas fa-cog me-2"></i>Running (<span id="runningCount">0</span>)
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab">
+                    <i class="fas fa-history me-2"></i>History
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="batchTabsContent">
+            <!-- Create Batch Tab -->
+            <div class="tab-pane fade show active" id="create" role="tabpanel">
+                <div class="card border-0">
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- Batch Configuration -->
+                            <div class="col-lg-8 mb-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <i class="fas fa-cog me-2"></i>
+                                        Batch Configuration
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="batchConfigForm">
+                                            <!-- Batch Info -->
+                                            <div class="row mb-4">
+                                                <div class="col-md-6 mb-3">
+                                                    <label for="batchName" class="form-label fw-bold">Batch Name</label>
+                                                    <input type="text" class="form-control" id="batchName" 
+                                                           placeholder="e.g., Lo-Fi Album Collection" required>
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label for="batchMode" class="form-label fw-bold">Generation Mode</label>
+                                                    <select class="form-select" id="batchMode" required>
+                                                        <option value="mock">🧪 Test Mode (No costs)</option>
+                                                        <option value="real">🔑 Real Mode (Uses credits)</option>
+                                                        <option value="hybrid">🔄 Hybrid Mode</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <!-- Batch Type -->
+                                            <div class="mb-4">
+                                                <label class="form-label fw-bold">Batch Type</label>
+                                                <div class="row">
+                                                    <div class="col-md-4">
+                                                        <div class="card batch-type-card" data-type="genre">
+                                                            <div class="card-body text-center p-3">
+                                                                <i class="fas fa-music fa-2x text-primary mb-2"></i>
+                                                                <h6>Genre Collection</h6>
+                                                                <small class="text-muted">Multiple songs in same genre</small>
+                                                                <input type="radio" name="batchType" value="genre" class="form-check-input mt-2" checked>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="card batch-type-card" data-type="theme">
+                                                            <div class="card-body text-center p-3">
+                                                                <i class="fas fa-palette fa-2x text-success mb-2"></i>
+                                                                <h6>Theme Variations</h6>
+                                                                <small class="text-muted">Same theme, different styles</small>
+                                                                <input type="radio" name="batchType" value="theme" class="form-check-input mt-2">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="card batch-type-card" data-type="custom">
+                                                            <div class="card-body text-center p-3">
+                                                                <i class="fas fa-list fa-2x text-warning mb-2"></i>
+                                                                <h6>Custom List</h6>
+                                                                <small class="text-muted">Individual configurations</small>
+                                                                <input type="radio" name="batchType" value="custom" class="form-check-input mt-2">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Dynamic Configuration -->
+                                            <div id="genreConfig" class="batch-config-section">
+                                                <div class="row mb-3">
+                                                    <div class="col-md-6">
+                                                        <label for="baseGenre" class="form-label">Base Genre</label>
+                                                        <select class="form-select" id="baseGenre">
+                                                            <option value="Lo-Fi Hip Hop">Lo-Fi Hip Hop</option>
+                                                            <option value="Ambient">Ambient</option>
+                                                            <option value="Jazz">Jazz</option>
+                                                            <option value="Electronic">Electronic</option>
+                                                            <option value="Classical">Classical</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label for="songCount" class="form-label">Number of Songs</label>
+                                                        <input type="number" class="form-control" id="songCount" 
+                                                               min="1" max="20" value="5">
+                                                    </div>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="themeList" class="form-label">Themes (one per line)</label>
+                                                    <textarea class="form-control" id="themeList" rows="5" 
+                                                              placeholder="rainy night in Tokyo&#10;sunrise over mountains&#10;busy city streets&#10;peaceful forest&#10;ocean waves"></textarea>
+                                                </div>
+                                            </div>
+
+                                            <div id="themeConfig" class="batch-config-section" style="display: none;">
+                                                <div class="row mb-3">
+                                                    <div class="col-md-6">
+                                                        <label for="baseTheme" class="form-label">Base Theme</label>
+                                                        <input type="text" class="form-control" id="baseTheme" 
+                                                               placeholder="e.g., rainy night vibes">
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label for="variationCount" class="form-label">Variations</label>
+                                                        <input type="number" class="form-control" id="variationCount" 
+                                                               min="2" max="10" value="3">
+                                                    </div>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="genreVariations" class="form-label">Genre Variations</label>
+                                                    <div class="row">
+                                                        <div class="col-md-4">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="lofi" checked>
+                                                                <label class="form-check-label" for="lofi">Lo-Fi Hip Hop</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="ambient">
+                                                                <label class="form-check-label" for="ambient">Ambient</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="jazz">
+                                                                <label class="form-check-label" for="jazz">Jazz</label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div id="customConfig" class="batch-config-section" style="display: none;">
+                                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                                    <h6>Custom Songs</h6>
+                                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="addCustomSong()">
+                                                        <i class="fas fa-plus me-1"></i>Add Song
+                                                    </button>
+                                                </div>
+                                                <div id="customSongsList">
+                                                    <!-- Custom songs will be added here -->
+                                                </div>
+                                            </div>
+
+                                            <!-- Advanced Options -->
+                                            <div class="card bg-light mt-4">
+                                                <div class="card-header bg-transparent">
+                                                    <button class="btn btn-link p-0 text-decoration-none fw-bold" type="button" 
+                                                            data-bs-toggle="collapse" data-bs-target="#batchAdvanced">
+                                                        <i class="fas fa-cog me-2"></i>Advanced Options
+                                                        <i class="fas fa-chevron-down ms-2"></i>
+                                                    </button>
+                                                </div>
+                                                <div class="collapse" id="batchAdvanced">
+                                                    <div class="card-body">
+                                                        <div class="row">
+                                                            <div class="col-md-6 mb-3">
+                                                                <label for="concurrency" class="form-label">Concurrent Jobs</label>
+                                                                <input type="number" class="form-control" id="concurrency" 
+                                                                       min="1" max="5" value="2">
+                                                                <div class="form-text">Number of simultaneous generations</div>
+                                                            </div>
+                                                            <div class="col-md-6 mb-3">
+                                                                <label for="retryCount" class="form-label">Retry Failed</label>
+                                                                <input type="number" class="form-control" id="retryCount" 
+                                                                       min="0" max="5" value="1">
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-md-6">
+                                                                <div class="form-check form-switch">
+                                                                    <input class="form-check-input" type="checkbox" id="generateCovers" checked>
+                                                                    <label class="form-check-label" for="generateCovers">
+                                                                        Generate Album Covers
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <div class="form-check form-switch">
+                                                                    <input class="form-check-input" type="checkbox" id="createVideos">
+                                                                    <label class="form-check-label" for="createVideos">
+                                                                        Create Video Files
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Action Buttons -->
+                                            <div class="mt-4 d-grid gap-2 d-md-flex justify-content-md-end">
+                                                <button type="button" class="btn btn-outline-secondary me-md-2" onclick="resetBatchForm()">
+                                                    <i class="fas fa-undo me-1"></i>Reset
+                                                </button>
+                                                <button type="button" class="btn btn-outline-info me-md-2" onclick="previewBatch()">
+                                                    <i class="fas fa-eye me-1"></i>Preview
+                                                </button>
+                                                <button type="submit" class="btn btn-primary" id="startBatchBtn">
+                                                    <i class="fas fa-play me-1"></i>Start Batch
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Batch Summary -->
+                            <div class="col-lg-4 mb-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        Batch Summary
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-4">
+                                            <h6 class="mb-3">Estimated Resources</h6>
+                                            <div class="bg-light p-3 rounded">
+                                                <div class="d-flex justify-content-between mb-2">
+                                                    <span>Songs:</span>
+                                                    <span id="estimatedSongs" class="fw-bold">5</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between mb-2">
+                                                    <span>Est. Time:</span>
+                                                    <span id="estimatedTime" class="fw-bold">25 min</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between mb-2">
+                                                    <span>Est. Cost:</span>
+                                                    <span id="estimatedCost" class="fw-bold">$2.50</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between">
+                                                    <span>Storage:</span>
+                                                    <span id="estimatedStorage" class="fw-bold">~50 MB</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-4">
+                                            <h6 class="mb-3">Templates</h6>
+                                            <div class="d-grid gap-2">
+                                                <button class="btn btn-outline-primary btn-sm" onclick="loadBatchTemplate('lofi-album')">
+                                                    🎵 Lo-Fi Album (10 tracks)
+                                                </button>
+                                                <button class="btn btn-outline-success btn-sm" onclick="loadBatchTemplate('ambient-collection')">
+                                                    🌊 Ambient Collection (8 tracks)
+                                                </button>
+                                                <button class="btn btn-outline-info btn-sm" onclick="loadBatchTemplate('mood-variations')">
+                                                    🎭 Mood Variations (6 tracks)
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div class="alert alert-warning">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            <strong>Note:</strong> Batch operations can take significant time and resources. 
+                                            Monitor progress in the Running tab.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Running Batch Tab -->
+            <div class="tab-pane fade" id="running" role="tabpanel">
+                <div class="card border-0">
+                    <div class="card-body">
+                        <div id="runningBatchesContainer">
+                            <!-- Running batches will be populated here -->
+                            <div class="text-center py-5">
+                                <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No Active Batch Operations</h5>
+                                <p class="text-muted">Start a new batch operation to see it here.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Tab -->
+            <div class="tab-pane fade" id="history" role="tabpanel">
+                <div class="card border-0">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h6>Batch History</h6>
+                            <div>
+                                <select class="form-select form-select-sm" style="width: auto; display: inline-block;">
+                                    <option>Last 30 days</option>
+                                    <option>Last 7 days</option>
+                                    <option>All time</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Batch Name</th>
+                                        <th>Type</th>
+                                        <th>Songs</th>
+                                        <th>Status</th>
+                                        <th>Started</th>
+                                        <th>Duration</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-4">
+                                            No batch history available
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Batch Operations JavaScript
+    
+    let customSongCounter = 0;
+    
+    // Batch type selection
+    document.querySelectorAll('.batch-type-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const type = this.dataset.type;
+            const radio = this.querySelector('input[type="radio"]');
+            radio.checked = true;
+            updateBatchTypeSelection();
+            showConfigSection(type);
+            updateEstimates();
+        });
+    });
+    
+    function updateBatchTypeSelection() {
+        document.querySelectorAll('.batch-type-card').forEach(card => {
+            const radio = card.querySelector('input[type="radio"]');
+            if (radio.checked) {
+                card.classList.add('border-primary', 'bg-light');
+            } else {
+                card.classList.remove('border-primary', 'bg-light');
+            }
+        });
+    }
+    
+    function showConfigSection(type) {
+        // Hide all sections
+        document.querySelectorAll('.batch-config-section').forEach(section => {
+            section.style.display = 'none';
+        });
+        
+        // Show selected section
+        document.getElementById(type + 'Config').style.display = 'block';
+    }
+    
+    function addCustomSong() {
+        customSongCounter++;
+        const container = document.getElementById('customSongsList');
+        
+        const songDiv = document.createElement('div');
+        songDiv.className = 'card mb-3';
+        songDiv.innerHTML = `
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-2">
+                        <input type="text" class="form-control" placeholder="Song title" 
+                               name="customTitle[]">
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <select class="form-select" name="customGenre[]">
+                            <option value="Lo-Fi Hip Hop">Lo-Fi</option>
+                            <option value="Ambient">Ambient</option>
+                            <option value="Jazz">Jazz</option>
+                            <option value="Electronic">Electronic</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <input type="text" class="form-control" placeholder="Theme/mood" 
+                               name="customTheme[]">
+                    </div>
+                    <div class="col-md-1 mb-2">
+                        <button type="button" class="btn btn-outline-danger btn-sm" 
+                                onclick="this.closest('.card').remove(); updateEstimates();">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(songDiv);
+        updateEstimates();
+    }
+    
+    function updateEstimates() {
+        const batchType = document.querySelector('input[name="batchType"]:checked').value;
+        const mode = document.getElementById('batchMode').value;
+        let songCount = 0;
+        let estimatedCost = '$0.00 (FREE)';
+        
+        if (batchType === 'genre') {
+            songCount = parseInt(document.getElementById('songCount').value) || 0;
+        } else if (batchType === 'theme') {
+            songCount = parseInt(document.getElementById('variationCount').value) || 0;
+        } else if (batchType === 'custom') {
+            songCount = document.querySelectorAll('#customSongsList .card').length;
+        }
+        
+        if (mode === 'real') {
+            const costPerSong = 0.50;
+            estimatedCost = '$' + (songCount * costPerSong).toFixed(2);
+        } else if (mode === 'hybrid') {
+            const costPerSong = 0.10;
+            estimatedCost = '$' + (songCount * costPerSong).toFixed(2);
+        }
+        
+        document.getElementById('estimatedSongs').textContent = songCount;
+        document.getElementById('estimatedTime').textContent = (songCount * 5) + ' min';
+        document.getElementById('estimatedCost').textContent = estimatedCost;
+        document.getElementById('estimatedStorage').textContent = '~' + (songCount * 10) + ' MB';
+    }
+    
+    function loadBatchTemplate(templateName) {
+        const templates = {
+            'lofi-album': {
+                name: 'Lo-Fi Album Collection',
+                type: 'genre',
+                genre: 'Lo-Fi Hip Hop',
+                count: 10,
+                themes: [
+                    'rainy night in Tokyo',
+                    'morning coffee ritual',
+                    'sunset over the city',
+                    'studying in a quiet library',
+                    'walking through autumn leaves',
+                    'peaceful garden meditation',
+                    'late night contemplation',
+                    'warm summer evening',
+                    'cozy fireplace ambiance',
+                    'early morning mist'
+                ]
+            },
+            'ambient-collection': {
+                name: 'Ambient Space Collection',
+                type: 'theme',
+                theme: 'floating in deep space',
+                variations: 8,
+                genres: ['Ambient', 'Electronic']
+            },
+            'mood-variations': {
+                name: 'Emotional Journey',
+                type: 'custom',
+                songs: [
+                    { title: 'Joy', genre: 'Pop', theme: 'celebration and happiness' },
+                    { title: 'Melancholy', genre: 'Ambient', theme: 'sadness and reflection' },
+                    { title: 'Energy', genre: 'Electronic', theme: 'high energy motivation' },
+                    { title: 'Peace', genre: 'Classical', theme: 'tranquil meditation' },
+                    { title: 'Nostalgia', genre: 'Lo-Fi Hip Hop', theme: 'childhood memories' },
+                    { title: 'Hope', genre: 'Indie', theme: 'looking forward to tomorrow' }
+                ]
+            }
+        };
+        
+        const template = templates[templateName];
+        if (!template) return;
+        
+        document.getElementById('batchName').value = template.name;
+        
+        if (template.type === 'genre') {
+            document.querySelector('input[value="genre"]').click();
+            document.getElementById('baseGenre').value = template.genre;
+            document.getElementById('songCount').value = template.count;
+            document.getElementById('themeList').value = template.themes.join('\n');
+        } else if (template.type === 'theme') {
+            document.querySelector('input[value="theme"]').click();
+            document.getElementById('baseTheme').value = template.theme;
+            document.getElementById('variationCount').value = template.variations;
+        } else if (template.type === 'custom') {
+            document.querySelector('input[value="custom"]').click();
+            // Clear existing custom songs
+            document.getElementById('customSongsList').innerHTML = '';
+            // Add template songs
+            template.songs.forEach(song => {
+                addCustomSong();
+                const lastCard = document.querySelector('#customSongsList .card:last-child');
+                lastCard.querySelector('input[name="customTitle[]"]').value = song.title;
+                lastCard.querySelector('select[name="customGenre[]"]').value = song.genre;
+                lastCard.querySelector('input[name="customTheme[]"]').value = song.theme;
+            });
+        }
+        
+        updateEstimates();
+        showToast(`Template "${template.name}" loaded successfully!`, 'success');
+    }
+    
+    function previewBatch() {
+        const batchType = document.querySelector('input[name="batchType"]:checked').value;
+        const batchName = document.getElementById('batchName').value;
+        const mode = document.getElementById('batchMode').value;
+        
+        let preview = `<strong>Batch:</strong> ${batchName}<br>`;
+        preview += `<strong>Mode:</strong> ${mode}<br>`;
+        preview += `<strong>Type:</strong> ${batchType}<br><br>`;
+        
+        if (batchType === 'genre') {
+            const genre = document.getElementById('baseGenre').value;
+            const count = document.getElementById('songCount').value;
+            const themes = document.getElementById('themeList').value.split('\n').filter(t => t.trim());
+            
+            preview += `<strong>Genre:</strong> ${genre}<br>`;
+            preview += `<strong>Songs:</strong> ${count}<br>`;
+            preview += `<strong>Themes:</strong><br>`;
+            themes.slice(0, 5).forEach(theme => {
+                preview += `• ${theme}<br>`;
+            });
+            if (themes.length > 5) {
+                preview += `... and ${themes.length - 5} more<br>`;
+            }
+        }
+        
+        Swal.fire({
+            title: 'Batch Preview',
+            html: preview,
+            icon: 'info',
+            width: 500
+        });
+    }
+    
+    function resetBatchForm() {
+        document.getElementById('batchConfigForm').reset();
+        document.getElementById('customSongsList').innerHTML = '';
+        document.querySelector('input[value="genre"]').click();
+        updateEstimates();
+    }
+    
+    // Form submission
+    document.getElementById('batchConfigForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        startBatch();
+    });
+    
+    function startBatch() {
+        const batchName = document.getElementById('batchName').value;
+        const mode = document.getElementById('batchMode').value;
+        
+        if (mode === 'real') {
+            Swal.fire({
+                title: 'Start Batch Operation?',
+                text: 'This will use API credits and may take significant time.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, start batch!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    executeBatch();
+                }
+            });
+        } else {
+            executeBatch();
+        }
+    }
+    
+    function executeBatch() {
+        // Switch to running tab
+        document.getElementById('running-tab').click();
+        
+        // Show success message
+        showToast('Batch operation started successfully!', 'success');
+        
+        // Update running count
+        document.getElementById('runningCount').textContent = '1';
+        
+        // Show mock running batch
+        document.getElementById('runningBatchesContainer').innerHTML = `
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">${document.getElementById('batchName').value || 'New Batch'}</h6>
+                    <span class="badge bg-primary">Running</span>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <small class="text-muted">Progress</small>
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-animated" style="width: 40%"></div>
+                            </div>
+                            <small>2 of 5 songs completed</small>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted">Elapsed Time</small>
+                            <div class="fw-bold">12 minutes</div>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted">Est. Remaining</small>
+                            <div class="fw-bold">18 minutes</div>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted">Status</small>
+                            <div class="text-info">Generating song 3...</div>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-pause me-1"></i>Pause
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm">
+                            <i class="fas fa-stop me-1"></i>Stop
+                        </button>
+                        <button class="btn btn-outline-info btn-sm">
+                            <i class="fas fa-eye me-1"></i>View Details
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Initialize
+    updateBatchTypeSelection();
+    updateEstimates();
+    
+    // Event listeners for estimate updates
+    document.getElementById('songCount').addEventListener('input', updateEstimates);
+    document.getElementById('variationCount').addEventListener('input', updateEstimates);
+    document.getElementById('batchMode').addEventListener('change', updateEstimates);
+    document.querySelectorAll('input[name="batchType"]').forEach(radio => {
+        radio.addEventListener('change', updateEstimates);
+    });
+</script>
+{% endblock %}

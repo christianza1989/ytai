@@ -1,0 +1,459 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Projects Management - Admin Panel{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+<li class="breadcrumb-item active">Projects</li>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-folder text-primary me-2"></i>
+            Project Management
+        </h1>
+        <p class="text-muted">Manage and organize your music generation projects</p>
+    </div>
+    <div class="col-md-6 text-end">
+        <button class="btn btn-outline-secondary me-2" onclick="refreshProjects()">
+            <i class="fas fa-sync-alt me-1"></i>
+            Refresh
+        </button>
+        <a href="{{ url_for('generator') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>
+            New Project
+        </a>
+    </div>
+</div>
+
+<!-- Stats Overview -->
+<div class="row mb-4">
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-folder-open fa-2x mb-2"></i>
+                <h4>{{ projects|length }}</h4>
+                <small>Total Projects</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-music fa-2x mb-2"></i>
+                <h4>{{ projects|selectattr('metadata.tracks_created')|map(attribute='metadata.tracks_created')|sum }}</h4>
+                <small>Total Tracks</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-hdd fa-2x mb-2"></i>
+                <h4>{{ "%.1f"|format(projects|map(attribute='size_mb')|sum) }}MB</h4>
+                <small>Total Size</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-check-circle fa-2x mb-2"></i>
+                <h4>{{ projects|selectattr('metadata.tracks_created')|selectattr('metadata.tracks_created', '>', 0)|list|length }}</h4>
+                <small>Successful</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters and Search -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="input-group">
+            <span class="input-group-text">
+                <i class="fas fa-search"></i>
+            </span>
+            <input type="text" class="form-control" id="searchProjects" 
+                   placeholder="Search projects by name, genre, or theme...">
+        </div>
+    </div>
+    <div class="col-md-4">
+        <select class="form-select" id="filterGenre" onchange="filterProjects()">
+            <option value="">All Genres</option>
+            {% for project in projects %}
+                {% if project.metadata.genre %}
+                    <option value="{{ project.metadata.genre }}">{{ project.metadata.genre }}</option>
+                {% endif %}
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+<!-- Projects Grid -->
+{% if projects %}
+<div class="row" id="projectsGrid">
+    {% for project in projects %}
+    <div class="col-lg-6 col-xl-4 mb-4 project-card" 
+         data-name="{{ project.name.lower() }}" 
+         data-title="{{ project.metadata.title.lower() if project.metadata.title else '' }}"
+         data-genre="{{ project.metadata.genre.lower() if project.metadata.genre else '' }}"
+         data-theme="{{ project.metadata.theme.lower() if project.metadata.theme else '' }}">
+        <div class="card h-100">
+            <!-- Project Header -->
+            <div class="card-header d-flex justify-content-between align-items-start">
+                <div class="flex-grow-1">
+                    <h6 class="card-title mb-1">{{ project.metadata.title or project.name }}</h6>
+                    <small class="text-muted">
+                        <i class="fas fa-calendar me-1"></i>
+                        {{ project.metadata.created_at[:19]|replace('T', ' ') if project.metadata.created_at != 'Unknown' else 'Unknown' }}
+                    </small>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary" type="button" 
+                            data-bs-toggle="dropdown">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" onclick="openProject('{{ project.name }}')">
+                            <i class="fas fa-folder-open me-2"></i>Open
+                        </a></li>
+                        <li><a class="dropdown-item" href="#" onclick="downloadProject('{{ project.name }}')">
+                            <i class="fas fa-download me-2"></i>Download
+                        </a></li>
+                        <li><a class="dropdown-item" href="#" onclick="shareProject('{{ project.name }}')">
+                            <i class="fas fa-share me-2"></i>Share
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="#" onclick="deleteProject('{{ project.name }}')">
+                            <i class="fas fa-trash me-2"></i>Delete
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Project Content -->
+            <div class="card-body">
+                <!-- Project Info -->
+                <div class="mb-3">
+                    {% if project.metadata.genre %}
+                    <span class="badge bg-primary me-1">{{ project.metadata.genre }}</span>
+                    {% endif %}
+                    {% if project.metadata.mode %}
+                    <span class="badge bg-{{ 'success' if project.metadata.mode == 'real' else 'warning' if project.metadata.mode == 'hybrid' else 'info' }} me-1">
+                        {{ project.metadata.mode.title() }}
+                    </span>
+                    {% endif %}
+                </div>
+
+                {% if project.metadata.theme %}
+                <p class="text-muted small mb-3">
+                    <i class="fas fa-quote-left me-1"></i>
+                    {{ project.metadata.theme }}
+                </p>
+                {% endif %}
+
+                <!-- Project Stats -->
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <div class="text-center">
+                            <div class="h5 mb-0 text-success">{{ project.metadata.tracks_created or 0 }}</div>
+                            <small class="text-muted">Tracks</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center">
+                            <div class="h5 mb-0 text-info">{{ project.file_count }}</div>
+                            <small class="text-muted">Files</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- File Size -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <small class="text-muted">Size:</small>
+                    <small class="fw-bold">{{ "%.1f"|format(project.size_mb) }} MB</small>
+                </div>
+
+                <!-- Success Indicator -->
+                <div class="d-flex align-items-center mb-3">
+                    {% if project.metadata.tracks_created and project.metadata.tracks_created > 0 %}
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <small class="text-success">Generation Successful</small>
+                    {% else %}
+                        <i class="fas fa-exclamation-circle text-warning me-2"></i>
+                        <small class="text-warning">Incomplete/Failed</small>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Project Actions -->
+            <div class="card-footer bg-transparent">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-primary btn-sm" onclick="openProject('{{ project.name }}')">
+                        <i class="fas fa-folder-open me-1"></i>
+                        Open Project
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination (if needed) -->
+<nav aria-label="Projects pagination" class="mt-4">
+    <ul class="pagination justify-content-center">
+        <li class="page-item disabled">
+            <span class="page-link">Previous</span>
+        </li>
+        <li class="page-item active">
+            <span class="page-link">1</span>
+        </li>
+        <li class="page-item disabled">
+            <span class="page-link">Next</span>
+        </li>
+    </ul>
+</nav>
+
+{% else %}
+<!-- Empty State -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-folder-open fa-4x text-muted mb-4"></i>
+                <h4 class="text-muted mb-3">No Projects Yet</h4>
+                <p class="text-muted mb-4">
+                    Start creating your first music generation project to see it here.
+                </p>
+                <a href="{{ url_for('generator') }}" class="btn btn-primary">
+                    <i class="fas fa-magic me-2"></i>
+                    Create Your First Project
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Project Modal -->
+<div class="modal fade" id="projectModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-folder-open me-2"></i>
+                    Project Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="projectModalContent">
+                <!-- Content loaded dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Projects management JavaScript
+    
+    function refreshProjects() {
+        window.location.reload();
+    }
+    
+    function searchProjects() {
+        const searchTerm = document.getElementById('searchProjects').value.toLowerCase();
+        const projects = document.querySelectorAll('.project-card');
+        
+        projects.forEach(project => {
+            const name = project.dataset.name || '';
+            const title = project.dataset.title || '';
+            const genre = project.dataset.genre || '';
+            const theme = project.dataset.theme || '';
+            
+            const isVisible = name.includes(searchTerm) || 
+                             title.includes(searchTerm) || 
+                             genre.includes(searchTerm) || 
+                             theme.includes(searchTerm);
+            
+            project.style.display = isVisible ? 'block' : 'none';
+        });
+    }
+    
+    function filterProjects() {
+        const selectedGenre = document.getElementById('filterGenre').value.toLowerCase();
+        const projects = document.querySelectorAll('.project-card');
+        
+        projects.forEach(project => {
+            const genre = project.dataset.genre || '';
+            const isVisible = !selectedGenre || genre === selectedGenre;
+            project.style.display = isVisible ? 'block' : 'none';
+        });
+    }
+    
+    function openProject(projectName) {
+        // Load project details in modal
+        document.getElementById('projectModalContent').innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading project details...</p>
+            </div>
+        `;
+        
+        const modal = new bootstrap.Modal(document.getElementById('projectModal'));
+        modal.show();
+        
+        // Simulate loading project details
+        setTimeout(() => {
+            document.getElementById('projectModalContent').innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Project Information</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Name:</strong> ${projectName}</li>
+                            <li><strong>Status:</strong> <span class="badge bg-success">Completed</span></li>
+                            <li><strong>Files:</strong> Multiple audio and metadata files</li>
+                        </ul>
+                        
+                        <h6 class="mt-3">Actions</h6>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" onclick="downloadProject('${projectName}')">
+                                <i class="fas fa-download me-1"></i> Download All
+                            </button>
+                            <button class="btn btn-info" onclick="shareProject('${projectName}')">
+                                <i class="fas fa-share me-1"></i> Share Project
+                            </button>
+                            <button class="btn btn-warning" onclick="duplicateProject('${projectName}')">
+                                <i class="fas fa-copy me-1"></i> Duplicate
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Files</h6>
+                        <div class="list-group">
+                            <a href="#" class="list-group-item list-group-item-action">
+                                <i class="fas fa-music text-primary me-2"></i> track_1.mp3
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action">
+                                <i class="fas fa-music text-primary me-2"></i> track_2.mp3
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action">
+                                <i class="fas fa-image text-success me-2"></i> cover_art.jpg
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action">
+                                <i class="fas fa-file-code text-info me-2"></i> metadata.json
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }, 1000);
+    }
+    
+    function downloadProject(projectName) {
+        showToast('Download started for ' + projectName, 'info');
+        // Implement download functionality
+        window.open(`/download/${projectName}`, '_blank');
+    }
+    
+    function shareProject(projectName) {
+        const shareUrl = window.location.origin + '/projects/' + projectName;
+        
+        Swal.fire({
+            title: 'Share Project',
+            html: `
+                <div class="mb-3">
+                    <label class="form-label">Share URL:</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" value="${shareUrl}" readonly>
+                        <button class="btn btn-outline-secondary" onclick="navigator.clipboard.writeText('${shareUrl}')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button class="btn btn-primary btn-sm" onclick="window.open('https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}', '_blank')">
+                        <i class="fab fa-twitter me-1"></i> Twitter
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}', '_blank')">
+                        <i class="fab fa-facebook me-1"></i> Facebook
+                    </button>
+                </div>
+            `,
+            showConfirmButton: false,
+            showCancelButton: true,
+            cancelButtonText: 'Close'
+        });
+    }
+    
+    function duplicateProject(projectName) {
+        Swal.fire({
+            title: 'Duplicate Project',
+            text: 'This will create a copy with similar settings. Continue?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, duplicate!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                showToast('Project duplicated successfully', 'success');
+                // Implement duplication logic
+            }
+        });
+    }
+    
+    function deleteProject(projectName) {
+        confirmDelete(`Are you sure you want to delete "${projectName}"? This action cannot be undone.`)
+            .then((result) => {
+                if (result.isConfirmed) {
+                    // Make DELETE request
+                    fetch(`/api/projects/${projectName}/delete`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showToast('Project deleted successfully', 'success');
+                            // Remove from UI
+                            const projectCard = document.querySelector(`[data-name="${projectName.toLowerCase()}"]`);
+                            if (projectCard) {
+                                projectCard.remove();
+                            }
+                        } else {
+                            showToast('Failed to delete project: ' + data.message, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        showToast('Network error: ' + error.message, 'error');
+                    });
+                }
+            });
+    }
+    
+    // Initialize search
+    document.getElementById('searchProjects').addEventListener('input', searchProjects);
+    
+    // Remove duplicates from genre filter
+    const genreSelect = document.getElementById('filterGenre');
+    const genres = new Set();
+    Array.from(genreSelect.options).forEach(option => {
+        if (option.value && genres.has(option.value)) {
+            option.remove();
+        } else if (option.value) {
+            genres.add(option.value);
+        }
+    });
+</script>
+{% endblock %}

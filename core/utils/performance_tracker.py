@@ -25,7 +25,7 @@ class PerformanceTracker:
 
         elapsed = time.time() - self.timers[operation]
         self.metrics[f"{operation}_time"] = elapsed
-        print(".1f")
+        print(f"⏰ Užbaigta: {operation} ({elapsed:.1f}s)")
         return elapsed
 
     def add_metric(self, key: str, value: Any) -> None:
@@ -89,7 +89,7 @@ class PerformanceTracker:
         time_metrics = {k: v for k, v in self.metrics.items() if k.endswith('_time')}
         for metric, value in sorted(time_metrics.items()):
             operation = metric.replace('_time', '').replace('_', ' ').title()
-            report_lines.append("6.1f")
+            report_lines.append(f"   {operation}: {value:.1f}s")
 
         # File Information
         report_lines.append("\n📁 FAILŲ INFORMACIJA:")
@@ -98,7 +98,7 @@ class PerformanceTracker:
             if file_info:
                 report_lines.append(f"   {metric_name.upper()}:")
                 report_lines.append(f"     Kelias: {file_info.get('path', 'N/A')}")
-                report_lines.append(".1f")
+                report_lines.append(f"     Dydis: {file_info.get('size_mb', 0):.1f} MB")
                 if 'resolution' in file_info:
                     report_lines.append(f"     Rezoliucija: {file_info['resolution']}")
 
@@ -111,7 +111,7 @@ class PerformanceTracker:
         # Summary
         total_time = sum(v for k, v in time_metrics.items())
         report_lines.append("\n📈 SANTRAUKA:")
-        report_lines.append(".1f")
+        report_lines.append(f"   Bendras laikas: {total_time:.1f}s")
         report_lines.append(f"   Iš viso failų: {len(file_metrics)}")
         report_lines.append(f"   Įspėjimų: {len(self.warnings)}")
 

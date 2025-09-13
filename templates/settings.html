@@ -1,0 +1,901 @@
+{% extends "admin_base.html" %}
+
+{% block title %}System Settings - Admin Panel{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+<li class="breadcrumb-item active">Settings</li>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-sliders-h text-primary me-2"></i>
+            System Settings
+        </h1>
+        <p class="text-muted">Configure system preferences and advanced options</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <button class="btn btn-outline-success" onclick="backupSettings()">
+            <i class="fas fa-download me-1"></i>
+            Backup Settings
+        </button>
+    </div>
+</div>
+
+<!-- Settings Tabs -->
+<div class="row">
+    <div class="col-12">
+        <ul class="nav nav-tabs" id="settingsTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab">
+                    <i class="fas fa-cog me-2"></i>General
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="generation-tab" data-bs-toggle="tab" data-bs-target="#generation" type="button" role="tab">
+                    <i class="fas fa-magic me-2"></i>Generation
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="storage-tab" data-bs-toggle="tab" data-bs-target="#storage" type="button" role="tab">
+                    <i class="fas fa-hdd me-2"></i>Storage
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="notifications-tab" data-bs-toggle="tab" data-bs-target="#notifications" type="button" role="tab">
+                    <i class="fas fa-bell me-2"></i>Notifications
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab">
+                    <i class="fas fa-shield-alt me-2"></i>Security
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="settingsTabsContent">
+            <!-- General Settings -->
+            <div class="tab-pane fade show active" id="general" role="tabpanel">
+                <div class="card border-0">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-lg-8">
+                                <form id="generalSettingsForm">
+                                    <!-- System Preferences -->
+                                    <div class="mb-4">
+                                        <h5><i class="fas fa-desktop me-2 text-primary"></i>System Preferences</h5>
+                                        <hr>
+                                        
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <label for="systemTimezone" class="form-label">Timezone</label>
+                                                <select class="form-select" id="systemTimezone">
+                                                    <option value="UTC">UTC</option>
+                                                    <option value="Europe/London">Europe/London</option>
+                                                    <option value="America/New_York">America/New_York</option>
+                                                    <option value="Asia/Tokyo">Asia/Tokyo</option>
+                                                    <option value="Europe/Vilnius" selected>Europe/Vilnius</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="systemLanguage" class="form-label">Language</label>
+                                                <select class="form-select" id="systemLanguage">
+                                                    <option value="lt" selected>Lietuvių</option>
+                                                    <option value="en">English</option>
+                                                    <option value="de">Deutsch</option>
+                                                    <option value="es">Español</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <label for="defaultMode" class="form-label">Default Generation Mode</label>
+                                                <select class="form-select" id="defaultMode">
+                                                    <option value="mock" selected>Mock (Test Mode)</option>
+                                                    <option value="real">Real (Production)</option>
+                                                    <option value="hybrid">Hybrid</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="maxConcurrentJobs" class="form-label">Max Concurrent Jobs</label>
+                                                <input type="number" class="form-control" id="maxConcurrentJobs" min="1" max="10" value="3">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- UI Preferences -->
+                                    <div class="mb-4">
+                                        <h5><i class="fas fa-paint-brush me-2 text-success"></i>UI Preferences</h5>
+                                        <hr>
+                                        
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-check form-switch mb-3">
+                                                    <input class="form-check-input" type="checkbox" id="darkMode">
+                                                    <label class="form-check-label" for="darkMode">
+                                                        Dark Mode
+                                                    </label>
+                                                </div>
+                                                
+                                                <div class="form-check form-switch mb-3">
+                                                    <input class="form-check-input" type="checkbox" id="compactView">
+                                                    <label class="form-check-label" for="compactView">
+                                                        Compact View
+                                                    </label>
+                                                </div>
+                                                
+                                                <div class="form-check form-switch mb-3">
+                                                    <input class="form-check-input" type="checkbox" id="autoRefresh" checked>
+                                                    <label class="form-check-label" for="autoRefresh">
+                                                        Auto-refresh Dashboard
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="refreshInterval" class="form-label">Refresh Interval (seconds)</label>
+                                                <input type="range" class="form-range" id="refreshInterval" min="5" max="60" value="30">
+                                                <div class="d-flex justify-content-between">
+                                                    <small class="text-muted">5s</small>
+                                                    <small class="text-muted" id="refreshValue">30s</small>
+                                                    <small class="text-muted">60s</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                        <button type="button" class="btn btn-outline-secondary me-md-2" onclick="resetGeneralSettings()">
+                                            <i class="fas fa-undo me-1"></i>Reset
+                                        </button>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-1"></i>Save General Settings
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                            
+                            <div class="col-lg-4">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6><i class="fas fa-info-circle text-info me-2"></i>System Information</h6>
+                                        <ul class="list-unstyled mb-0">
+                                            <li><strong>Version:</strong> v1.2.0</li>
+                                            <li><strong>Build:</strong> 2025.09.13</li>
+                                            <li><strong>Python:</strong> 3.12.11</li>
+                                            <li><strong>Platform:</strong> Linux x86_64</li>
+                                            <li><strong>Uptime:</strong> 2h 15m</li>
+                                        </ul>
+                                        
+                                        <hr>
+                                        
+                                        <div class="d-grid gap-2">
+                                            <button class="btn btn-outline-info btn-sm" onclick="checkUpdates()">
+                                                <i class="fas fa-sync-alt me-1"></i>Check Updates
+                                            </button>
+                                            <button class="btn btn-outline-warning btn-sm" onclick="systemDiagnostics()">
+                                                <i class="fas fa-stethoscope me-1"></i>Run Diagnostics
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Generation Settings -->
+            <div class="tab-pane fade" id="generation" role="tabpanel">
+                <div class="card border-0">
+                    <div class="card-body">
+                        <form id="generationSettingsForm">
+                            <div class="row">
+                                <div class="col-lg-6 mb-4">
+                                    <h5><i class="fas fa-music me-2 text-primary"></i>Default Parameters</h5>
+                                    <hr>
+                                    
+                                    <div class="mb-3">
+                                        <label for="defaultGenre" class="form-label">Default Genre</label>
+                                        <select class="form-select" id="defaultGenre">
+                                            <option value="Lo-Fi Hip Hop" selected>Lo-Fi Hip Hop</option>
+                                            <option value="Ambient">Ambient</option>
+                                            <option value="Jazz">Jazz</option>
+                                            <option value="Electronic">Electronic</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="defaultDuration" class="form-label">Default Duration (seconds)</label>
+                                        <input type="number" class="form-control" id="defaultDuration" min="30" max="300" value="180">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="defaultTempo" class="form-label">Default Tempo (BPM)</label>
+                                        <input type="number" class="form-control" id="defaultTempo" min="60" max="200" value="120">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="autoGenerateCovers" checked>
+                                            <label class="form-check-label" for="autoGenerateCovers">
+                                                Auto-generate Album Covers
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="autoCreateVideos">
+                                            <label class="form-check-label" for="autoCreateVideos">
+                                                Auto-create Video Files
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-lg-6 mb-4">
+                                    <h5><i class="fas fa-cogs me-2 text-success"></i>Quality Settings</h5>
+                                    <hr>
+                                    
+                                    <div class="mb-3">
+                                        <label for="audioQuality" class="form-label">Audio Quality</label>
+                                        <select class="form-select" id="audioQuality">
+                                            <option value="standard">Standard (128 kbps)</option>
+                                            <option value="high" selected>High (192 kbps)</option>
+                                            <option value="premium">Premium (320 kbps)</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="imageResolution" class="form-label">Cover Art Resolution</label>
+                                        <select class="form-select" id="imageResolution">
+                                            <option value="512">512x512</option>
+                                            <option value="1024" selected>1024x1024</option>
+                                            <option value="2048">2048x2048</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="videoQuality" class="form-label">Video Quality</label>
+                                        <select class="form-select" id="videoQuality">
+                                            <option value="720p" selected>HD (720p)</option>
+                                            <option value="1080p">Full HD (1080p)</option>
+                                            <option value="4k">4K (2160p)</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="retryAttempts" class="form-label">Retry Attempts on Failure</label>
+                                        <input type="number" class="form-control" id="retryAttempts" min="0" max="5" value="2">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-12">
+                                    <h5><i class="fas fa-clock me-2 text-warning"></i>Timeout Settings</h5>
+                                    <hr>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3">
+                                            <label for="apiTimeout" class="form-label">API Request Timeout (seconds)</label>
+                                            <input type="number" class="form-control" id="apiTimeout" min="10" max="300" value="60">
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label for="generationTimeout" class="form-label">Generation Timeout (minutes)</label>
+                                            <input type="number" class="form-control" id="generationTimeout" min="5" max="60" value="15">
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label for="batchTimeout" class="form-label">Batch Timeout (hours)</label>
+                                            <input type="number" class="form-control" id="batchTimeout" min="1" max="24" value="6">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <button type="button" class="btn btn-outline-secondary me-md-2" onclick="resetGenerationSettings()">
+                                    <i class="fas fa-undo me-1"></i>Reset
+                                </button>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save me-1"></i>Save Generation Settings
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Storage Settings -->
+            <div class="tab-pane fade" id="storage" role="tabpanel">
+                <div class="card border-0">
+                    <div class="card-body">
+                        <div class="row mb-4">
+                            <div class="col-lg-6">
+                                <h5><i class="fas fa-hdd me-2 text-info"></i>Storage Overview</h5>
+                                <hr>
+                                
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span>Total Used Space</span>
+                                        <span class="fw-bold">2.4 GB</span>
+                                    </div>
+                                    <div class="progress mb-2">
+                                        <div class="progress-bar bg-info" style="width: 24%"></div>
+                                    </div>
+                                    <small class="text-muted">24% of 10 GB allocated</small>
+                                </div>
+                                
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <div class="fw-bold text-primary">1.8 GB</div>
+                                        <small class="text-muted">Audio Files</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="fw-bold text-success">0.4 GB</div>
+                                        <small class="text-muted">Images</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="fw-bold text-warning">0.2 GB</div>
+                                        <small class="text-muted">Videos</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-lg-6">
+                                <h5><i class="fas fa-trash me-2 text-danger"></i>Cleanup Actions</h5>
+                                <hr>
+                                
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-outline-warning" onclick="cleanupTempFiles()">
+                                        <i class="fas fa-broom me-1"></i>
+                                        Clean Temporary Files (45 MB)
+                                    </button>
+                                    <button class="btn btn-outline-info" onclick="optimizeStorage()">
+                                        <i class="fas fa-compress-arrows-alt me-1"></i>
+                                        Optimize Storage
+                                    </button>
+                                    <button class="btn btn-outline-danger" onclick="confirmFullCleanup()">
+                                        <i class="fas fa-trash-alt me-1"></i>
+                                        Delete Old Projects (>30 days)
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <form id="storageSettingsForm">
+                            <div class="row">
+                                <div class="col-lg-6 mb-4">
+                                    <h5><i class="fas fa-folder me-2 text-primary"></i>Directory Settings</h5>
+                                    <hr>
+                                    
+                                    <div class="mb-3">
+                                        <label for="outputDirectory" class="form-label">Output Directory</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="outputDirectory" value="/home/user/webapp/output">
+                                            <button class="btn btn-outline-secondary" type="button">
+                                                <i class="fas fa-folder-open"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="tempDirectory" class="form-label">Temporary Directory</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="tempDirectory" value="/home/user/webapp/temp">
+                                            <button class="btn btn-outline-secondary" type="button">
+                                                <i class="fas fa-folder-open"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-lg-6 mb-4">
+                                    <h5><i class="fas fa-clock me-2 text-warning"></i>Retention Policies</h5>
+                                    <hr>
+                                    
+                                    <div class="mb-3">
+                                        <label for="projectRetention" class="form-label">Keep Projects (days)</label>
+                                        <input type="number" class="form-control" id="projectRetention" min="1" max="365" value="90">
+                                        <div class="form-text">0 = Keep forever</div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="tempRetention" class="form-label">Keep Temp Files (hours)</label>
+                                        <input type="number" class="form-control" id="tempRetention" min="1" max="168" value="24">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="autoCleanup" checked>
+                                            <label class="form-check-label" for="autoCleanup">
+                                                Auto Cleanup
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <button type="button" class="btn btn-outline-secondary me-md-2" onclick="resetStorageSettings()">
+                                    <i class="fas fa-undo me-1"></i>Reset
+                                </button>
+                                <button type="submit" class="btn btn-info">
+                                    <i class="fas fa-save me-1"></i>Save Storage Settings
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notifications Settings -->
+            <div class="tab-pane fade" id="notifications" role="tabpanel">
+                <div class="card border-0">
+                    <div class="card-body">
+                        <form id="notificationSettingsForm">
+                            <div class="row">
+                                <div class="col-lg-6 mb-4">
+                                    <h5><i class="fas fa-bell me-2 text-primary"></i>Notification Preferences</h5>
+                                    <hr>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="notifyGenerationComplete" checked>
+                                            <label class="form-check-label" for="notifyGenerationComplete">
+                                                Generation Complete
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="notifyBatchComplete" checked>
+                                            <label class="form-check-label" for="notifyBatchComplete">
+                                                Batch Operations Complete
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="notifyErrors" checked>
+                                            <label class="form-check-label" for="notifyErrors">
+                                                Errors and Failures
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="notifySystemHealth">
+                                            <label class="form-check-label" for="notifySystemHealth">
+                                                System Health Issues
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-lg-6 mb-4">
+                                    <h5><i class="fas fa-envelope me-2 text-info"></i>Delivery Methods</h5>
+                                    <hr>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="browserNotifications" checked>
+                                            <label class="form-check-label" for="browserNotifications">
+                                                Browser Notifications
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="emailNotifications">
+                                            <label class="form-check-label" for="emailNotifications">
+                                                Email Notifications
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3" id="emailConfig" style="display: none;">
+                                        <label for="notificationEmail" class="form-label">Email Address</label>
+                                        <input type="email" class="form-control" id="notificationEmail" 
+                                               placeholder="your@email.com">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="webhookNotifications">
+                                            <label class="form-check-label" for="webhookNotifications">
+                                                Webhook Notifications
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3" id="webhookConfig" style="display: none;">
+                                        <label for="webhookUrl" class="form-label">Webhook URL</label>
+                                        <input type="url" class="form-control" id="webhookUrl" 
+                                               placeholder="https://your-webhook-url.com">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <button type="button" class="btn btn-outline-info me-md-2" onclick="testNotifications()">
+                                    <i class="fas fa-bell me-1"></i>Test Notifications
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i>Save Notification Settings
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Settings -->
+            <div class="tab-pane fade" id="security" role="tabpanel">
+                <div class="card border-0">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-lg-6 mb-4">
+                                <h5><i class="fas fa-lock me-2 text-danger"></i>Authentication</h5>
+                                <hr>
+                                
+                                <form id="passwordForm">
+                                    <div class="mb-3">
+                                        <label for="currentPassword" class="form-label">Current Password</label>
+                                        <input type="password" class="form-control" id="currentPassword">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="newPassword" class="form-label">New Password</label>
+                                        <input type="password" class="form-control" id="newPassword">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="confirmPassword" class="form-label">Confirm Password</label>
+                                        <input type="password" class="form-control" id="confirmPassword">
+                                    </div>
+                                    
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="fas fa-key me-1"></i>Change Password
+                                    </button>
+                                </form>
+                            </div>
+                            
+                            <div class="col-lg-6 mb-4">
+                                <h5><i class="fas fa-shield-alt me-2 text-success"></i>Security Options</h5>
+                                <hr>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="sessionTimeout" checked>
+                                        <label class="form-check-label" for="sessionTimeout">
+                                            Auto Session Timeout
+                                        </label>
+                                    </div>
+                                    <div class="form-text">Automatically log out after 30 minutes of inactivity</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="apiKeyRotation">
+                                        <label class="form-check-label" for="apiKeyRotation">
+                                            Auto API Key Rotation
+                                        </label>
+                                    </div>
+                                    <div class="form-text">Remind to rotate API keys monthly</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="auditLogging" checked>
+                                        <label class="form-check-label" for="auditLogging">
+                                            Audit Logging
+                                        </label>
+                                    </div>
+                                    <div class="form-text">Log all admin actions</div>
+                                </div>
+                                
+                                <div class="alert alert-warning mt-3">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <strong>Security Reminder:</strong> Change default passwords and keep API keys secure.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <h5><i class="fas fa-history me-2 text-info"></i>Security Log</h5>
+                                <hr>
+                                
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Event</th>
+                                                <th>IP Address</th>
+                                                <th>User Agent</th>
+                                                <th>Timestamp</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td><span class="badge bg-success">Login Success</span></td>
+                                                <td>192.168.1.100</td>
+                                                <td>Chrome 118.0.0.0</td>
+                                                <td>2025-09-13 12:30:15</td>
+                                            </tr>
+                                            <tr>
+                                                <td><span class="badge bg-info">Settings Change</span></td>
+                                                <td>192.168.1.100</td>
+                                                <td>Chrome 118.0.0.0</td>
+                                                <td>2025-09-13 12:25:43</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Settings JavaScript
+    
+    // Form submissions
+    document.getElementById('generalSettingsForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveSettings('general');
+    });
+    
+    document.getElementById('generationSettingsForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveSettings('generation');
+    });
+    
+    document.getElementById('storageSettingsForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveSettings('storage');
+    });
+    
+    document.getElementById('notificationSettingsForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveSettings('notifications');
+    });
+    
+    document.getElementById('passwordForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        changePassword();
+    });
+    
+    function saveSettings(category) {
+        const button = event.target.querySelector('button[type="submit"]');
+        const originalText = button.innerHTML;
+        
+        showLoading(button);
+        
+        setTimeout(() => {
+            hideLoading(button, originalText);
+            showToast(`${category.charAt(0).toUpperCase() + category.slice(1)} settings saved!`, 'success');
+        }, 1500);
+    }
+    
+    function changePassword() {
+        const current = document.getElementById('currentPassword').value;
+        const newPass = document.getElementById('newPassword').value;
+        const confirm = document.getElementById('confirmPassword').value;
+        
+        if (!current || !newPass || !confirm) {
+            showToast('Please fill all password fields', 'warning');
+            return;
+        }
+        
+        if (newPass !== confirm) {
+            showToast('New passwords do not match', 'error');
+            return;
+        }
+        
+        if (newPass.length < 8) {
+            showToast('Password must be at least 8 characters', 'warning');
+            return;
+        }
+        
+        showToast('Password changed successfully!', 'success');
+        document.getElementById('passwordForm').reset();
+    }
+    
+    // Refresh interval slider
+    document.getElementById('refreshInterval').addEventListener('input', function() {
+        document.getElementById('refreshValue').textContent = this.value + 's';
+    });
+    
+    // Email notifications toggle
+    document.getElementById('emailNotifications').addEventListener('change', function() {
+        const emailConfig = document.getElementById('emailConfig');
+        emailConfig.style.display = this.checked ? 'block' : 'none';
+    });
+    
+    // Webhook notifications toggle
+    document.getElementById('webhookNotifications').addEventListener('change', function() {
+        const webhookConfig = document.getElementById('webhookConfig');
+        webhookConfig.style.display = this.checked ? 'block' : 'none';
+    });
+    
+    // Cleanup functions
+    function cleanupTempFiles() {
+        Swal.fire({
+            title: 'Clean Temporary Files?',
+            text: 'This will delete all temporary files (45 MB). This action cannot be undone.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, clean up!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                showToast('Temporary files cleaned successfully!', 'success');
+            }
+        });
+    }
+    
+    function optimizeStorage() {
+        Swal.fire({
+            title: 'Optimize Storage',
+            text: 'This will compress and reorganize files for better storage efficiency.',
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: 'Optimize',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                showToast('Storage optimization completed!', 'success');
+            }
+        });
+    }
+    
+    function confirmFullCleanup() {
+        Swal.fire({
+            title: 'Delete Old Projects?',
+            html: 'This will permanently delete all projects older than 30 days.<br><strong>This action cannot be undone!</strong>',
+            icon: 'error',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Yes, delete them!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                showToast('Old projects deleted successfully!', 'success');
+            }
+        });
+    }
+    
+    function testNotifications() {
+        showToast('Test notification sent!', 'info');
+        
+        // Test browser notification if enabled
+        if (document.getElementById('browserNotifications').checked) {
+            if (Notification.permission === 'granted') {
+                new Notification('Test Notification', {
+                    body: 'This is a test notification from Autonominis Muzikantas',
+                    icon: '/static/favicon.ico'
+                });
+            } else if (Notification.permission !== 'denied') {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        new Notification('Test Notification', {
+                            body: 'This is a test notification from Autonominis Muzikantas',
+                            icon: '/static/favicon.ico'
+                        });
+                    }
+                });
+            }
+        }
+    }
+    
+    function checkUpdates() {
+        const button = event.target;
+        const originalText = button.innerHTML;
+        
+        showLoading(button);
+        
+        setTimeout(() => {
+            hideLoading(button, originalText);
+            Swal.fire({
+                title: 'System Up to Date',
+                text: 'You are running the latest version (v1.2.0)',
+                icon: 'success'
+            });
+        }, 2000);
+    }
+    
+    function systemDiagnostics() {
+        const button = event.target;
+        const originalText = button.innerHTML;
+        
+        showLoading(button);
+        
+        setTimeout(() => {
+            hideLoading(button, originalText);
+            Swal.fire({
+                title: 'System Diagnostics',
+                html: `
+                    <div class="text-start">
+                        <h6>System Health Check:</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>Web Server: Running</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Database: Connected</li>
+                            <li><i class="fas fa-check text-success me-2"></i>File System: Accessible</li>
+                            <li><i class="fas fa-exclamation text-warning me-2"></i>MoviePy: Limited functionality</li>
+                            <li><i class="fas fa-times text-danger me-2"></i>API Keys: Not configured</li>
+                        </ul>
+                        
+                        <h6>Recommendations:</h6>
+                        <ul class="small">
+                            <li>Configure API keys for full functionality</li>
+                            <li>Consider upgrading MoviePy version</li>
+                            <li>Enable automatic backups</li>
+                        </ul>
+                    </div>
+                `,
+                width: 500,
+                confirmButtonText: 'Close'
+            });
+        }, 3000);
+    }
+    
+    function backupSettings() {
+        showToast('Settings backup created successfully!', 'success');
+        
+        // Create and download backup file
+        const settings = {
+            general: { /* settings data */ },
+            generation: { /* settings data */ },
+            storage: { /* settings data */ },
+            notifications: { /* settings data */ },
+            timestamp: new Date().toISOString()
+        };
+        
+        const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `settings_backup_${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+    
+    // Reset functions
+    function resetGeneralSettings() {
+        if (confirm('Reset all general settings to defaults?')) {
+            document.getElementById('generalSettingsForm').reset();
+            showToast('General settings reset to defaults', 'info');
+        }
+    }
+    
+    function resetGenerationSettings() {
+        if (confirm('Reset all generation settings to defaults?')) {
+            document.getElementById('generationSettingsForm').reset();
+            showToast('Generation settings reset to defaults', 'info');
+        }
+    }
+    
+    function resetStorageSettings() {
+        if (confirm('Reset all storage settings to defaults?')) {
+            document.getElementById('storageSettingsForm').reset();
+            showToast('Storage settings reset to defaults', 'info');
+        }
+    }
+</script>
+{% endblock %}

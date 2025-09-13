@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Generavimo Būsena - Autonominis Muzikantas{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>📊 Generavimo Būsena</h2>
+    
+    {% if status.running %}
+        <div class="alert alert-success">
+            <strong>🔄 Generavimas vyksta...</strong>
+        </div>
+        
+        <div class="form-group">
+            <label>Progresas:</label>
+            <div class="progress">
+                <div class="progress-bar" style="width: {{ status.progress }}%"></div>
+            </div>
+            <small>{{ status.progress }}% užbaigta</small>
+        </div>
+        
+        <div class="form-group">
+            <label>Dabartinis žingsnis:</label>
+            <p class="current-step">{{ status.current_step }}</p>
+        </div>
+        
+        <script>
+            // Auto-refresh every 2 seconds
+            setTimeout(function() {
+                window.location.reload();
+            }, 2000);
+        </script>
+        
+    {% elif status.result %}
+        {% if status.result.success %}
+            <div class="alert alert-success">
+                <strong>✅ Generavimas sėkmingai užbaigtas!</strong>
+            </div>
+            
+            <div class="grid">
+                <div class="card">
+                    <h3>📂 Rezultatai</h3>
+                    <p><strong>Aplankas:</strong> {{ status.result.directory }}</p>
+                    <p><strong>Sukurta takelių:</strong> {{ status.result.tracks_created }}</p>
+                    <p><strong>Viršelis:</strong> {% if status.result.cover_created %}✅ Sukurtas{% else %}❌ Nesukurtas{% endif %}</p>
+                    
+                    {% if status.result.metadata %}
+                    <h4>Metadata</h4>
+                    <ul>
+                        <li><strong>Pavadinimas:</strong> {{ status.result.metadata.title }}</li>
+                        <li><strong>Žanras:</strong> {{ status.result.metadata.genre }}</li>
+                        <li><strong>Tema:</strong> {{ status.result.metadata.theme }}</li>
+                        <li><strong>Režimas:</strong> {{ status.result.metadata.mode }}</li>
+                    </ul>
+                    {% endif %}
+                    
+                    <a href="/outputs" class="btn">📂 Peržiūrėti Rezultatus</a>
+                    <a href="/" class="btn btn-secondary">🏠 Grįžti</a>
+                </div>
+            </div>
+        {% else %}
+            <div class="alert alert-error">
+                <strong>❌ Generavimas nepavyko!</strong><br>
+                Klaida: {{ status.result.error or status.error }}
+            </div>
+            <a href="/" class="btn">🔄 Bandyti Dar Kartą</a>
+        {% endif %}
+        
+    {% else %}
+        <div class="alert alert-warning">
+            <strong>ℹ️ Generavimas nepradėtas</strong><br>
+            Eikite į <a href="/">pagrindinį puslapį</a> ir pradėkite generavimą.
+        </div>
+        <a href="/" class="btn">🏠 Pradėti Generavimą</a>
+    {% endif %}
+</div>
+
+<!-- Logs Section -->
+{% if status.logs %}
+<div class="card">
+    <h2>📝 Proceso Logai</h2>
+    <div class="log-container logs-container">
+        {% for log in status.logs %}
+        <div class="log-entry">{{ log }}</div>
+        {% endfor %}
+    </div>
+    
+    <div style="margin-top: 1rem;">
+        <button onclick="document.querySelector('.logs-container').scrollTop = 0" class="btn btn-secondary">⬆️ Į Viršų</button>
+        <button onclick="document.querySelector('.logs-container').scrollTop = document.querySelector('.logs-container').scrollHeight" class="btn btn-secondary">⬇️ Į Apačią</button>
+        <button onclick="window.location.reload()" class="btn btn-warning">🔄 Atnaujinti</button>
+    </div>
+</div>
+{% endif %}
+
+<!-- Controls -->
+<div class="card">
+    <h2>⚡ Valdymas</h2>
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        {% if not status.running %}
+            <a href="/" class="btn">🚀 Pradėti Naują Generavimą</a>
+        {% endif %}
+        <a href="/outputs" class="btn btn-secondary">📂 Peržiūrėti Rezultatus</a>
+        <button onclick="window.location.reload()" class="btn btn-warning">🔄 Atnaujinti Puslapį</button>
+    </div>
+</div>
+{% endblock %}

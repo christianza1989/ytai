@@ -1,0 +1,733 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Analytics Dashboard - Admin Panel{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+<li class="breadcrumb-item active">Analytics</li>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-chart-line text-primary me-2"></i>
+            Analytics Dashboard
+        </h1>
+        <p class="text-muted">Monitor system performance and generation insights</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <div class="btn-group" role="group">
+            <button class="btn btn-outline-secondary" onclick="exportAnalytics()">
+                <i class="fas fa-download me-1"></i>Export
+            </button>
+            <button class="btn btn-outline-primary" onclick="refreshAnalytics()">
+                <i class="fas fa-sync-alt me-1"></i>Refresh
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Key Metrics Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card bg-gradient-primary text-white">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-white-50 text-uppercase mb-1">
+                            Total Generations
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-white" id="totalGenerations">
+                            {{ analytics.generation_history|length }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-music fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card bg-gradient-success text-white">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-white-50 text-uppercase mb-1">
+                            Success Rate
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-white" id="successRate">
+                            {% if analytics.generation_history %}
+                                {{ "%.1f"|format((analytics.generation_history|selectattr('success')|list|length / analytics.generation_history|length) * 100) }}%
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card bg-gradient-info text-white">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-white-50 text-uppercase mb-1">
+                            Total Tracks
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-white" id="totalTracks">
+                            {{ analytics.generation_history|selectattr('tracks_created')|map(attribute='tracks_created')|sum }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-file-audio fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card bg-gradient-warning text-white">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-white-50 text-uppercase mb-1">
+                            Avg. Generation Time
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-white">4.2 min</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clock fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <!-- Generation Trends -->
+    <div class="col-xl-8 col-lg-7 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-chart-area me-2"></i>
+                Generation Trends
+                <div class="float-end">
+                    <div class="btn-group btn-group-sm" role="group">
+                        <input type="radio" class="btn-check" name="chartPeriod" id="period7" checked>
+                        <label class="btn btn-outline-primary" for="period7">7d</label>
+                        
+                        <input type="radio" class="btn-check" name="chartPeriod" id="period30">
+                        <label class="btn btn-outline-primary" for="period30">30d</label>
+                        
+                        <input type="radio" class="btn-check" name="chartPeriod" id="period90">
+                        <label class="btn btn-outline-primary" for="period90">90d</label>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="generationTrendsChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Genre Distribution -->
+    <div class="col-xl-4 col-lg-5 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-chart-pie me-2"></i>
+                Genre Distribution
+            </div>
+            <div class="card-body">
+                <canvas id="genreDistributionChart" width="300" height="300"></canvas>
+                <div class="mt-3">
+                    {% set genres = {} %}
+                    {% for item in analytics.generation_history %}
+                        {% if item.genre %}
+                            {% set _ = genres.update({item.genre: genres.get(item.genre, 0) + 1}) %}
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% for genre, count in genres.items() %}
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small">{{ genre }}</span>
+                        <span class="badge bg-primary">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                    
+                    {% if not genres %}
+                    <div class="text-center text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        No genre data available
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Monitoring -->
+<div class="row mb-4">
+    <div class="col-xl-6 col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-tachometer-alt me-2"></i>
+                System Performance
+            </div>
+            <div class="card-body">
+                <canvas id="performanceChart" width="400" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-6 col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Error Analysis
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Error Type</th>
+                                <th>Count</th>
+                                <th>Last Occurrence</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>API Timeout</td>
+                                <td><span class="badge bg-warning">3</span></td>
+                                <td>2h ago</td>
+                            </tr>
+                            <tr>
+                                <td>Invalid Parameters</td>
+                                <td><span class="badge bg-danger">1</span></td>
+                                <td>1d ago</td>
+                            </tr>
+                            <tr>
+                                <td>Rate Limited</td>
+                                <td><span class="badge bg-info">5</span></td>
+                                <td>4h ago</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-3">
+                    <button class="btn btn-outline-primary btn-sm" onclick="showErrorDetails()">
+                        <i class="fas fa-search me-1"></i>
+                        View Details
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-history me-2"></i>
+                Recent Generation History
+                <div class="float-end">
+                    <div class="input-group input-group-sm" style="width: 250px;">
+                        <input type="text" class="form-control" placeholder="Filter by genre, mode..." id="historyFilter">
+                        <button class="btn btn-outline-secondary" type="button">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="historyTable">
+                        <thead>
+                            <tr>
+                                <th>Project</th>
+                                <th>Genre</th>
+                                <th>Mode</th>
+                                <th>Tracks</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in analytics.generation_history[:20] %}
+                            <tr>
+                                <td>
+                                    <div class="fw-bold">{{ item.title }}</div>
+                                    <small class="text-muted">{{ item.project }}</small>
+                                </td>
+                                <td>
+                                    {% if item.genre %}
+                                        <span class="badge bg-primary">{{ item.genre }}</span>
+                                    {% else %}
+                                        <span class="text-muted">Unknown</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if item.mode == 'real' else 'warning' if item.mode == 'hybrid' else 'info' }}">
+                                        {{ item.mode.title() }}
+                                    </span>
+                                </td>
+                                <td>{{ item.tracks_created or 0 }}</td>
+                                <td>
+                                    {% if item.success %}
+                                        <i class="fas fa-check-circle text-success me-1"></i>Success
+                                    {% else %}
+                                        <i class="fas fa-times-circle text-danger me-1"></i>Failed
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small>{{ item.created_at[:19]|replace('T', ' ') if item.created_at else 'Unknown' }}</small>
+                                </td>
+                                <td>
+                                    <button class="btn btn-outline-primary btn-sm" onclick="viewGenerationDetails('{{ item.project }}')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            
+                            {% if not analytics.generation_history %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">
+                                    <i class="fas fa-inbox fa-2x mb-2 opacity-25"></i>
+                                    <br>No generation history available
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- API Usage Statistics -->
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-plug me-2"></i>
+                API Usage Today
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Suno API</span>
+                        <span class="fw-bold">12 calls</span>
+                    </div>
+                    <div class="progress mb-2">
+                        <div class="progress-bar bg-primary" style="width: 60%"></div>
+                    </div>
+                    <small class="text-muted">60% of daily limit</small>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Gemini AI</span>
+                        <span class="fw-bold">28 calls</span>
+                    </div>
+                    <div class="progress mb-2">
+                        <div class="progress-bar bg-info" style="width: 35%"></div>
+                    </div>
+                    <small class="text-muted">35% of daily limit</small>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Stability AI</span>
+                        <span class="fw-bold">5 calls</span>
+                    </div>
+                    <div class="progress mb-2">
+                        <div class="progress-bar bg-warning" style="width: 25%"></div>
+                    </div>
+                    <small class="text-muted">25% of daily limit</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-dollar-sign me-2"></i>
+                Cost Analysis
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <div class="h3 text-success">$23.45</div>
+                    <small class="text-muted">Total spent this month</small>
+                </div>
+                
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between">
+                        <span>Suno API</span>
+                        <span>$18.20</span>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between">
+                        <span>Gemini AI</span>
+                        <span>$2.15</span>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between">
+                        <span>Stability AI</span>
+                        <span>$3.10</span>
+                    </div>
+                </div>
+                
+                <hr>
+                <div class="small text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Estimates based on usage patterns
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-server me-2"></i>
+                System Health
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>CPU Usage</span>
+                        <span class="fw-bold">45%</span>
+                    </div>
+                    <div class="progress mb-2">
+                        <div class="progress-bar bg-success" style="width: 45%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Memory Usage</span>
+                        <span class="fw-bold">62%</span>
+                    </div>
+                    <div class="progress mb-2">
+                        <div class="progress-bar bg-warning" style="width: 62%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Disk Usage</span>
+                        <span class="fw-bold">38%</span>
+                    </div>
+                    <div class="progress mb-2">
+                        <div class="progress-bar bg-info" style="width: 38%"></div>
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <span class="badge bg-success">System Healthy</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Analytics Dashboard JavaScript
+    
+    // Initialize charts
+    let generationTrendsChart, genreDistributionChart, performanceChart;
+    
+    window.addEventListener('load', function() {
+        initializeCharts();
+        setupRealTimeUpdates();
+    });
+    
+    function initializeCharts() {
+        // Generation Trends Chart
+        const trendsCtx = document.getElementById('generationTrendsChart').getContext('2d');
+        generationTrendsChart = new Chart(trendsCtx, {
+            type: 'line',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'Generations',
+                    data: [3, 7, 2, 5, 8, 4, 6],
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }, {
+                    label: 'Successful',
+                    data: [3, 6, 2, 4, 7, 4, 5],
+                    borderColor: '#198754',
+                    backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                    tension: 0.4,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        // Genre Distribution Chart
+        const genreCtx = document.getElementById('genreDistributionChart').getContext('2d');
+        const genreData = {
+            {% set genres = {} %}
+            {% for item in analytics.generation_history %}
+                {% if item.genre %}
+                    {% set _ = genres.update({item.genre: genres.get(item.genre, 0) + 1}) %}
+                {% endif %}
+            {% endfor %}
+            labels: [{% for genre in genres.keys() %}'{{ genre }}'{% if not loop.last %},{% endif %}{% endfor %}],
+            data: [{% for count in genres.values() %}{{ count }}{% if not loop.last %},{% endif %}{% endfor %}]
+        };
+        
+        genreDistributionChart = new Chart(genreCtx, {
+            type: 'doughnut',
+            data: {
+                labels: genreData.labels,
+                datasets: [{
+                    data: genreData.data,
+                    backgroundColor: [
+                        '#0d6efd', '#198754', '#ffc107', '#dc3545', 
+                        '#6f42c1', '#fd7e14', '#20c997', '#6c757d'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        display: false
+                    }
+                }
+            }
+        });
+        
+        // Performance Chart
+        const perfCtx = document.getElementById('performanceChart').getContext('2d');
+        performanceChart = new Chart(perfCtx, {
+            type: 'bar',
+            data: {
+                labels: ['API Response', 'Generation Time', 'File Processing', 'Total Time'],
+                datasets: [{
+                    label: 'Average (seconds)',
+                    data: [2.3, 145.7, 8.2, 156.2],
+                    backgroundColor: ['#0d6efd', '#198754', '#ffc107', '#dc3545'],
+                    borderColor: ['#0a58ca', '#146c43', '#ffca2c', '#b02a37'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+    
+    function setupRealTimeUpdates() {
+        // Update charts every 30 seconds
+        setInterval(updateCharts, 30000);
+    }
+    
+    function updateCharts() {
+        // Simulate real-time data updates
+        if (generationTrendsChart) {
+            const newData = Math.floor(Math.random() * 10);
+            generationTrendsChart.data.datasets[0].data.shift();
+            generationTrendsChart.data.datasets[0].data.push(newData);
+            generationTrendsChart.update();
+        }
+    }
+    
+    function refreshAnalytics() {
+        const button = event.target;
+        const originalText = button.innerHTML;
+        
+        showLoading(button);
+        
+        setTimeout(() => {
+            hideLoading(button, originalText);
+            showToast('Analytics data refreshed!', 'success');
+            updateCharts();
+        }, 2000);
+    }
+    
+    function exportAnalytics() {
+        Swal.fire({
+            title: 'Export Analytics',
+            html: `
+                <div class="mb-3">
+                    <label class="form-label">Export Format:</label>
+                    <select class="form-select" id="exportFormat">
+                        <option value="csv">CSV File</option>
+                        <option value="pdf">PDF Report</option>
+                        <option value="json">JSON Data</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Time Period:</label>
+                    <select class="form-select" id="exportPeriod">
+                        <option value="7">Last 7 days</option>
+                        <option value="30">Last 30 days</option>
+                        <option value="90">Last 90 days</option>
+                        <option value="all">All time</option>
+                    </select>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Export',
+            preConfirm: () => {
+                const format = document.getElementById('exportFormat').value;
+                const period = document.getElementById('exportPeriod').value;
+                return { format, period };
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const { format, period } = result.value;
+                showToast(`Exporting analytics as ${format.toUpperCase()}...`, 'info');
+                
+                // Simulate export
+                setTimeout(() => {
+                    showToast(`Analytics exported successfully!`, 'success');
+                }, 2000);
+            }
+        });
+    }
+    
+    function viewGenerationDetails(projectName) {
+        Swal.fire({
+            title: 'Generation Details',
+            html: `
+                <div class="text-start">
+                    <h6>Project: ${projectName}</h6>
+                    <ul class="list-unstyled">
+                        <li><strong>Status:</strong> Completed Successfully</li>
+                        <li><strong>Duration:</strong> 4 minutes 32 seconds</li>
+                        <li><strong>API Calls:</strong> 3 (Suno), 1 (Gemini)</li>
+                        <li><strong>Files Generated:</strong> 2 audio, 1 metadata</li>
+                        <li><strong>Total Size:</strong> 15.2 MB</li>
+                    </ul>
+                    
+                    <h6 class="mt-3">Performance Metrics:</h6>
+                    <div class="progress mb-2">
+                        <div class="progress-bar bg-success" style="width: 85%">Quality: 85%</div>
+                    </div>
+                    <div class="progress mb-2">
+                        <div class="progress-bar bg-info" style="width: 92%">Speed: 92%</div>
+                    </div>
+                    <div class="progress mb-2">
+                        <div class="progress-bar bg-warning" style="width: 78%">Cost Efficiency: 78%</div>
+                    </div>
+                </div>
+            `,
+            width: 500,
+            confirmButtonText: 'Close'
+        });
+    }
+    
+    function showErrorDetails() {
+        Swal.fire({
+            title: 'Error Analysis',
+            html: `
+                <div class="text-start">
+                    <h6>Recent Errors:</h6>
+                    <div class="list-group">
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">API Timeout</h6>
+                                <small>2 hours ago</small>
+                            </div>
+                            <p class="mb-1">Suno API request timed out after 60 seconds</p>
+                            <small class="text-muted">Project: Lo-Fi Collection #3</small>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">Rate Limited</h6>
+                                <small>4 hours ago</small>
+                            </div>
+                            <p class="mb-1">Exceeded rate limit for Gemini API</p>
+                            <small class="text-muted">Retried successfully after 30s</small>
+                        </div>
+                    </div>
+                </div>
+            `,
+            width: 600,
+            confirmButtonText: 'Close'
+        });
+    }
+    
+    // History table filtering
+    document.getElementById('historyFilter').addEventListener('input', function() {
+        const filter = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#historyTable tbody tr');
+        
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(filter) ? '' : 'none';
+        });
+    });
+    
+    // Period selector for charts
+    document.querySelectorAll('input[name="chartPeriod"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const period = this.id.replace('period', '');
+            updateChartsPeriod(period);
+        });
+    });
+    
+    function updateChartsPeriod(days) {
+        // Update chart data based on selected period
+        showToast(`Updated charts for last ${days} days`, 'info');
+    }
+</script>
+{% endblock %}

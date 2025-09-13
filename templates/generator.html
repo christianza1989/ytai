@@ -1,0 +1,624 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Music Generator - Admin Panel{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+<li class="breadcrumb-item active">Generator</li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="h3 mb-4">
+            <i class="fas fa-magic text-primary me-2"></i>
+            Music Generator
+        </h1>
+    </div>
+</div>
+
+<!-- Generation Form -->
+<div class="row">
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-cog me-2"></i>
+                Generation Parameters
+            </div>
+            <div class="card-body">
+                <form id="generationForm">
+                    <!-- Mode Selection -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Generation Mode</label>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <div class="card mode-card" data-mode="mock">
+                                        <div class="card-body text-center p-3">
+                                            <i class="fas fa-flask fa-2x text-info mb-2"></i>
+                                            <h6>Test Mode</h6>
+                                            <small class="text-muted">Mock data, no API costs</small>
+                                            <input type="radio" name="mode" value="mock" class="form-check-input mt-2" checked>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <div class="card mode-card" data-mode="real">
+                                        <div class="card-body text-center p-3">
+                                            <i class="fas fa-rocket fa-2x text-success mb-2"></i>
+                                            <h6>Real Mode</h6>
+                                            <small class="text-muted">Uses API credits</small>
+                                            <input type="radio" name="mode" value="real" class="form-check-input mt-2" 
+                                                {{ 'disabled' if not (api_status.suno.status == 'connected' and api_status.gemini.status == 'connected') else '' }}>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <div class="card mode-card" data-mode="hybrid">
+                                        <div class="card-body text-center p-3">
+                                            <i class="fas fa-sync-alt fa-2x text-warning mb-2"></i>
+                                            <h6>Hybrid Mode</h6>
+                                            <small class="text-muted">Real AI + Mock audio</small>
+                                            <input type="radio" name="mode" value="hybrid" class="form-check-input mt-2">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Basic Parameters -->
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
+                            <label for="genre" class="form-label fw-bold">Genre</label>
+                            <select class="form-select" id="genre" name="genre" required>
+                                <option value="Lo-Fi Hip Hop">Lo-Fi Hip Hop</option>
+                                <option value="Ambient">Ambient</option>
+                                <option value="Chill Hop">Chill Hop</option>
+                                <option value="Synthwave">Synthwave</option>
+                                <option value="Jazz">Jazz</option>
+                                <option value="Electronic">Electronic</option>
+                                <option value="Classical">Classical</option>
+                                <option value="Rock">Rock</option>
+                                <option value="Pop">Pop</option>
+                                <option value="R&B">R&B</option>
+                                <option value="Indie">Indie</option>
+                                <option value="Folk">Folk</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="theme" class="form-label fw-bold">Theme/Mood</label>
+                            <input type="text" class="form-control" id="theme" name="theme" 
+                                   placeholder="e.g., rainy night in Tokyo, summer vibes, melancholy" 
+                                   value="rainy night in Tokyo" required>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Parameters -->
+                    <div class="card bg-light mb-4">
+                        <div class="card-header bg-transparent">
+                            <button class="btn btn-link p-0 text-decoration-none fw-bold" type="button" 
+                                    data-bs-toggle="collapse" data-bs-target="#advancedParams">
+                                <i class="fas fa-cog me-2"></i>
+                                Advanced Parameters
+                                <i class="fas fa-chevron-down ms-2"></i>
+                            </button>
+                        </div>
+                        <div class="collapse" id="advancedParams">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label for="duration" class="form-label">Duration (seconds)</label>
+                                        <input type="number" class="form-control" id="duration" name="duration" 
+                                               min="30" max="300" value="180">
+                                    </div>
+                                    
+                                    <div class="col-md-4 mb-3">
+                                        <label for="tempo" class="form-label">Tempo (BPM)</label>
+                                        <input type="number" class="form-control" id="tempo" name="tempo" 
+                                               min="60" max="200" value="120">
+                                    </div>
+                                    
+                                    <div class="col-md-4 mb-3">
+                                        <label for="key" class="form-label">Key</label>
+                                        <select class="form-select" id="key" name="key">
+                                            <option value="">Auto</option>
+                                            <option value="C">C Major</option>
+                                            <option value="Am">A Minor</option>
+                                            <option value="G">G Major</option>
+                                            <option value="Em">E Minor</option>
+                                            <option value="D">D Major</option>
+                                            <option value="Bm">B Minor</option>
+                                            <option value="F">F Major</option>
+                                            <option value="Dm">D Minor</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="style" class="form-label">Style Instructions</label>
+                                        <textarea class="form-control" id="style" name="style" rows="3" 
+                                                  placeholder="Additional style instructions..."></textarea>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Options</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="generateCover" name="generateCover" checked>
+                                            <label class="form-check-label" for="generateCover">
+                                                Generate Album Cover
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="createVideo" name="createVideo" checked>
+                                            <label class="form-check-label" for="createVideo">
+                                                Create Video File
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="multipleVersions" name="multipleVersions">
+                                            <label class="form-check-label" for="multipleVersions">
+                                                Generate Multiple Versions
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Custom Prompt -->
+                    <div class="mb-4">
+                        <label for="customPrompt" class="form-label fw-bold">Custom Prompt (Optional)</label>
+                        <textarea class="form-control" id="customPrompt" name="customPrompt" rows="4" 
+                                  placeholder="Enter custom generation prompt. Leave empty for AI-generated prompt based on genre and theme."></textarea>
+                        <div class="form-text">
+                            <i class="fas fa-lightbulb me-1"></i>
+                            Custom prompts override automatic generation. Use for specific creative control.
+                        </div>
+                    </div>
+
+                    <!-- Generation Button -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="button" class="btn btn-outline-secondary me-md-2" onclick="resetForm()">
+                            <i class="fas fa-undo me-1"></i>
+                            Reset
+                        </button>
+                        <button type="button" class="btn btn-outline-info me-md-2" onclick="previewParameters()">
+                            <i class="fas fa-eye me-1"></i>
+                            Preview
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="generateBtn">
+                            <i class="fas fa-magic me-1"></i>
+                            Start Generation
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Panel -->
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-info-circle me-2"></i>
+                Generation Status
+            </div>
+            <div class="card-body">
+                <div id="statusPanel">
+                    <!-- API Status -->
+                    <div class="mb-4">
+                        <h6 class="mb-3">API Services</h6>
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span><i class="fas fa-music me-2"></i>Suno API</span>
+                                <span class="status-badge 
+                                    {% if api_status.suno.status == 'connected' %}status-connected
+                                    {% elif api_status.suno.status == 'error' %}status-error
+                                    {% else %}status-warning{% endif %}">
+                                    {{ api_status.suno.status.title() }}
+                                </span>
+                            </div>
+                            {% if api_status.suno.status == 'connected' %}
+                                <small class="text-success">{{ api_status.suno.credits }} credits available</small>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span><i class="fas fa-brain me-2"></i>Gemini AI</span>
+                                <span class="status-badge 
+                                    {% if api_status.gemini.status == 'connected' %}status-connected
+                                    {% elif api_status.gemini.status == 'error' %}status-error
+                                    {% else %}status-warning{% endif %}">
+                                    {{ api_status.gemini.status.title() }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span><i class="fas fa-image me-2"></i>Stability AI</span>
+                                <span class="status-badge 
+                                    {% if api_status.stability.status == 'connected' %}status-connected
+                                    {% elif api_status.stability.status == 'error' %}status-error
+                                    {% else %}status-warning{% endif %}">
+                                    {{ api_status.stability.status.title() }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cost Estimation -->
+                    <div class="mb-4">
+                        <h6 class="mb-3">Cost Estimation</h6>
+                        <div class="bg-light p-3 rounded">
+                            <div class="d-flex justify-content-between">
+                                <span>Suno API:</span>
+                                <span id="sunoCost">~5 credits</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Gemini AI:</span>
+                                <span id="geminiCost">~$0.01</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Stability AI:</span>
+                                <span id="stabilityCost">~$0.04</span>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between fw-bold">
+                                <span>Total:</span>
+                                <span id="totalCost">~$0.20</span>
+                            </div>
+                        </div>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Estimates may vary based on parameters
+                        </small>
+                    </div>
+
+                    <!-- Templates -->
+                    <div class="mb-4">
+                        <h6 class="mb-3">Quick Templates</h6>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary btn-sm" onclick="loadTemplate('lofi')">
+                                🎵 Lo-Fi Night
+                            </button>
+                            <button class="btn btn-outline-primary btn-sm" onclick="loadTemplate('ambient')">
+                                🌊 Ambient Space
+                            </button>
+                            <button class="btn btn-outline-primary btn-sm" onclick="loadTemplate('jazz')">
+                                🎷 Smooth Jazz
+                            </button>
+                            <button class="btn btn-outline-primary btn-sm" onclick="loadTemplate('electronic')">
+                                ⚡ Electronic Beat
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Panel (hidden by default) -->
+                <div id="progressPanel" style="display: none;">
+                    <h6 class="mb-3">Generation Progress</h6>
+                    <div class="progress mb-3">
+                        <div class="progress-bar progress-bar-animated" role="progressbar" 
+                             style="width: 0%" id="progressBar"></div>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted" id="currentStep">Initializing...</small>
+                    </div>
+                    <div class="d-grid">
+                        <button class="btn btn-outline-danger btn-sm" onclick="cancelGeneration()">
+                            <i class="fas fa-stop me-1"></i>
+                            Cancel Generation
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Generator-specific JavaScript
+    
+    let currentTaskId = null;
+    let generationInterval = null;
+    
+    // Mode card selection
+    document.querySelectorAll('.mode-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const mode = this.dataset.mode;
+            const radio = this.querySelector('input[type="radio"]');
+            if (!radio.disabled) {
+                radio.checked = true;
+                updateModeSelection();
+                updateCostEstimation();
+            }
+        });
+    });
+    
+    function updateModeSelection() {
+        document.querySelectorAll('.mode-card').forEach(card => {
+            const radio = card.querySelector('input[type="radio"]');
+            if (radio.checked) {
+                card.classList.add('border-primary', 'bg-light');
+            } else {
+                card.classList.remove('border-primary', 'bg-light');
+            }
+        });
+    }
+    
+    function updateCostEstimation() {
+        const mode = document.querySelector('input[name="mode"]:checked').value;
+        const multipleVersions = document.getElementById('multipleVersions').checked;
+        
+        let sunoCost = '~0 credits';
+        let geminiCost = '~$0.00';
+        let stabilityCost = '~$0.00';
+        let totalCost = '~$0.00 (FREE)';
+        
+        if (mode === 'real') {
+            const baseMultiplier = multipleVersions ? 2 : 1;
+            sunoCost = `~${5 * baseMultiplier} credits`;
+            geminiCost = `~$${(0.01 * baseMultiplier).toFixed(2)}`;
+            stabilityCost = document.getElementById('generateCover').checked ? `~$${(0.04 * baseMultiplier).toFixed(2)}` : '~$0.00';
+            
+            const totalValue = (0.20 * baseMultiplier).toFixed(2);
+            totalCost = `~$${totalValue}`;
+        } else if (mode === 'hybrid') {
+            geminiCost = '~$0.01';
+            stabilityCost = document.getElementById('generateCover').checked ? '~$0.04' : '~$0.00';
+            totalCost = '~$0.05';
+        }
+        
+        document.getElementById('sunoCost').textContent = sunoCost;
+        document.getElementById('geminiCost').textContent = geminiCost;
+        document.getElementById('stabilityCost').textContent = stabilityCost;
+        document.getElementById('totalCost').textContent = totalCost;
+    }
+    
+    // Form submission
+    document.getElementById('generationForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        startGeneration();
+    });
+    
+    function startGeneration() {
+        const formData = new FormData(document.getElementById('generationForm'));
+        const data = Object.fromEntries(formData);
+        
+        // Add checkboxes
+        data.generateCover = document.getElementById('generateCover').checked;
+        data.createVideo = document.getElementById('createVideo').checked;
+        data.multipleVersions = document.getElementById('multipleVersions').checked;
+        
+        // Show confirmation for real mode
+        if (data.mode === 'real') {
+            Swal.fire({
+                title: 'Confirm Generation',
+                text: 'This will use API credits. Are you sure?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, generate!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    executeGeneration(data);
+                }
+            });
+        } else {
+            executeGeneration(data);
+        }
+    }
+    
+    function executeGeneration(data) {
+        // Switch to progress view
+        document.getElementById('statusPanel').style.display = 'none';
+        document.getElementById('progressPanel').style.display = 'block';
+        
+        // Disable form
+        document.getElementById('generateBtn').disabled = true;
+        document.getElementById('generateBtn').innerHTML = '<span class="loading me-2"></span>Generating...';
+        
+        // Start generation
+        fetch('/api/generate/start', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                currentTaskId = result.task_id;
+                startProgressTracking();
+            } else {
+                showError('Failed to start generation');
+            }
+        })
+        .catch(error => {
+            showError('Network error: ' + error.message);
+        });
+    }
+    
+    function startProgressTracking() {
+        generationInterval = setInterval(() => {
+            if (currentTaskId) {
+                fetch(`/api/generate/status/${currentTaskId}`)
+                    .then(response => response.json())
+                    .then(task => {
+                        updateProgress(task);
+                        
+                        if (task.status === 'completed' || task.status === 'failed') {
+                            clearInterval(generationInterval);
+                            handleGenerationComplete(task);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Progress tracking error:', error);
+                    });
+            }
+        }, 2000);
+    }
+    
+    function updateProgress(task) {
+        document.getElementById('progressBar').style.width = task.progress + '%';
+        document.getElementById('currentStep').textContent = task.current_step || 'Processing...';
+    }
+    
+    function handleGenerationComplete(task) {
+        // Reset UI
+        document.getElementById('statusPanel').style.display = 'block';
+        document.getElementById('progressPanel').style.display = 'none';
+        document.getElementById('generateBtn').disabled = false;
+        document.getElementById('generateBtn').innerHTML = '<i class="fas fa-magic me-1"></i>Start Generation';
+        
+        if (task.status === 'completed') {
+            Swal.fire({
+                title: 'Generation Complete!',
+                text: 'Your music has been generated successfully.',
+                icon: 'success',
+                confirmButtonText: 'View Results',
+                showCancelButton: true,
+                cancelButtonText: 'Create Another'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '{{ url_for("projects") }}';
+                }
+            });
+        } else {
+            Swal.fire({
+                title: 'Generation Failed',
+                text: task.result?.error || 'Unknown error occurred',
+                icon: 'error'
+            });
+        }
+        
+        currentTaskId = null;
+    }
+    
+    function cancelGeneration() {
+        if (currentTaskId) {
+            clearInterval(generationInterval);
+            currentTaskId = null;
+            
+            // Reset UI
+            document.getElementById('statusPanel').style.display = 'block';
+            document.getElementById('progressPanel').style.display = 'none';
+            document.getElementById('generateBtn').disabled = false;
+            document.getElementById('generateBtn').innerHTML = '<i class="fas fa-magic me-1"></i>Start Generation';
+            
+            showToast('Generation cancelled', 'info');
+        }
+    }
+    
+    function resetForm() {
+        document.getElementById('generationForm').reset();
+        document.getElementById('genre').value = 'Lo-Fi Hip Hop';
+        document.getElementById('theme').value = 'rainy night in Tokyo';
+        updateModeSelection();
+        updateCostEstimation();
+    }
+    
+    function previewParameters() {
+        const formData = new FormData(document.getElementById('generationForm'));
+        const data = Object.fromEntries(formData);
+        data.generateCover = document.getElementById('generateCover').checked;
+        data.createVideo = document.getElementById('createVideo').checked;
+        data.multipleVersions = document.getElementById('multipleVersions').checked;
+        
+        Swal.fire({
+            title: 'Generation Preview',
+            html: `
+                <div class="text-start">
+                    <p><strong>Mode:</strong> ${data.mode}</p>
+                    <p><strong>Genre:</strong> ${data.genre}</p>
+                    <p><strong>Theme:</strong> ${data.theme}</p>
+                    <p><strong>Duration:</strong> ${data.duration || 180}s</p>
+                    <p><strong>Options:</strong></p>
+                    <ul>
+                        <li>Album Cover: ${data.generateCover ? 'Yes' : 'No'}</li>
+                        <li>Video File: ${data.createVideo ? 'Yes' : 'No'}</li>
+                        <li>Multiple Versions: ${data.multipleVersions ? 'Yes' : 'No'}</li>
+                    </ul>
+                </div>
+            `,
+            icon: 'info',
+            width: 500
+        });
+    }
+    
+    function loadTemplate(templateName) {
+        const templates = {
+            lofi: {
+                genre: 'Lo-Fi Hip Hop',
+                theme: 'rainy night in Tokyo',
+                tempo: 85,
+                key: 'Am',
+                style: 'Relaxed, atmospheric, with vinyl crackle'
+            },
+            ambient: {
+                genre: 'Ambient',
+                theme: 'floating in space',
+                tempo: 60,
+                key: 'C',
+                style: 'Ethereal, spacious, minimal percussion'
+            },
+            jazz: {
+                genre: 'Jazz',
+                theme: 'late night cafe',
+                tempo: 120,
+                key: 'Bb',
+                style: 'Smooth, sophisticated, soft piano'
+            },
+            electronic: {
+                genre: 'Electronic',
+                theme: 'neon city nights',
+                tempo: 128,
+                key: 'Em',
+                style: 'Energetic, synthetic, driving beat'
+            }
+        };
+        
+        const template = templates[templateName];
+        if (template) {
+            document.getElementById('genre').value = template.genre;
+            document.getElementById('theme').value = template.theme;
+            document.getElementById('tempo').value = template.tempo;
+            document.getElementById('key').value = template.key;
+            document.getElementById('style').value = template.style;
+        }
+    }
+    
+    function showError(message) {
+        // Reset UI
+        document.getElementById('statusPanel').style.display = 'block';
+        document.getElementById('progressPanel').style.display = 'none';
+        document.getElementById('generateBtn').disabled = false;
+        document.getElementById('generateBtn').innerHTML = '<i class="fas fa-magic me-1"></i>Start Generation';
+        
+        Swal.fire({
+            title: 'Error',
+            text: message,
+            icon: 'error'
+        });
+    }
+    
+    // Initialize
+    updateModeSelection();
+    updateCostEstimation();
+    
+    // Update cost estimation when options change
+    document.getElementById('multipleVersions').addEventListener('change', updateCostEstimation);
+    document.getElementById('generateCover').addEventListener('change', updateCostEstimation);
+    document.querySelectorAll('input[name="mode"]').forEach(radio => {
+        radio.addEventListener('change', updateCostEstimation);
+    });
+</script>
+{% endblock %}

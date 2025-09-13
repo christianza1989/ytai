@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Rezultatai - Autonominis Muzikantas{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>📂 Sugeneruoti Rezultatai</h2>
+    
+    {% if outputs %}
+        <p>Rasta {{ outputs|length }} rezultatų aplankų:</p>
+        
+        {% for output in outputs %}
+        <div class="card" style="border-left: 4px solid #4CAF50;">
+            <div class="grid" style="grid-template-columns: 2fr 1fr; align-items: start;">
+                <div>
+                    <h3>🎵 {{ output.metadata.title or output.name }}</h3>
+                    
+                    <div style="margin: 1rem 0;">
+                        {% if output.metadata.created_at %}
+                        <p><strong>📅 Sukurta:</strong> {{ output.metadata.created_at[:19] | replace('T', ' ') }}</p>
+                        {% endif %}
+                        
+                        {% if output.metadata.genre %}
+                        <p><strong>🎼 Žanras:</strong> {{ output.metadata.genre }}</p>
+                        {% endif %}
+                        
+                        {% if output.metadata.theme %}
+                        <p><strong>💭 Tema:</strong> {{ output.metadata.theme }}</p>
+                        {% endif %}
+                        
+                        {% if output.metadata.mode %}
+                        <p><strong>⚙️ Režimas:</strong> 
+                           {% if output.metadata.mode == 'mock' %}🧪 Testavimo{% else %}🔑 Realus{% endif %}
+                        </p>
+                        {% endif %}
+                        
+                        {% if output.metadata.tracks_created %}
+                        <p><strong>🎵 Takeliai:</strong> {{ output.metadata.tracks_created }}</p>
+                        {% endif %}
+                        
+                        {% if output.metadata.cover_created is defined %}
+                        <p><strong>🖼️ Viršelis:</strong> {% if output.metadata.cover_created %}✅ Sukurtas{% else %}❌ Nesukurtas{% endif %}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <strong>📁 Failai aplankе:</strong>
+                        <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
+                            {% for file in output.files %}
+                            <li>
+                                {{ file }}
+                                {% if file.endswith('.mp3') %}🎵
+                                {% elif file.endswith('.jpg') or file.endswith('.png') %}🖼️
+                                {% elif file.endswith('.mp4') %}🎬
+                                {% elif file.endswith('.json') %}📄
+                                {% elif file.endswith('.txt') %}📝
+                                {% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                
+                <div style="text-align: center;">
+                    <div style="margin-bottom: 1rem;">
+                        <strong>{{ output.files|length }}</strong><br>
+                        <small>failų</small>
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <!-- Download individual files -->
+                        {% for file in output.files %}
+                            {% if file.endswith('.mp3') or file.endswith('.jpg') or file.endswith('.png') or file.endswith('.mp4') %}
+                            <a href="/download/{{ output.name }}/{{ file }}" 
+                               class="btn btn-secondary" 
+                               style="font-size: 12px; padding: 5px 10px;"
+                               download>
+                                📥 {{ file }}
+                            </a>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        <!-- Folder path for manual access -->
+                        <small style="word-break: break-all; color: #ccc;">
+                            {{ output.path }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        
+    {% else %}
+        <div class="alert alert-warning">
+            <strong>📭 Rezultatų nėra</strong><br>
+            Dar nesugenerjavote jokių muzikos failų. 
+            <a href="/">Pradėkite generavimą</a> pirmame puslapyje.
+        </div>
+    {% endif %}
+</div>
+
+<!-- Summary Statistics -->
+{% if outputs %}
+<div class="card">
+    <h2>📊 Statistika</h2>
+    <div class="grid">
+        <div class="card">
+            <h3 style="text-align: center; color: #4CAF50;">{{ outputs|length }}</h3>
+            <p style="text-align: center; margin: 0;">Sugeneruotų projektų</p>
+        </div>
+        
+        <div class="card">
+            <h3 style="text-align: center; color: #2196F3;">
+                {{ outputs|selectattr('metadata.tracks_created')|map(attribute='metadata.tracks_created')|sum }}
+            </h3>
+            <p style="text-align: center; margin: 0;">Sukurtų takelių</p>
+        </div>
+        
+        <div class="card">
+            <h3 style="text-align: center; color: #ff9800;">
+                {{ outputs|selectattr('metadata.mode', 'equalto', 'real')|list|length }}
+            </h3>
+            <p style="text-align: center; margin: 0;">Realių generavimų</p>
+        </div>
+        
+        <div class="card">
+            <h3 style="text-align: center; color: #9C27B0;">
+                {{ outputs|selectattr('metadata.cover_created', 'equalto', true)|list|length }}
+            </h3>
+            <p style="text-align: center; margin: 0;">Su viršeliais</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Actions -->
+<div class="card">
+    <h2>⚡ Veiksmai</h2>
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <a href="/" class="btn">🚀 Sukurti Naują</a>
+        <a href="/status" class="btn btn-secondary">📊 Peržiūrėti Būseną</a>
+        <button onclick="window.location.reload()" class="btn btn-warning">🔄 Atnaujinti Sąrašą</button>
+    </div>
+</div>
+
+<!-- Instructions -->
+<div class="card">
+    <h2>💡 Patarimai</h2>
+    <ul style="line-height: 1.6;">
+        <li><strong>📥 Atsisiuntimas:</strong> Spauskite ant failų pavadinimų, kad atsisiųstumėte juos</li>
+        <li><strong>📁 Aplankų vietos:</strong> Visi failai saugomi <code>output/</code> kataloge</li>
+        <li><strong>🎵 Audio failai:</strong> MP3 formatu, tinka daugumai audio grotuvų</li>
+        <li><strong>🖼️ Viršeliai:</strong> JPG/PNG formatu, jei buvo sugeneruoti</li>
+        <li><strong>📄 Metadata:</strong> JSON failuose saugoma informacija apie projektą</li>
+    </ul>
+</div>
+{% endblock %}

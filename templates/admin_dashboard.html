@@ -1,0 +1,365 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Dashboard - Admin Panel{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Dashboard</li>
+{% endblock %}
+
+{% block content %}
+<!-- Quick Stats Row -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="h3 mb-3">
+            <i class="fas fa-tachometer-alt text-primary me-2"></i>
+            Dashboard Overview
+        </h1>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body stat-card">
+                <div class="stat-number text-white" id="totalProjects">
+                    {{ system_stats.total_projects or 0 }}
+                </div>
+                <div class="stat-label text-white-50">
+                    <i class="fas fa-folder me-1"></i>
+                    Total Projects
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card bg-success text-white">
+            <div class="card-body stat-card">
+                <div class="stat-number text-white" id="totalFiles">
+                    {{ system_stats.total_files or 0 }}
+                </div>
+                <div class="stat-label text-white-50">
+                    <i class="fas fa-file-audio me-1"></i>
+                    Generated Files
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card bg-warning text-white">
+            <div class="card-body stat-card">
+                <div class="stat-number text-white" id="totalSize">
+                    {{ "%.1f"|format(system_stats.total_size_mb or 0) }}MB
+                </div>
+                <div class="stat-label text-white-50">
+                    <i class="fas fa-hdd me-1"></i>
+                    Storage Used
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card bg-info text-white">
+            <div class="card-body stat-card">
+                <div class="stat-number text-white" id="sunoCredits">
+                    {{ api_status.suno.credits if api_status.suno.status == 'connected' else 'N/A' }}
+                </div>
+                <div class="stat-label text-white-50">
+                    <i class="fas fa-coins me-1"></i>
+                    Suno Credits
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Row -->
+<div class="row">
+    <!-- API Status -->
+    <div class="col-xl-6 col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-plug me-2"></i>
+                API Services Status
+            </div>
+            <div class="card-body">
+                <!-- Suno API -->
+                <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
+                    <div>
+                        <h6 class="mb-1">
+                            <i class="fas fa-music text-primary me-2"></i>
+                            Suno API
+                        </h6>
+                        <small class="text-muted">Music Generation Service</small>
+                    </div>
+                    <div class="text-end">
+                        {% set suno_status = api_status.suno %}
+                        <span class="status-badge 
+                            {% if suno_status.status == 'connected' %}status-connected
+                            {% elif suno_status.status == 'error' %}status-error
+                            {% else %}status-warning{% endif %}">
+                            <i class="fas fa-{{ 'check' if suno_status.status == 'connected' else 'times' if suno_status.status == 'error' else 'exclamation' }} me-1"></i>
+                            {{ suno_status.status.title() }}
+                        </span>
+                        {% if suno_status.status == 'connected' %}
+                            <div class="small text-success mt-1">{{ suno_status.credits }} credits</div>
+                        {% elif suno_status.error %}
+                            <div class="small text-danger mt-1">{{ suno_status.error }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Gemini AI -->
+                <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
+                    <div>
+                        <h6 class="mb-1">
+                            <i class="fas fa-brain text-info me-2"></i>
+                            Gemini AI
+                        </h6>
+                        <small class="text-muted">Text Generation Service</small>
+                    </div>
+                    <div class="text-end">
+                        {% set gemini_status = api_status.gemini %}
+                        <span class="status-badge 
+                            {% if gemini_status.status == 'connected' %}status-connected
+                            {% elif gemini_status.status == 'error' %}status-error
+                            {% else %}status-warning{% endif %}">
+                            <i class="fas fa-{{ 'check' if gemini_status.status == 'connected' else 'times' if gemini_status.status == 'error' else 'exclamation' }} me-1"></i>
+                            {{ gemini_status.status.title() }}
+                        </span>
+                        {% if gemini_status.status == 'connected' %}
+                            <div class="small text-success mt-1">{{ gemini_status.model }}</div>
+                        {% elif gemini_status.error %}
+                            <div class="small text-danger mt-1">{{ gemini_status.error }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Stability AI -->
+                <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                    <div>
+                        <h6 class="mb-1">
+                            <i class="fas fa-image text-warning me-2"></i>
+                            Stability AI
+                        </h6>
+                        <small class="text-muted">Image Generation Service</small>
+                    </div>
+                    <div class="text-end">
+                        {% set stability_status = api_status.stability %}
+                        <span class="status-badge 
+                            {% if stability_status.status == 'connected' %}status-connected
+                            {% elif stability_status.status == 'error' %}status-error
+                            {% else %}status-warning{% endif %}">
+                            <i class="fas fa-{{ 'check' if stability_status.status == 'connected' else 'times' if stability_status.status == 'error' else 'exclamation' }} me-1"></i>
+                            {{ stability_status.status.title() }}
+                        </span>
+                        {% if stability_status.error %}
+                            <div class="small text-danger mt-1">{{ stability_status.error }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <a href="{{ url_for('api_config') }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-cog me-1"></i>
+                        Configure APIs
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="col-xl-6 col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-history me-2"></i>
+                Recent Activity
+            </div>
+            <div class="card-body">
+                {% if system_stats.recent_projects %}
+                    {% for project in system_stats.recent_projects[:5] %}
+                    <div class="d-flex align-items-center mb-3 p-2 bg-light rounded">
+                        <div class="me-3">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                <i class="fas fa-music"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">{{ project.title }}</h6>
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>
+                                {{ project.created_at[:19] | replace('T', ' ') if project.created_at != 'Unknown' else 'Unknown' }}
+                            </small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-success">{{ project.tracks_created }} tracks</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-inbox fa-3x mb-3 opacity-25"></i>
+                        <p>No recent activity</p>
+                        <a href="{{ url_for('generator') }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus me-1"></i>
+                            Create First Project
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-bolt me-2"></i>
+                Quick Actions
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <a href="{{ url_for('generator') }}" class="btn btn-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4">
+                            <i class="fas fa-magic fa-2x mb-2"></i>
+                            <span>New Generation</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <a href="{{ url_for('batch') }}" class="btn btn-success w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4">
+                            <i class="fas fa-tasks fa-2x mb-2"></i>
+                            <span>Batch Process</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <a href="{{ url_for('analytics') }}" class="btn btn-info w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4">
+                            <i class="fas fa-chart-line fa-2x mb-2"></i>
+                            <span>Analytics</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <a href="{{ url_for('projects') }}" class="btn btn-warning w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4">
+                            <i class="fas fa-folder fa-2x mb-2"></i>
+                            <span>Browse Projects</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Information -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-server me-2"></i>
+                System Information
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6>Environment</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Python:</strong> {{ system_stats.system.python_version if system_stats.system else 'Unknown' }}</li>
+                            <li><strong>Server Time:</strong> <span id="serverTime">{{ system_stats.system.current_time[:19] if system_stats.system else 'Unknown' }}</span></li>
+                            <li><strong>Uptime:</strong> {{ "%.1f"|format(system_stats.system.uptime_hours) }}h</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Storage</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Projects:</strong> {{ system_stats.total_projects }}</li>
+                            <li><strong>Files:</strong> {{ system_stats.total_files }}</li>
+                            <li><strong>Total Size:</strong> {{ "%.1f"|format(system_stats.total_size_mb) }} MB</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Services</h6>
+                        <ul class="list-unstyled">
+                            <li>
+                                <strong>Web Server:</strong> 
+                                <span class="badge bg-success">Running</span>
+                            </li>
+                            <li>
+                                <strong>Background Tasks:</strong> 
+                                <span class="badge bg-info" id="activeTasks">0 active</span>
+                            </li>
+                            <li>
+                                <strong>Last Update:</strong> 
+                                <span id="lastUpdate">Just now</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Dashboard-specific JavaScript
+    
+    // Listen for system status updates
+    document.addEventListener('systemStatusUpdate', function(event) {
+        const data = event.detail;
+        
+        // Update stats
+        if (data.system_stats) {
+            document.getElementById('totalProjects').textContent = data.system_stats.total_projects || 0;
+            document.getElementById('totalFiles').textContent = data.system_stats.total_files || 0;
+            document.getElementById('totalSize').textContent = (data.system_stats.total_size_mb || 0).toFixed(1) + 'MB';
+        }
+        
+        // Update Suno credits
+        if (data.api_status && data.api_status.suno && data.api_status.suno.status === 'connected') {
+            document.getElementById('sunoCredits').textContent = data.api_status.suno.credits || 'N/A';
+        }
+        
+        // Update active tasks
+        const activeTasks = Object.keys(data.generation_tasks || {}).length;
+        document.getElementById('activeTasks').textContent = activeTasks + ' active';
+        
+        // Update last update time
+        document.getElementById('lastUpdate').textContent = 'Just now';
+    });
+    
+    // Update server time every second
+    function updateServerTime() {
+        const now = new Date();
+        document.getElementById('serverTime').textContent = now.toLocaleString();
+    }
+    
+    setInterval(updateServerTime, 1000);
+    
+    // Welcome message for first-time users
+    window.addEventListener('load', function() {
+        const totalProjects = parseInt(document.getElementById('totalProjects').textContent);
+        if (totalProjects === 0) {
+            setTimeout(() => {
+                Swal.fire({
+                    title: 'Welcome to Admin Panel!',
+                    text: 'Start by creating your first music generation project.',
+                    icon: 'info',
+                    confirmButtonText: 'Create Project',
+                    showCancelButton: true,
+                    cancelButtonText: 'Later'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = '{{ url_for("generator") }}';
+                    }
+                });
+            }, 1000);
+        }
+    });
+</script>
+{% endblock %}

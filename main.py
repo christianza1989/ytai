@@ -1,3 +1,4 @@
+import os
 from dotenv import load_dotenv
 from core.services.suno_client import SunoClient
 from core.services.gemini_client import GeminiClient

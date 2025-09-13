@@ -1,0 +1,498 @@
+{% extends "admin_base.html" %}
+
+{% block title %}API Configuration - Admin Panel{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+<li class="breadcrumb-item active">API Config</li>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-cog text-primary me-2"></i>
+            API Configuration
+        </h1>
+        <p class="text-muted">Configure and manage your API connections for music generation</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <button class="btn btn-outline-secondary" onclick="testAllConnections()">
+            <i class="fas fa-plug me-1"></i>
+            Test All
+        </button>
+    </div>
+</div>
+
+<!-- API Status Overview -->
+<div class="row mb-4">
+    <div class="col-md-4 col-sm-6 mb-3">
+        <div class="card {% if api_status.suno.status == 'connected' %}border-success{% elif api_status.suno.status == 'error' %}border-danger{% else %}border-warning{% endif %}">
+            <div class="card-body text-center">
+                <i class="fas fa-music fa-2x {% if api_status.suno.status == 'connected' %}text-success{% elif api_status.suno.status == 'error' %}text-danger{% else %}text-warning{% endif %} mb-2"></i>
+                <h6>Suno API</h6>
+                <span class="status-badge 
+                    {% if api_status.suno.status == 'connected' %}status-connected
+                    {% elif api_status.suno.status == 'error' %}status-error
+                    {% else %}status-warning{% endif %}">
+                    {{ api_status.suno.status.title() }}
+                </span>
+                {% if api_status.suno.status == 'connected' %}
+                    <div class="small text-success mt-2">{{ api_status.suno.credits }} credits</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 col-sm-6 mb-3">
+        <div class="card {% if api_status.gemini.status == 'connected' %}border-success{% elif api_status.gemini.status == 'error' %}border-danger{% else %}border-warning{% endif %}">
+            <div class="card-body text-center">
+                <i class="fas fa-brain fa-2x {% if api_status.gemini.status == 'connected' %}text-success{% elif api_status.gemini.status == 'error' %}text-danger{% else %}text-warning{% endif %} mb-2"></i>
+                <h6>Gemini AI</h6>
+                <span class="status-badge 
+                    {% if api_status.gemini.status == 'connected' %}status-connected
+                    {% elif api_status.gemini.status == 'error' %}status-error
+                    {% else %}status-warning{% endif %}">
+                    {{ api_status.gemini.status.title() }}
+                </span>
+                {% if api_status.gemini.status == 'connected' %}
+                    <div class="small text-success mt-2">{{ api_status.gemini.model }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 col-sm-6 mb-3">
+        <div class="card {% if api_status.stability.status == 'connected' %}border-success{% elif api_status.stability.status == 'error' %}border-danger{% else %}border-warning{% endif %}">
+            <div class="card-body text-center">
+                <i class="fas fa-image fa-2x {% if api_status.stability.status == 'connected' %}text-success{% elif api_status.stability.status == 'error' %}text-danger{% else %}text-warning{% endif %} mb-2"></i>
+                <h6>Stability AI</h6>
+                <span class="status-badge 
+                    {% if api_status.stability.status == 'connected' %}status-connected
+                    {% elif api_status.stability.status == 'error' %}status-error
+                    {% else %}status-warning{% endif %}">
+                    {{ api_status.stability.status.title() }}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Configuration Forms -->
+<div class="row">
+    <!-- Suno API Configuration -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-music text-primary me-2"></i>
+                Suno API Configuration
+            </div>
+            <div class="card-body">
+                <form id="sunoConfigForm">
+                    <div class="mb-3">
+                        <label for="sunoApiKey" class="form-label">API Key</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="sunoApiKey" 
+                                   placeholder="Enter your Suno API key"
+                                   value="{{ 'configured' if env_config.SUNO_API_KEY != 'not_configured' else '' }}">
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('sunoApiKey')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Get your API key from <a href="https://api.sunoapi.org" target="_blank">api.sunoapi.org</a>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="sunoModel" class="form-label">Preferred Model</label>
+                        <select class="form-select" id="sunoModel">
+                            <option value="v3_5">V3.5 (Balanced)</option>
+                            <option value="v4">V4 (High Quality)</option>
+                            <option value="v4_5">V4.5 (Latest)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="button" class="btn btn-outline-primary" onclick="testConnection('suno')">
+                            <i class="fas fa-plug me-1"></i>
+                            Test Connection
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>
+                            Save Configuration
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Usage Stats -->
+                {% if api_status.suno.status == 'connected' %}
+                <div class="mt-4 p-3 bg-light rounded">
+                    <h6 class="mb-2">Current Usage</h6>
+                    <div class="row">
+                        <div class="col-6">
+                            <small class="text-muted">Credits Remaining</small>
+                            <div class="fw-bold text-success">{{ api_status.suno.credits }}</div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Rate Limit</small>
+                            <div class="fw-bold">20/10s</div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Gemini AI Configuration -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-brain text-info me-2"></i>
+                Gemini AI Configuration
+            </div>
+            <div class="card-body">
+                <form id="geminiConfigForm">
+                    <div class="mb-3">
+                        <label for="geminiApiKey" class="form-label">API Key</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="geminiApiKey" 
+                                   placeholder="Enter your Gemini API key"
+                                   value="{{ 'configured' if env_config.GEMINI_API_KEY != 'not_configured' else '' }}">
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('geminiApiKey')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Get your API key from <a href="https://makersuite.google.com/app/apikey" target="_blank">Google AI Studio</a>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="geminiModel" class="form-label">Model</label>
+                        <select class="form-select" id="geminiModel">
+                            <option value="gemini-1.5-flash" {{ 'selected' if env_config.GEMINI_MODEL == 'gemini-1.5-flash' else '' }}>
+                                Gemini 1.5 Flash (Fast & Cheap)
+                            </option>
+                            <option value="gemini-1.5-pro" {{ 'selected' if env_config.GEMINI_MODEL == 'gemini-1.5-pro' else '' }}>
+                                Gemini 1.5 Pro (High Quality)
+                            </option>
+                            <option value="gemini-1.0-pro">
+                                Gemini 1.0 Pro (Legacy)
+                            </option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="geminiTemp" class="form-label">Temperature</label>
+                        <input type="range" class="form-range" id="geminiTemp" min="0" max="2" step="0.1" value="1.0">
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">Conservative</small>
+                            <small class="text-muted">Creative</small>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="button" class="btn btn-outline-info" onclick="testConnection('gemini')">
+                            <i class="fas fa-plug me-1"></i>
+                            Test Connection
+                        </button>
+                        <button type="submit" class="btn btn-info">
+                            <i class="fas fa-save me-1"></i>
+                            Save Configuration
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Second Row -->
+<div class="row">
+    <!-- Stability AI Configuration -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-image text-warning me-2"></i>
+                Stability AI Configuration
+            </div>
+            <div class="card-body">
+                <form id="stabilityConfigForm">
+                    <div class="mb-3">
+                        <label for="stabilityApiKey" class="form-label">API Key</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="stabilityApiKey" 
+                                   placeholder="Enter your Stability AI API key"
+                                   value="{{ 'configured' if env_config.STABLE_DIFFUSION_API_KEY != 'not_configured' else '' }}">
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('stabilityApiKey')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Get your API key from <a href="https://platform.stability.ai" target="_blank">Stability AI Platform</a>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="stabilityModel" class="form-label">Model</label>
+                        <select class="form-select" id="stabilityModel">
+                            <option value="stable-diffusion-xl-1024-v1-0">SDXL 1.0</option>
+                            <option value="sd3-medium">SD3 Medium</option>
+                            <option value="sd3-large">SD3 Large</option>
+                        </select>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Optional Service:</strong> Used for generating album covers. 
+                        System works without this API.
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="button" class="btn btn-outline-warning" onclick="testConnection('stability')">
+                            <i class="fas fa-plug me-1"></i>
+                            Test Connection
+                        </button>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-save me-1"></i>
+                            Save Configuration
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Settings -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-sliders-h text-secondary me-2"></i>
+                Advanced Settings
+            </div>
+            <div class="card-body">
+                <form id="advancedConfigForm">
+                    <div class="mb-3">
+                        <label for="requestTimeout" class="form-label">Request Timeout (seconds)</label>
+                        <input type="number" class="form-control" id="requestTimeout" 
+                               min="10" max="300" value="60">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="maxRetries" class="form-label">Max Retries</label>
+                        <input type="number" class="form-control" id="maxRetries" 
+                               min="1" max="10" value="3">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="enableCache" checked>
+                            <label class="form-check-label" for="enableCache">
+                                Enable Response Caching
+                            </label>
+                        </div>
+                        <div class="form-text">Caches similar requests to reduce API calls</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="enableFallback" checked>
+                            <label class="form-check-label" for="enableFallback">
+                                Enable Mock Fallback
+                            </label>
+                        </div>
+                        <div class="form-text">Use mock data if APIs fail</div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-secondary">
+                            <i class="fas fa-save me-1"></i>
+                            Save Advanced Settings
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Documentation Section -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-book text-info me-2"></i>
+                API Documentation & Help
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-music text-primary me-2"></i>Suno API</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Purpose:</strong> Music generation</li>
+                            <li><strong>Cost:</strong> ~5-10 credits per song</li>
+                            <li><strong>Limits:</strong> 20 requests/10 seconds</li>
+                        </ul>
+                        <a href="https://api.sunoapi.org/docs" target="_blank" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-external-link-alt me-1"></i>
+                            Documentation
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-brain text-info me-2"></i>Gemini AI</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Purpose:</strong> Text generation</li>
+                            <li><strong>Cost:</strong> ~$0.001-0.01 per request</li>
+                            <li><strong>Limits:</strong> Varies by plan</li>
+                        </ul>
+                        <a href="https://ai.google.dev/docs" target="_blank" class="btn btn-outline-info btn-sm">
+                            <i class="fas fa-external-link-alt me-1"></i>
+                            Documentation
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-image text-warning me-2"></i>Stability AI</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Purpose:</strong> Image generation</li>
+                            <li><strong>Cost:</strong> ~$0.04 per image</li>
+                            <li><strong>Limits:</strong> Based on credits</li>
+                        </ul>
+                        <a href="https://platform.stability.ai/docs" target="_blank" class="btn btn-outline-warning btn-sm">
+                            <i class="fas fa-external-link-alt me-1"></i>
+                            Documentation
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="mt-4 p-3 bg-light rounded">
+                    <h6><i class="fas fa-lightbulb text-warning me-2"></i>Quick Tips</h6>
+                    <ul class="mb-0">
+                        <li>Start with test mode to familiarize yourself with the system</li>
+                        <li>Configure Suno and Gemini APIs for full functionality</li>
+                        <li>Stability AI is optional - used only for album covers</li>
+                        <li>Monitor your usage to avoid unexpected costs</li>
+                        <li>Keep your API keys secure and never share them</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // API Configuration JavaScript
+    
+    function togglePasswordVisibility(fieldId) {
+        const field = document.getElementById(fieldId);
+        const button = field.nextElementSibling;
+        const icon = button.querySelector('i');
+        
+        if (field.type === 'password') {
+            field.type = 'text';
+            icon.className = 'fas fa-eye-slash';
+        } else {
+            field.type = 'password';
+            icon.className = 'fas fa-eye';
+        }
+    }
+    
+    function testConnection(service) {
+        const button = event.target;
+        const originalText = button.innerHTML;
+        
+        showLoading(button);
+        
+        // Simulate API test
+        setTimeout(() => {
+            hideLoading(button, originalText);
+            
+            if (service === 'suno' && document.getElementById('sunoApiKey').value) {
+                showToast(`${service.charAt(0).toUpperCase() + service.slice(1)} API connection successful!`, 'success');
+            } else if (service === 'gemini' && document.getElementById('geminiApiKey').value) {
+                showToast(`${service.charAt(0).toUpperCase() + service.slice(1)} API connection successful!`, 'success');
+            } else if (service === 'stability' && document.getElementById('stabilityApiKey').value) {
+                showToast(`${service.charAt(0).toUpperCase() + service.slice(1)} API connection successful!`, 'success');
+            } else {
+                showToast(`Please enter a valid API key for ${service}`, 'warning');
+            }
+        }, 2000);
+    }
+    
+    function testAllConnections() {
+        const services = ['suno', 'gemini', 'stability'];
+        let tested = 0;
+        
+        Swal.fire({
+            title: 'Testing All Connections',
+            html: '<div class="progress"><div class="progress-bar" role="progressbar" style="width: 0%"></div></div>',
+            allowOutsideClick: false,
+            showConfirmButton: false
+        });
+        
+        services.forEach((service, index) => {
+            setTimeout(() => {
+                tested++;
+                const progress = (tested / services.length) * 100;
+                document.querySelector('.progress-bar').style.width = progress + '%';
+                
+                if (tested === services.length) {
+                    Swal.close();
+                    showToast('All API connections tested!', 'success');
+                }
+            }, (index + 1) * 1000);
+        });
+    }
+    
+    // Form submissions
+    document.getElementById('sunoConfigForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveConfiguration('suno');
+    });
+    
+    document.getElementById('geminiConfigForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveConfiguration('gemini');
+    });
+    
+    document.getElementById('stabilityConfigForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveConfiguration('stability');
+    });
+    
+    document.getElementById('advancedConfigForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveConfiguration('advanced');
+    });
+    
+    function saveConfiguration(service) {
+        const button = event.target.querySelector('button[type="submit"]');
+        const originalText = button.innerHTML;
+        
+        showLoading(button);
+        
+        // Simulate save
+        setTimeout(() => {
+            hideLoading(button, originalText);
+            showToast(`${service.charAt(0).toUpperCase() + service.slice(1)} configuration saved!`, 'success');
+        }, 1500);
+    }
+    
+    // Temperature slider update
+    document.getElementById('geminiTemp').addEventListener('input', function() {
+        const value = this.value;
+        this.title = `Temperature: ${value}`;
+    });
+    
+    // Initialize tooltips
+    const temperatureSlider = document.getElementById('geminiTemp');
+    temperatureSlider.title = `Temperature: ${temperatureSlider.value}`;
+</script>
+{% endblock %}

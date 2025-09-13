@@ -1,16 +1,33 @@
 import os
 from typing import Optional
 from pathlib import Path
-from moviepy.editor import AudioFileClip, ImageClip, CompositeVideoClip
+
+try:
+    from moviepy.editor import AudioFileClip, ImageClip, CompositeVideoClip, ColorClip, VideoFileClip
+    MOVIEPY_AVAILABLE = True
+    print("✅ MoviePy successfully loaded - video creation enabled")
+except ImportError as e:
+    print(f"⚠️  MoviePy not available: {e}. Video creation will be disabled.")
+    MOVIEPY_AVAILABLE = False
 
 class VideoCreator:
     """Utility class for creating videos from audio and image files"""
 
     def __init__(self):
-        pass
+        self.moviepy_available = MOVIEPY_AVAILABLE
+        if not self.moviepy_available:
+            print("⚠️  Video creation functions are disabled due to missing MoviePy dependency.")
 
     def create_video_from_audio_and_image(self, image_path: str, audio_path: str, output_path: str, title: str) -> bool:
         """Create MP4 video from image and audio files"""
+        if not self.moviepy_available:
+            print("❌ Video creation is disabled - MoviePy not available")
+            print(f"📝 Would create video: {title}")
+            print(f"   Image: {image_path}")
+            print(f"   Audio: {audio_path}")
+            print(f"   Output: {output_path}")
+            return False
+            
         try:
             print(f"🎬 Kuriamas video failas: {title}")
 
@@ -46,7 +63,6 @@ class VideoCreator:
             image_clip = image_clip.set_position('center')
 
             # Create background (black)
-            from moviepy.editor import ColorClip
             background = ColorClip(size=(1920, 1080), color=(0, 0, 0), duration=duration)
 
             # Combine background, image, and audio
@@ -110,9 +126,11 @@ class VideoCreator:
 
     def get_video_info(self, video_path: str) -> Optional[dict]:
         """Get information about a video file"""
+        if not self.moviepy_available:
+            print("❌ Video info retrieval is disabled - MoviePy not available")
+            return None
+            
         try:
-            from moviepy.editor import VideoFileClip
-
             if not Path(video_path).exists():
                 return None
 
