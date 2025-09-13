@@ -37,6 +37,11 @@ from live_trending_hijacker import LiveTrendingHijacker
 # Import unlimited empire system
 from ai_channel_generator import AIChannelGenerator
 
+# Import advanced genre system
+from advanced_genre_system import advanced_genre_system, recommendation_engine, VocalIntelligenceEngine
+from gemini_vocal_intelligence import gemini_vocal_engine
+from music_industry_analytics import music_analytics
+
 load_dotenv()
 
 app = Flask(__name__)
@@ -53,6 +58,9 @@ class SystemState:
         self.voice_empire = VoiceCloningEmpire()  # Initialize voice cloning system
         self.trending_hijacker = LiveTrendingHijacker()  # Initialize trending hijacker
         self.ai_channel_generator = AIChannelGenerator()  # Initialize unlimited empire system
+        self.vocal_ai = VocalIntelligenceEngine()  # Initialize AI vocal decision engine
+        self.gemini_vocal_ai = gemini_vocal_engine  # Initialize Gemini AI vocal intelligence
+        self.music_analytics = music_analytics  # Initialize music industry analytics engine
         
     def update_api_status(self):
         """Update API connection status"""
@@ -318,6 +326,17 @@ def settings():
 def youtube_channels_manager():
     """YouTube Channels Manager - Multi-channel management interface"""
     return render_template('youtube_channels.html')
+
+@app.route('/enhanced-channel-creation')
+@require_auth
+def enhanced_channel_creation():
+    """Advanced Channel Creation with Genre Intelligence"""
+    return render_template('enhanced_channel_creation.html')
+
+@app.route('/templates/genre_tree_selector.html')
+def serve_genre_tree_selector():
+    """Serve the genre tree selector template as component"""
+    return send_from_directory('templates', 'genre_tree_selector.html')
 
 @app.route('/automation-control')
 @require_auth
@@ -1848,6 +1867,551 @@ def get_empire_activity():
             'success': False,
             'error': str(e)
         }), 500
+
+# =============================================================================
+# ADVANCED GENRE SYSTEM API ENDPOINTS
+# =============================================================================
+
+@app.route('/api/genres/tree')
+@require_auth
+def api_genres_tree():
+    """Get complete genre tree with statistics"""
+    try:
+        return jsonify(advanced_genre_system.genre_tree)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/genres/recommendations/<recommendation_type>')
+@require_auth
+def api_genres_recommendations(recommendation_type):
+    """Get genre recommendations by type"""
+    try:
+        limit = request.args.get('limit', 10, type=int)
+        
+        if recommendation_type == 'profitable':
+            recommendations = recommendation_engine.get_top_profitable_genres(limit)
+        elif recommendation_type == 'trending':
+            recommendations = recommendation_engine.get_trending_genres(limit)
+        elif recommendation_type == 'easy':
+            recommendations = recommendation_engine.get_easiest_to_start(limit)
+        else:
+            return jsonify({'error': 'Invalid recommendation type'}), 400
+        
+        return jsonify(recommendations)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/genres/vocal-decision', methods=['POST'])
+@require_auth
+def api_genres_vocal_decision():
+    """Get AI vocal configuration decision using Gemini AI"""
+    try:
+        data = request.get_json() or {}
+        
+        # Prepare comprehensive context for Gemini AI
+        context = {
+            'genre_info': {
+                'category': data.get('category', 'ELECTRONIC'),
+                'subgenre': data.get('subgenre', 'HOUSE'),
+                'substyle': data.get('substyle'),
+                'vocal_probability': data.get('vocal_probability', 0.5),
+                'preferred_vocals': data.get('preferred_vocals', [])
+            },
+            'user_context': {
+                'target_audience': data.get('target_audience', 'general'),
+                'time_context': data.get('time_context', 'any'),
+                'upload_schedule': data.get('upload_schedule', 'weekly'),
+                'target_revenue': data.get('target_revenue', 2000),
+                'preferred_language': data.get('preferred_language', 'en')
+            }
+        }
+        
+        # Get comprehensive strategy from Gemini AI
+        strategy = system_state.gemini_vocal_ai.get_comprehensive_vocal_strategy(context)
+        
+        return jsonify({
+            'vocal_configuration': strategy['vocal_configuration'],
+            'ai_analysis': strategy['ai_analysis'],
+            'decision_rationale': strategy['ai_analysis'].get('market_rationale', 'AI-powered analysis'),
+            'confidence_score': strategy['ai_analysis'].get('confidence_score', 75),
+            'market_intelligence': strategy['ai_analysis'].get('market_intelligence', {}),
+            'actionable_insights': strategy['ai_analysis'].get('actionable_insights', []),
+            'implementation_guide': strategy['implementation_guide'],
+            'success_metrics': strategy['success_metrics'],
+            'gemini_powered': strategy['ai_powered']
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/genres/vocal-strategy-advanced', methods=['POST'])
+@require_auth
+def api_genres_vocal_strategy_advanced():
+    """Get advanced vocal strategy with full Gemini AI analysis"""
+    try:
+        data = request.get_json() or {}
+        
+        context = {
+            'genre_info': {
+                'category': data.get('category', 'ELECTRONIC'),
+                'subgenre': data.get('subgenre', 'HOUSE'),
+                'substyle': data.get('substyle'),
+                'monthly_revenue': data.get('monthly_revenue', 2500),
+                'difficulty_level': data.get('difficulty_level', 50),
+                'competition_level': data.get('competition_level', 70)
+            },
+            'user_context': {
+                'target_audience': data.get('target_audience', 'general'),
+                'upload_schedule': data.get('upload_schedule', 'weekly'),
+                'target_revenue': data.get('target_revenue', 2000),
+                'experience_level': data.get('experience_level', 'intermediate'),
+                'market_focus': data.get('market_focus', 'global')
+            }
+        }
+        
+        # Get full strategy with market analysis
+        strategy = system_state.gemini_vocal_ai.get_comprehensive_vocal_strategy(context)
+        
+        # Add additional market insights
+        market_analysis = {
+            'trending_opportunities': system_state.gemini_vocal_ai._get_trending_factor(strategy['vocal_configuration']['vocal_type']),
+            'audience_fit': system_state.gemini_vocal_ai._get_audience_compatibility(strategy['vocal_configuration']['vocal_type'], context['user_context']['target_audience']),
+            'revenue_optimization': system_state.gemini_vocal_ai._get_revenue_optimization(strategy['vocal_configuration']['vocal_type'], context),
+            'competitive_position': system_state.gemini_vocal_ai._get_competitive_landscape(strategy['vocal_configuration']['vocal_type'], context['genre_info'])
+        }
+        
+        return jsonify({
+            'vocal_strategy': strategy,
+            'market_analysis': market_analysis,
+            'roi_projection': {
+                'monthly_revenue_boost': market_analysis['revenue_optimization']['projected_monthly_revenue'] - context['user_context']['target_revenue'],
+                'confidence_level': market_analysis['revenue_optimization']['revenue_confidence'],
+                'payback_period': '2-4 weeks',
+                'annual_projection': market_analysis['revenue_optimization']['projected_monthly_revenue'] * 12
+            },
+            'next_steps': [
+                'Implement vocal configuration in next content creation',
+                'Monitor engagement metrics for 2 weeks',
+                'A/B test alternative vocal approaches',
+                'Scale successful vocal strategies across channels'
+            ]
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/genres/statistics')
+@require_auth
+def api_genres_statistics():
+    """Get comprehensive genre statistics overview"""
+    try:
+        stats = {
+            'total_categories': len(advanced_genre_system.genre_tree),
+            'total_subgenres': sum(len(cat.get('subgenres', {})) for cat in advanced_genre_system.genre_tree.values()),
+            'average_monthly_revenue': 0,
+            'highest_revenue_genre': None,
+            'trending_count': 0,
+            'easy_start_count': 0,
+            'vocal_vs_instrumental': {'vocal': 0, 'instrumental': 0, 'mixed': 0}
+        }
+        
+        all_revenues = []
+        
+        for category_name, category in advanced_genre_system.genre_tree.items():
+            if 'subgenres' in category:
+                for subgenre_name, subgenre in category['subgenres'].items():
+                    if 'statistics' in subgenre:
+                        revenue = subgenre['statistics'].monthly_revenue
+                        all_revenues.append(revenue)
+                        
+                        if not stats['highest_revenue_genre'] or revenue > stats['highest_revenue_genre']['revenue']:
+                            stats['highest_revenue_genre'] = {
+                                'name': f"{category_name}.{subgenre_name}",
+                                'revenue': revenue
+                            }
+                        
+                        # Count trending
+                        if subgenre['statistics'].growth_trend > 25:
+                            stats['trending_count'] += 1
+                        
+                        # Count easy start
+                        if subgenre['statistics'].difficulty_level < 40:
+                            stats['easy_start_count'] += 1
+                        
+                        # Vocal preference categorization
+                        vocal_pref = subgenre['statistics'].vocal_preference
+                        if vocal_pref < 0.3:
+                            stats['vocal_vs_instrumental']['instrumental'] += 1
+                        elif vocal_pref > 0.7:
+                            stats['vocal_vs_instrumental']['vocal'] += 1
+                        else:
+                            stats['vocal_vs_instrumental']['mixed'] += 1
+        
+        if all_revenues:
+            stats['average_monthly_revenue'] = round(sum(all_revenues) / len(all_revenues), 2)
+        
+        return jsonify(stats)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/genres/optimize-channel', methods=['POST'])
+@require_auth
+def api_genres_optimize_channel():
+    """Optimize genre selection for new channel"""
+    try:
+        data = request.get_json() or {}
+        
+        # Channel preferences
+        target_revenue = data.get('target_monthly_revenue', 2000)
+        difficulty_preference = data.get('difficulty_preference', 'medium')  # easy, medium, hard
+        vocal_preference = data.get('vocal_preference', 'any')  # vocal, instrumental, any
+        upload_frequency = data.get('upload_frequency', 'weekly')  # daily, weekly, monthly
+        
+        # Get all genres with their scores
+        genre_recommendations = []
+        
+        for category_name, category in advanced_genre_system.genre_tree.items():
+            if 'subgenres' in category:
+                for subgenre_name, subgenre in category['subgenres'].items():
+                    if 'statistics' in subgenre:
+                        stats = subgenre['statistics']
+                        
+                        # Calculate optimization score
+                        score = 0
+                        
+                        # Revenue score (40% weight)
+                        revenue_score = min(100, (stats.monthly_revenue / target_revenue) * 100)
+                        score += revenue_score * 0.4
+                        
+                        # Difficulty score (25% weight)
+                        if difficulty_preference == 'easy':
+                            difficulty_score = 100 - stats.difficulty_level
+                        elif difficulty_preference == 'hard':
+                            difficulty_score = stats.difficulty_level
+                        else:  # medium
+                            difficulty_score = 100 - abs(stats.difficulty_level - 50)
+                        score += difficulty_score * 0.25
+                        
+                        # Vocal preference score (20% weight)
+                        vocal_score = 50  # default
+                        if vocal_preference == 'vocal' and stats.vocal_preference > 0.6:
+                            vocal_score = 100
+                        elif vocal_preference == 'instrumental' and stats.vocal_preference < 0.3:
+                            vocal_score = 100
+                        elif vocal_preference == 'any':
+                            vocal_score = 75
+                        score += vocal_score * 0.2
+                        
+                        # Growth trend score (15% weight)
+                        growth_score = max(0, min(100, stats.growth_trend + 50))
+                        score += growth_score * 0.15
+                        
+                        genre_recommendations.append({
+                            'genre_path': f"{category_name}.{subgenre_name}",
+                            'category': category_name,
+                            'subgenre': subgenre_name,
+                            'optimization_score': round(score, 1),
+                            'statistics': {
+                                'monthly_revenue': stats.monthly_revenue,
+                                'difficulty_level': stats.difficulty_level,
+                                'growth_trend': stats.growth_trend,
+                                'vocal_preference': stats.vocal_preference,
+                                'competition_level': stats.competition_level,
+                                'monetization_rate': stats.monetization_rate
+                            },
+                            'match_reasons': []
+                        })
+        
+        # Sort by score and get top recommendations
+        genre_recommendations.sort(key=lambda x: x['optimization_score'], reverse=True)
+        top_recommendations = genre_recommendations[:10]
+        
+        # Add match reasons for top recommendations
+        for rec in top_recommendations:
+            reasons = []
+            stats = rec['statistics']
+            
+            if stats['monthly_revenue'] >= target_revenue:
+                reasons.append(f"Exceeds target revenue (${stats['monthly_revenue']}/mo)")
+            
+            if difficulty_preference == 'easy' and stats['difficulty_level'] < 40:
+                reasons.append("Low difficulty - easy to start")
+            
+            if stats['growth_trend'] > 20:
+                reasons.append(f"Strong growth trend (+{stats['growth_trend']}%)")
+            
+            if vocal_preference == 'vocal' and stats['vocal_preference'] > 0.6:
+                reasons.append("High vocal preference match")
+            elif vocal_preference == 'instrumental' and stats['vocal_preference'] < 0.3:
+                reasons.append("Instrumental preference match")
+            
+            if stats['competition_level'] < 60:
+                reasons.append("Low competition market")
+            
+            if stats['monetization_rate'] > 80:
+                reasons.append("High monetization potential")
+            
+            rec['match_reasons'] = reasons
+        
+        return jsonify({
+            'optimization_results': top_recommendations,
+            'optimization_parameters': {
+                'target_revenue': target_revenue,
+                'difficulty_preference': difficulty_preference,
+                'vocal_preference': vocal_preference,
+                'upload_frequency': upload_frequency
+            },
+            'summary': {
+                'total_genres_analyzed': len(genre_recommendations),
+                'top_recommendation': top_recommendations[0] if top_recommendations else None,
+                'average_score': round(sum(r['optimization_score'] for r in top_recommendations) / len(top_recommendations), 1) if top_recommendations else 0
+            }
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/genres/suno-prompt', methods=['POST'])
+@require_auth
+def api_genres_suno_prompt():
+    """Generate optimized Suno prompts based on genre selection"""
+    try:
+        data = request.get_json() or {}
+        
+        genre_path = data.get('genre_path', '').split('.')
+        if len(genre_path) != 2:
+            return jsonify({'error': 'Invalid genre path format'}), 400
+        
+        category_name, subgenre_name = genre_path
+        substyle_name = data.get('substyle')
+        
+        # Get genre data
+        category = advanced_genre_system.genre_tree.get(category_name)
+        if not category:
+            return jsonify({'error': 'Category not found'}), 404
+        
+        subgenre = category.get('subgenres', {}).get(subgenre_name)
+        if not subgenre:
+            return jsonify({'error': 'Subgenre not found'}), 404
+        
+        # Get substyle if specified
+        substyle = None
+        if substyle_name and 'substyles' in subgenre:
+            substyle = subgenre['substyles'].get(substyle_name)
+        
+        # Generate AI vocal decision
+        vocal_context = {
+            'time_context': data.get('time_context', 'any'),
+            'target_audience': data.get('target_audience', 'general'),
+            'preferred_language': data.get('preferred_language', 'en')
+        }
+        
+        genre_info = {
+            'vocal_probability': substyle['vocal_probability'] if substyle else subgenre['statistics'].vocal_preference,
+            'preferred_vocals': substyle.get('preferred_vocals', []) if substyle else []
+        }
+        
+        vocal_config = system_state.vocal_ai.decide_vocal_configuration(genre_info, vocal_context)
+        
+        # Build Suno prompt
+        prompt_parts = []
+        
+        # Genre and style
+        if substyle and substyle.get('trending_keywords'):
+            prompt_parts.extend(substyle['trending_keywords'][:3])  # Top 3 keywords
+        else:
+            prompt_parts.append(subgenre_name.replace('_', ' ').lower())
+        
+        # Vocal configuration
+        if vocal_config.vocal_type.value == 'instrumental':
+            prompt_parts.append('instrumental')
+        elif vocal_config.vocal_type.value == 'atmospheric_vocals':
+            prompt_parts.extend(['atmospheric vocals', 'ambient vocals'])
+        elif vocal_config.vocal_type.value == 'full_lyrics':
+            prompt_parts.extend([vocal_config.style, f'{vocal_config.mood} vocals'])
+        elif vocal_config.vocal_type.value == 'minimal_vocals':
+            prompt_parts.extend(['minimal vocals', 'sparse lyrics'])
+        
+        # Mood and style
+        prompt_parts.extend([vocal_config.mood, 'professional production'])
+        
+        # Technical specifications based on genre
+        if category_name == 'ELECTRONIC':
+            prompt_parts.extend(['electronic', '128 BPM', 'synthesized'])
+        elif category_name == 'CHILLOUT':
+            prompt_parts.extend(['relaxing', '80-90 BPM', 'ambient'])
+        elif category_name == 'WORKOUT':
+            prompt_parts.extend(['energetic', '120-140 BPM', 'driving beat'])
+        
+        # Create final prompt
+        suno_prompt = ', '.join(prompt_parts)
+        
+        # Generate metadata suggestions
+        metadata_suggestions = {
+            'title_templates': [
+                f"{subgenre_name.replace('_', ' ').title()} Vibes",
+                f"{vocal_config.mood.title()} {substyle_name.replace('_', ' ').title() if substyle_name else subgenre_name.replace('_', ' ').title()}",
+                f"Premium {subgenre_name.replace('_', ' ').title()} Mix"
+            ],
+            'tags': prompt_parts + ['AI music', 'Suno AI', category_name.lower()],
+            'description_template': f"Experience the perfect blend of {subgenre_name.replace('_', ' ')} with {vocal_config.mood} vibes. Created with advanced AI for optimal listening experience."
+        }
+        
+        return jsonify({
+            'suno_prompt': suno_prompt,
+            'vocal_configuration': {
+                'type': vocal_config.vocal_type.value,
+                'language': vocal_config.language,
+                'mood': vocal_config.mood,
+                'style': vocal_config.style,
+                'effects': vocal_config.vocal_effects
+            },
+            'metadata_suggestions': metadata_suggestions,
+            'genre_context': {
+                'category': category_name,
+                'subgenre': subgenre_name,
+                'substyle': substyle_name,
+                'monthly_revenue_potential': subgenre['statistics'].monthly_revenue,
+                'difficulty_level': subgenre['statistics'].difficulty_level,
+                'growth_trend': subgenre['statistics'].growth_trend
+            },
+            'optimization_tips': [
+                f"This genre has {subgenre['statistics'].competition_level}% competition level",
+                f"Expected monthly revenue: ${subgenre['statistics'].monthly_revenue}",
+                f"Audience retention rate: {subgenre['statistics'].audience_retention}%",
+                f"Difficulty level: {subgenre['statistics'].difficulty_level}/100"
+            ]
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# =============================================================================
+# MUSIC INDUSTRY ANALYTICS API ENDPOINTS
+# =============================================================================
+
+@app.route('/api/analytics/market-report')
+@require_auth
+def api_analytics_market_report():
+    """Get comprehensive daily market report"""
+    try:
+        import asyncio
+        
+        # Generate daily market report
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        report = loop.run_until_complete(system_state.music_analytics.generate_daily_report())
+        loop.close()
+        
+        return jsonify({
+            'success': True,
+            'report': report,
+            'generated_at': datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/analytics/genre-performance/<genre_path>')
+@require_auth
+def api_analytics_genre_performance(genre_path):
+    """Get detailed performance analysis for specific genre"""
+    try:
+        days = request.args.get('days', 30, type=int)
+        
+        performance = system_state.music_analytics.analyze_genre_performance(genre_path, days)
+        
+        return jsonify({
+            'success': True,
+            'performance': performance,
+            'analysis_date': datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/analytics/market-opportunities')
+@require_auth
+def api_analytics_market_opportunities():
+    """Get current market opportunities and trends"""
+    try:
+        opportunities = system_state.music_analytics.get_market_opportunities()
+        
+        return jsonify({
+            'success': True,
+            'opportunities': opportunities,
+            'analysis_date': datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/analytics/real-time-data')
+@require_auth
+def api_analytics_real_time_data():
+    """Get real-time market data collection"""
+    try:
+        import asyncio
+        
+        # Collect real-time data
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        market_data = loop.run_until_complete(system_state.music_analytics.collect_real_time_data())
+        loop.close()
+        
+        return jsonify({
+            'success': True,
+            'market_data': market_data,
+            'collected_at': datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/analytics/industry-benchmarks')
+@require_auth
+def api_analytics_industry_benchmarks():
+    """Get industry benchmarks and standards"""
+    try:
+        benchmarks = system_state.music_analytics.industry_benchmarks
+        
+        # Add real-time context
+        current_month = datetime.now().strftime('%B').lower()
+        seasonal_data = benchmarks['seasonal_multipliers'].get(current_month, {})
+        
+        enhanced_benchmarks = {
+            'global_metrics': {
+                'total_market_size': benchmarks['global_music_revenue'],
+                'streaming_growth_rate': benchmarks['streaming_growth_rate'],
+                'youtube_market_share': benchmarks['youtube_music_share']
+            },
+            'rpm_benchmarks': benchmarks['average_rpm_by_genre'],
+            'current_seasonal_multipliers': seasonal_data,
+            'industry_insights': [
+                f"Global music industry worth ${benchmarks['global_music_revenue']/1e9:.1f}B in 2025",
+                f"Streaming growth rate: {benchmarks['streaming_growth_rate']*100:.1f}% YoY",
+                f"YouTube holds {benchmarks['youtube_music_share']*100:.0f}% of music streaming market",
+                f"Current month ({current_month.title()}) shows {len(seasonal_data)} genres with seasonal boost"
+            ]
+        }
+        
+        return jsonify({
+            'success': True,
+            'benchmarks': enhanced_benchmarks,
+            'updated_at': datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/analytics/performance-tracking', methods=['POST'])
+@require_auth
+def api_analytics_performance_tracking():
+    """Track performance data for analytics"""
+    try:
+        data = request.get_json() or {}
+        
+        # Save performance snapshot
+        system_state.music_analytics.save_performance_snapshot(data)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Performance data tracked successfully',
+            'tracked_at': datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/unlimited_empire/expansion_plan', methods=['POST'])
 @require_auth

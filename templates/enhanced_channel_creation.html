@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Channel Creation - Autonominis Muzikantas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .creation-wizard {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+        
+        .wizard-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .wizard-header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .wizard-steps {
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .step {
+            display: flex;
+            align-items: center;
+            margin: 0 15px;
+            padding: 10px 20px;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+        
+        .step.active {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            transform: scale(1.05);
+        }
+        
+        .step.completed {
+            background: linear-gradient(135deg, #17a2b8 0%, #6c757d 100%);
+            color: white;
+        }
+        
+        .step-content {
+            padding: 40px;
+            min-height: 600px;
+        }
+        
+        .genre-optimizer {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+        
+        .optimization-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-left: 4px solid #007bff;
+        }
+        
+        .revenue-projection {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .ai-recommendation {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .vocal-strategy-preview {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        
+        .suno-prompt-preview {
+            background: #2c3e50;
+            color: #ecf0f1;
+            border-radius: 10px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            border-left: 4px solid #e74c3c;
+        }
+    </style>
+</head>
+<body class="creation-wizard">
+    <div class="wizard-container">
+        <!-- Header -->
+        <div class="wizard-header">
+            <h1><i class="fas fa-magic me-3"></i>Advanced YouTube Channel Creation</h1>
+            <p class="mb-0">AI-powered channel optimization with advanced genre intelligence</p>
+        </div>
+        
+        <!-- Progress Steps -->
+        <div class="wizard-steps">
+            <div class="step active" data-step="1">
+                <i class="fas fa-cog me-2"></i>
+                <span>Channel Setup</span>
+            </div>
+            <div class="step" data-step="2">
+                <i class="fas fa-sitemap me-2"></i>
+                <span>Genre Selection</span>
+            </div>
+            <div class="step" data-step="3">
+                <i class="fas fa-brain me-2"></i>
+                <span>AI Optimization</span>
+            </div>
+            <div class="step" data-step="4">
+                <i class="fas fa-rocket me-2"></i>
+                <span>Launch</span>
+            </div>
+        </div>
+        
+        <!-- Step Content -->
+        <div class="step-content">
+            <!-- Step 1: Channel Setup -->
+            <div id="step1" class="wizard-step">
+                <h3><i class="fas fa-youtube text-danger me-2"></i>Channel Configuration</h3>
+                
+                <div class="row">
+                    <div class="col-md-8">
+                        <form id="channelForm">
+                            <div class="mb-3">
+                                <label for="channelName" class="form-label">Channel Name</label>
+                                <input type="text" class="form-control form-control-lg" id="channelName" placeholder="e.g., LoFi Beats Central">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="channelDescription" class="form-label">Description</label>
+                                <textarea class="form-control" id="channelDescription" rows="3" placeholder="Describe your channel's purpose and content style"></textarea>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="targetAudience" class="form-label">Target Audience</label>
+                                    <select class="form-select" id="targetAudience">
+                                        <option value="general">General Audience</option>
+                                        <option value="study">Students & Focus</option>
+                                        <option value="workout">Fitness Enthusiasts</option>
+                                        <option value="relaxation">Relaxation & Meditation</option>
+                                        <option value="gaming">Gaming Community</option>
+                                        <option value="sleep">Sleep & Wellness</option>
+                                        <option value="work">Work & Productivity</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="uploadSchedule" class="form-label">Upload Schedule</label>
+                                    <select class="form-select" id="uploadSchedule">
+                                        <option value="daily">Daily</option>
+                                        <option value="every-2-days">Every 2 Days</option>
+                                        <option value="weekly">Weekly</option>
+                                        <option value="bi-weekly">Bi-weekly</option>
+                                        <option value="monthly">Monthly</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <label for="targetRevenue" class="form-label">Target Monthly Revenue ($)</label>
+                                    <input type="number" class="form-control" id="targetRevenue" placeholder="2000" min="100" max="50000">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="difficultyPreference" class="form-label">Difficulty Preference</label>
+                                    <select class="form-select" id="difficultyPreference">
+                                        <option value="easy">Easy Start (Low Competition)</option>
+                                        <option value="medium">Medium Challenge</option>
+                                        <option value="hard">High Competition (Higher Rewards)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="optimization-card">
+                            <h5><i class="fas fa-lightbulb text-warning me-2"></i>Smart Recommendations</h5>
+                            <div id="setupRecommendations">
+                                <div class="ai-recommendation">
+                                    <strong>💡 AI Tip:</strong> Fill out your preferences to get personalized genre recommendations in the next step.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-end mt-4">
+                    <button type="button" class="btn btn-primary btn-lg" onclick="nextStep(2)">
+                        Next: Genre Selection <i class="fas fa-arrow-right ms-2"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Step 2: Genre Selection -->
+            <div id="step2" class="wizard-step" style="display: none;">
+                <h3><i class="fas fa-sitemap me-2"></i>Advanced Genre Selection</h3>
+                
+                <!-- Genre Optimizer Panel -->
+                <div class="genre-optimizer">
+                    <h4><i class="fas fa-brain text-info me-2"></i>AI Genre Optimization Engine</h4>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div id="optimizationResults" class="optimization-results">
+                                <div class="ai-recommendation">
+                                    <i class="fas fa-spinner fa-spin me-2"></i>
+                                    Analyzing your preferences and market data...
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="button" class="btn btn-info w-100 mb-2" onclick="runGenreOptimization()">
+                                <i class="fas fa-magic me-2"></i>Run AI Optimization
+                            </button>
+                            <div class="revenue-projection">
+                                <h6>Revenue Projection</h6>
+                                <div id="revenueProjection">
+                                    <div class="text-muted">Select a genre to see projections</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Include the Advanced Genre Tree Selector -->
+                <div id="genreTreeSelector">
+                    <!-- The genre_tree_selector.html content will be loaded here -->
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <button type="button" class="btn btn-secondary btn-lg" onclick="prevStep(1)">
+                        <i class="fas fa-arrow-left me-2"></i>Previous
+                    </button>
+                    <button type="button" class="btn btn-primary btn-lg" onclick="nextStep(3)">
+                        Next: AI Optimization <i class="fas fa-arrow-right ms-2"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Step 3: AI Optimization -->
+            <div id="step3" class="wizard-step" style="display: none;">
+                <h3><i class="fas fa-brain me-2"></i>AI-Powered Content Strategy</h3>
+                
+                <div class="row">
+                    <div class="col-md-8">
+                        <!-- Vocal Strategy Section -->
+                        <div class="vocal-strategy-preview">
+                            <h5><i class="fas fa-microphone me-2"></i>AI Vocal Strategy</h5>
+                            <div id="vocalStrategyDetails">
+                                <div class="text-muted">Vocal configuration will be determined based on your genre selection</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Suno Prompt Preview -->
+                        <div class="mt-4">
+                            <h5><i class="fas fa-music me-2"></i>Optimized Suno AI Prompts</h5>
+                            <div class="suno-prompt-preview">
+                                <div id="sunoPromptPreview">
+                                    <div class="text-muted">// Suno AI prompts will be generated based on your selections</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- SEO Optimization -->
+                        <div class="mt-4">
+                            <h5><i class="fas fa-search me-2"></i>SEO & Metadata Optimization</h5>
+                            <div id="seoOptimization">
+                                <div class="optimization-card">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <strong>Suggested Titles:</strong>
+                                            <div id="titleSuggestions" class="mt-2"></div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <strong>Trending Tags:</strong>
+                                            <div id="tagSuggestions" class="mt-2"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <!-- AI Insights Panel -->
+                        <div class="optimization-card">
+                            <h5><i class="fas fa-chart-line me-2"></i>Performance Predictions</h5>
+                            <div id="performancePredictions">
+                                <div class="mb-3">
+                                    <strong>Expected Monthly Views:</strong>
+                                    <div class="progress mt-2">
+                                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Revenue Potential:</strong>
+                                    <div class="h4 text-success" id="revenuePotential">$0</div>
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Competition Level:</strong>
+                                    <div class="progress mt-2">
+                                        <div class="progress-bar bg-warning" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="optimization-card mt-3">
+                            <h5><i class="fas fa-calendar me-2"></i>Content Calendar</h5>
+                            <div id="contentCalendar">
+                                <div class="text-muted">Content schedule will be generated</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <button type="button" class="btn btn-secondary btn-lg" onclick="prevStep(2)">
+                        <i class="fas fa-arrow-left me-2"></i>Previous
+                    </button>
+                    <button type="button" class="btn btn-success btn-lg" onclick="nextStep(4)">
+                        Launch Channel <i class="fas fa-rocket ms-2"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Step 4: Launch -->
+            <div id="step4" class="wizard-step" style="display: none;">
+                <h3><i class="fas fa-rocket me-2"></i>Channel Launch & Automation</h3>
+                
+                <div class="text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-check-circle text-success" style="font-size: 5rem;"></i>
+                    </div>
+                    <h4>Channel Configuration Complete!</h4>
+                    <p class="lead">Your AI-optimized YouTube channel is ready for launch.</p>
+                </div>
+                
+                <div class="row mt-5">
+                    <div class="col-md-4">
+                        <div class="optimization-card text-center">
+                            <h5><i class="fas fa-play-circle text-primary me-2"></i>Start 24/7 Automation</h5>
+                            <p>Begin autonomous content generation and uploads</p>
+                            <button type="button" class="btn btn-primary" onclick="startAutomation()">
+                                Start Automation
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="optimization-card text-center">
+                            <h5><i class="fas fa-music text-success me-2"></i>Generate First Content</h5>
+                            <p>Create initial videos using your optimized settings</p>
+                            <button type="button" class="btn btn-success" onclick="generateContent()">
+                                Generate Content
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="optimization-card text-center">
+                            <h5><i class="fas fa-chart-bar text-info me-2"></i>Monitor Performance</h5>
+                            <p>Track analytics and optimization opportunities</p>
+                            <button type="button" class="btn btn-info" onclick="openAnalytics()">
+                                View Analytics
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <button type="button" class="btn btn-secondary btn-lg" onclick="prevStep(3)">
+                        <i class="fas fa-arrow-left me-2"></i>Previous
+                    </button>
+                    <button type="button" class="btn btn-success btn-lg" onclick="finishWizard()">
+                        <i class="fas fa-check me-2"></i>Complete Setup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        let currentStep = 1;
+        let channelData = {};
+        
+        // Load the genre tree selector
+        document.addEventListener('DOMContentLoaded', function() {
+            loadGenreTreeSelector();
+        });
+        
+        function loadGenreTreeSelector() {
+            fetch('/templates/genre_tree_selector.html')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('genreTreeSelector').innerHTML = html;
+                    // Initialize the genre tree selector
+                    if (typeof initGenreTreeSelector === 'function') {
+                        initGenreTreeSelector();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading genre tree selector:', error);
+                    document.getElementById('genreTreeSelector').innerHTML = 
+                        '<div class="alert alert-warning">Genre selector is loading...</div>';
+                });
+        }
+        
+        function nextStep(step) {
+            // Validate current step
+            if (currentStep === 1 && !validateStep1()) return;
+            if (currentStep === 2 && !validateStep2()) return;
+            if (currentStep === 3 && !validateStep3()) return;
+            
+            // Hide current step
+            document.getElementById(`step${currentStep}`).style.display = 'none';
+            document.querySelector(`[data-step="${currentStep}"]`).classList.remove('active');
+            document.querySelector(`[data-step="${currentStep}"]`).classList.add('completed');
+            
+            // Show next step
+            currentStep = step;
+            document.getElementById(`step${currentStep}`).style.display = 'block';
+            document.querySelector(`[data-step="${currentStep}"]`).classList.add('active');
+            
+            // Execute step-specific logic
+            if (currentStep === 2) {
+                updateSetupRecommendations();
+            } else if (currentStep === 3) {
+                loadAIOptimizations();
+            }
+        }
+        
+        function prevStep(step) {
+            // Hide current step
+            document.getElementById(`step${currentStep}`).style.display = 'none';
+            document.querySelector(`[data-step="${currentStep}"]`).classList.remove('active');
+            
+            // Show previous step
+            currentStep = step;
+            document.getElementById(`step${currentStep}`).style.display = 'block';
+            document.querySelector(`[data-step="${currentStep}"]`).classList.add('active');
+            
+            // Remove completed status from current step
+            document.querySelector(`[data-step="${step}"]`).classList.remove('completed');
+        }
+        
+        function validateStep1() {
+            const channelName = document.getElementById('channelName').value.trim();
+            if (!channelName) {
+                alert('Please enter a channel name');
+                return false;
+            }
+            
+            // Store channel data
+            channelData = {
+                name: channelName,
+                description: document.getElementById('channelDescription').value,
+                targetAudience: document.getElementById('targetAudience').value,
+                uploadSchedule: document.getElementById('uploadSchedule').value,
+                targetRevenue: parseInt(document.getElementById('targetRevenue').value) || 2000,
+                difficultyPreference: document.getElementById('difficultyPreference').value
+            };
+            
+            return true;
+        }
+        
+        function validateStep2() {
+            const selectedGenre = document.getElementById('selectedGenre')?.value;
+            if (!selectedGenre) {
+                alert('Please select a genre for your channel');
+                return false;
+            }
+            
+            channelData.selectedGenre = selectedGenre;
+            channelData.selectedSubgenre = document.getElementById('selectedSubgenre')?.value;
+            channelData.selectedSubstyle = document.getElementById('selectedSubstyle')?.value;
+            
+            return true;
+        }
+        
+        function validateStep3() {
+            // Step 3 is mostly informational, always valid
+            return true;
+        }
+        
+        function updateSetupRecommendations() {
+            const recommendations = document.getElementById('setupRecommendations');
+            
+            let html = '';
+            
+            if (channelData.targetAudience === 'study') {
+                html += `
+                    <div class="ai-recommendation">
+                        <strong>🎓 Study Audience:</strong> Lo-Fi Hip Hop and Ambient genres perform exceptionally well for study content.
+                    </div>
+                `;
+            }
+            
+            if (channelData.targetRevenue > 3000) {
+                html += `
+                    <div class="ai-recommendation">
+                        <strong>💰 High Revenue Target:</strong> Focus on trending genres with high monetization rates like Trance or House.
+                    </div>
+                `;
+            }
+            
+            if (channelData.difficultyPreference === 'easy') {
+                html += `
+                    <div class="ai-recommendation">
+                        <strong>🌱 Easy Start:</strong> Chillout and Meditation genres have lower competition and are easier to begin with.
+                    </div>
+                `;
+            }
+            
+            recommendations.innerHTML = html || `
+                <div class="ai-recommendation">
+                    <strong>✨ Ready!</strong> Proceed to genre selection for AI-powered recommendations.
+                </div>
+            `;
+        }
+        
+        function runGenreOptimization() {
+            const optimizationResults = document.getElementById('optimizationResults');
+            optimizationResults.innerHTML = '<div class="ai-recommendation"><i class="fas fa-spinner fa-spin me-2"></i>Running AI optimization...</div>';
+            
+            fetch('/api/genres/optimize-channel', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(channelData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.optimization_results) {
+                    displayOptimizationResults(data.optimization_results);
+                }
+            })
+            .catch(error => {
+                console.error('Error running optimization:', error);
+                optimizationResults.innerHTML = '<div class="alert alert-danger">Error running optimization</div>';
+            });
+        }
+        
+        function displayOptimizationResults(results) {
+            const container = document.getElementById('optimizationResults');
+            
+            let html = '<h5><i class="fas fa-star text-warning me-2"></i>Top AI Recommendations</h5>';
+            
+            results.slice(0, 3).forEach((result, index) => {
+                html += `
+                    <div class="optimization-card" onclick="selectOptimizedGenre('${result.genre_path}')">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h6>#${index + 1} ${result.subgenre.replace(/_/g, ' ')}</h6>
+                                <div class="text-muted">${result.category}</div>
+                                <div class="mt-2">
+                                    ${result.match_reasons.map(reason => `<span class="badge bg-info me-1">${reason}</span>`).join('')}
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <div class="h4 text-success">$${result.statistics.monthly_revenue}/mo</div>
+                                <div class="text-muted">Score: ${result.optimization_score}/100</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function selectOptimizedGenre(genrePath) {
+            // Auto-select the genre in the tree selector
+            const [category, subgenre] = genrePath.split('.');
+            
+            // Simulate clicking on the genre tree
+            if (typeof toggleCategory === 'function') {
+                toggleCategory(category);
+                setTimeout(() => {
+                    const subgenreElement = document.querySelector(`[data-subgenre="${subgenre}"]`);
+                    if (subgenreElement) {
+                        subgenreElement.click();
+                    }
+                }, 500);
+            }
+            
+            // Update revenue projection
+            updateRevenueProjection(genrePath);
+        }
+        
+        function updateRevenueProjection(genrePath) {
+            fetch('/api/genres/tree')
+                .then(response => response.json())
+                .then(genreTree => {
+                    const [category, subgenre] = genrePath.split('.');
+                    const genreData = genreTree[category]?.subgenres?.[subgenre];
+                    
+                    if (genreData?.statistics) {
+                        const stats = genreData.statistics;
+                        document.getElementById('revenueProjection').innerHTML = `
+                            <div class="text-center">
+                                <div class="h4 text-success">$${stats.monthly_revenue}</div>
+                                <div class="small text-muted">Monthly Revenue</div>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="h6">${stats.difficulty_level}/100</div>
+                                        <div class="small">Difficulty</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="h6 ${stats.growth_trend > 0 ? 'text-success' : 'text-danger'}">
+                                            ${stats.growth_trend > 0 ? '+' : ''}${stats.growth_trend}%
+                                        </div>
+                                        <div class="small">Growth</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+        }
+        
+        function loadAIOptimizations() {
+            if (!channelData.selectedGenre) return;
+            
+            const genrePath = `${channelData.selectedGenre}.${channelData.selectedSubgenre}`;
+            
+            // Load vocal strategy
+            loadVocalStrategy();
+            
+            // Generate Suno prompts
+            generateSunoPrompts();
+            
+            // Update performance predictions
+            updatePerformancePredictions();
+        }
+        
+        function loadVocalStrategy() {
+            fetch('/api/genres/vocal-decision', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    vocal_probability: 0.5, // Will be determined by selected genre
+                    time_context: 'any',
+                    target_audience: channelData.targetAudience,
+                    preferred_language: 'en'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.vocal_configuration) {
+                    const config = data.vocal_configuration;
+                    document.getElementById('vocalStrategyDetails').innerHTML = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Vocal Type:</strong> ${config.vocal_type.replace(/_/g, ' ')}<br>
+                                <strong>Language:</strong> ${config.language}<br>
+                                <strong>Mood:</strong> ${config.mood}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Style:</strong> ${config.style}<br>
+                                <strong>Complexity:</strong> ${config.lyrics_complexity}<br>
+                                <strong>Effects:</strong> ${config.vocal_effects.join(', ')}
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <strong>AI Rationale:</strong> ${data.decision_rationale}
+                            <span class="badge bg-success ms-2">${data.confidence_score}% confidence</span>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => console.error('Error loading vocal strategy:', error));
+        }
+        
+        function generateSunoPrompts() {
+            const genrePath = `${channelData.selectedGenre}.${channelData.selectedSubgenre}`;
+            
+            fetch('/api/genres/suno-prompt', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    genre_path: genrePath,
+                    substyle: channelData.selectedSubstyle,
+                    time_context: 'any',
+                    target_audience: channelData.targetAudience,
+                    preferred_language: 'en'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.suno_prompt) {
+                    document.getElementById('sunoPromptPreview').innerHTML = `
+                        <div class="mb-3">
+                            <strong>Optimized Suno Prompt:</strong><br>
+                            <code>"${data.suno_prompt}"</code>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Optimization Tips:</strong>
+                            <ul class="mb-0">
+                                ${data.optimization_tips.map(tip => `<li>${tip}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                    
+                    // Update SEO suggestions
+                    const metadata = data.metadata_suggestions;
+                    document.getElementById('titleSuggestions').innerHTML = 
+                        metadata.title_templates.map(title => `<span class="badge bg-primary me-1">${title}</span>`).join('');
+                    
+                    document.getElementById('tagSuggestions').innerHTML = 
+                        metadata.tags.slice(0, 8).map(tag => `<span class="badge bg-secondary me-1">${tag}</span>`).join('');
+                }
+            })
+            .catch(error => console.error('Error generating Suno prompts:', error));
+        }
+        
+        function updatePerformancePredictions() {
+            // Mock performance predictions based on genre data
+            setTimeout(() => {
+                const revenue = channelData.targetRevenue || 2000;
+                document.getElementById('revenuePotential').textContent = `$${revenue}`;
+                
+                document.querySelector('#performancePredictions .progress-bar').style.width = '75%';
+                document.querySelector('#performancePredictions .progress-bar.bg-warning').style.width = '60%';
+                
+                document.getElementById('contentCalendar').innerHTML = `
+                    <div class="small">
+                        <div>📅 Next Upload: Today</div>
+                        <div>🎵 Queue: 5 videos ready</div>
+                        <div>📈 Optimization: Daily</div>
+                    </div>
+                `;
+            }, 1000);
+        }
+        
+        function startAutomation() {
+            // Start 24/7 automation
+            fetch('/api/automation/start', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(channelData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('24/7 Automation started successfully!');
+                } else {
+                    alert('Error starting automation: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error starting automation:', error);
+                alert('Error starting automation');
+            });
+        }
+        
+        function generateContent() {
+            // Generate initial content
+            window.location.href = '/generator';
+        }
+        
+        function openAnalytics() {
+            // Open analytics dashboard
+            window.location.href = '/analytics';
+        }
+        
+        function finishWizard() {
+            // Save channel and redirect to dashboard
+            fetch('/api/youtube/channels/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(channelData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Channel created successfully!');
+                    window.location.href = '/youtube-channels';
+                } else {
+                    alert('Error creating channel: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error creating channel:', error);
+                alert('Error creating channel');
+            });
+        }
+    </script>
+</body>
+</html>
