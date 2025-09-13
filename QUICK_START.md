@@ -10,38 +10,38 @@ pip install -r requirements.txt
 python main.py
 # Pasirinkite "1" - Testavimo režimas
 
-# ARBA paleiskite web serverį
-python web_app.py
-# Atidarykite: http://localhost:5000
+# 🌐 ARBA paleiskite PAGRINDINĮ web interface
+python web_launch.py
+# 🔐 Atidarykite: http://localhost:8000 (Slaptažodis: admin123)
 ```
 
 **✅ Veiks iš karto! Nereikia API raktų testavimui.**
 
 ---
 
-## 2️⃣ Web Sąsaja (Rekomenduojama)
+## 2️⃣ 🌐 PAGRINDINIS Web Interface (Rekomenduojama)
 
-### Paleidimas su Supervisor (Linux/Mac):
-
-```bash
-# Paleiskite daemon
-supervisord -c supervisord.conf
-
-# Patikrinkite būseną  
-supervisorctl -c supervisord.conf status
-
-# Web sąsaja: http://localhost:5000
-```
-
-### Paprastas paleidimas:
+### 🚀 Admin Panel paleidimas:
 
 ```bash
-python web_app.py
+# Paleiskite PAGRINDINĮ admin interface
+python web_launch.py
+
+# 🔐 Prisijunkite: http://localhost:8000
+# Slaptažodis: admin123
 ```
+
+### 🏰 Pilnas funkcionalumas:
+- **✅ API Configuration** - suveskite API raktus
+- **✅ Music Generation** - real-time generavimas  
+- **✅ 10-Channel Empire** - kelių kanalų valdymas
+- **✅ Analytics & Monitoring** - išsami analitika
+- **✅ Voice Cloning** - balso klonavimo sistema
+- **✅ Trending Hijacker** - viral content sistema
 
 ### 🌐 Prieinamumas:
-- **Vietinis:** http://localhost:5000
-- **Tinkle:** Jūsų IP:5000
+- **🎯 PAGRINDINIS:** http://localhost:8000 (Port 8000)
+- **Alternatyvus:** http://localhost:5000 (Basic interface)
 
 ---
 

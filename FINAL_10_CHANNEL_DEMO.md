@@ -414,6 +414,18 @@ Revenue: $3,000-6,000/month immediately
 4. Run the interactive setup: `python ten_channel_empire_manager.py`
 5. Launch your automated 10-channel music empire!
 
-**Dashboard:** https://5000-i76do3fgbtdxky0vs2439-6532622b.e2b.dev/
+## 🌐 PAGRINDINIS WEB INTERFACE
 
-**Sistema laukia jūsų! Let's build your 10-channel empire! 🚀🏰💎**
+### 🔐 Admin Panel Prieiga:
+- **🎯 PAGRINDINIS URL:** http://localhost:8000
+- **🔑 Slaptažodis:** `admin123`  
+- **🚀 Paleidimas:** `python web_launch.py`
+
+### 🏰 Pilnas 10-Channel Empire Management:
+- ✅ **API Configuration** - suveskite Suno, Gemini, YouTube API raktus
+- ✅ **Multi-Channel Setup** - sukonfigurūokite visus 10 kanalų
+- ✅ **Real-time Monitoring** - stebėkite generavimą ir uploadą
+- ✅ **Analytics Dashboard** - revenue tracking ir performance
+- ✅ **Voice Cloning & Trending** - išplėstinių sistemų valdymas
+
+**🏰 Sistema laukia jūsų! Let's build your 10-channel empire! 🚀🏰💎**
