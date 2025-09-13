@@ -6,7 +6,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime, timedelta
 import json
 
-from .models import Base, ContentCreation, YouTubeVideo, PerformanceMetric
+from .models import Base, ContentCreation, YouTubeVideo, PerformanceMetric, YouTubeChannel
 
 class DatabaseManager:
     """Database manager for handling all database operations"""
@@ -440,5 +440,225 @@ class DatabaseManager:
         except Exception as e:
             print(f"❌ Failed to get performance summary for analysis: {e}")
             return f"Error retrieving performance data: {e}"
+        finally:
+            self.close_db(db)
+
+    # YouTube Channels CRUD Operations
+    def add_youtube_channel(self, data: Dict[str, Any]) -> YouTubeChannel:
+        """Add a new YouTube channel"""
+        db = self.get_db()
+        try:
+            channel = YouTubeChannel.from_dict(data)
+            db.add(channel)
+            db.commit()
+            db.refresh(channel)
+            print(f"✅ Added YouTube channel: {channel.name}")
+            return channel
+        except Exception as e:
+            db.rollback()
+            print(f"❌ Failed to add YouTube channel: {e}")
+            raise
+        finally:
+            self.close_db(db)
+
+    def get_youtube_channel(self, channel_id: int) -> Optional[YouTubeChannel]:
+        """Get a YouTube channel by ID"""
+        db = self.get_db()
+        try:
+            channel = db.query(YouTubeChannel).filter(YouTubeChannel.id == channel_id).first()
+            return channel
+        except Exception as e:
+            print(f"❌ Failed to get YouTube channel {channel_id}: {e}")
+            return None
+        finally:
+            self.close_db(db)
+
+    def get_youtube_channel_by_youtube_id(self, youtube_channel_id: str) -> Optional[YouTubeChannel]:
+        """Get a YouTube channel by YouTube channel ID"""
+        db = self.get_db()
+        try:
+            channel = db.query(YouTubeChannel).filter(
+                YouTubeChannel.youtube_channel_id == youtube_channel_id
+            ).first()
+            return channel
+        except Exception as e:
+            print(f"❌ Failed to get YouTube channel by YouTube ID {youtube_channel_id}: {e}")
+            return None
+        finally:
+            self.close_db(db)
+
+    def get_all_youtube_channels(self, status: Optional[str] = None) -> List[YouTubeChannel]:
+        """Get all YouTube channels, optionally filtered by status"""
+        db = self.get_db()
+        try:
+            query = db.query(YouTubeChannel)
+            if status:
+                query = query.filter(YouTubeChannel.status == status)
+            channels = query.order_by(YouTubeChannel.created_at.desc()).all()
+            return channels
+        except Exception as e:
+            print(f"❌ Failed to get YouTube channels: {e}")
+            return []
+        finally:
+            self.close_db(db)
+
+    def update_youtube_channel(self, channel_id: int, data: Dict[str, Any]) -> Optional[YouTubeChannel]:
+        """Update a YouTube channel"""
+        db = self.get_db()
+        try:
+            channel = db.query(YouTubeChannel).filter(YouTubeChannel.id == channel_id).first()
+            if not channel:
+                return None
+
+            # Update fields
+            for key, value in data.items():
+                if hasattr(channel, key):
+                    if key in ['secondary_genres', 'style_preferences'] and isinstance(value, (list, dict)):
+                        # Handle JSON fields
+                        setattr(channel, key, json.dumps(value))
+                    else:
+                        setattr(channel, key, value)
+
+            channel.updated_at = datetime.now()
+            db.commit()
+            db.refresh(channel)
+            print(f"✅ Updated YouTube channel: {channel.name}")
+            return channel
+        except Exception as e:
+            db.rollback()
+            print(f"❌ Failed to update YouTube channel {channel_id}: {e}")
+            raise
+        finally:
+            self.close_db(db)
+
+    def delete_youtube_channel(self, channel_id: int) -> bool:
+        """Delete a YouTube channel"""
+        db = self.get_db()
+        try:
+            channel = db.query(YouTubeChannel).filter(YouTubeChannel.id == channel_id).first()
+            if not channel:
+                return False
+
+            channel_name = channel.name
+            db.delete(channel)
+            db.commit()
+            print(f"✅ Deleted YouTube channel: {channel_name}")
+            return True
+        except Exception as e:
+            db.rollback()
+            print(f"❌ Failed to delete YouTube channel {channel_id}: {e}")
+            return False
+        finally:
+            self.close_db(db)
+
+    def get_active_channels_for_automation(self) -> List[YouTubeChannel]:
+        """Get all channels that are ready for automation"""
+        db = self.get_db()
+        try:
+            channels = db.query(YouTubeChannel).filter(
+                YouTubeChannel.status == 'active',
+                YouTubeChannel.auto_upload == True,
+                YouTubeChannel.api_key.isnot(None),
+                YouTubeChannel.client_id.isnot(None)
+            ).all()
+            return [c for c in channels if c.is_ready_for_automation()]
+        except Exception as e:
+            print(f"❌ Failed to get active channels for automation: {e}")
+            return []
+        finally:
+            self.close_db(db)
+
+    def update_channel_metrics(self, channel_id: int, metrics: Dict[str, Any]) -> bool:
+        """Update channel metrics from YouTube API"""
+        db = self.get_db()
+        try:
+            channel = db.query(YouTubeChannel).filter(YouTubeChannel.id == channel_id).first()
+            if not channel:
+                return False
+
+            channel.update_metrics(
+                subscribers=metrics.get('subscribers'),
+                total_views=metrics.get('total_views'),
+                total_videos=metrics.get('total_videos'),
+                monthly_revenue=metrics.get('monthly_revenue')
+            )
+            channel.last_sync = datetime.now()
+            
+            db.commit()
+            return True
+        except Exception as e:
+            db.rollback()
+            print(f"❌ Failed to update channel metrics for {channel_id}: {e}")
+            return False
+        finally:
+            self.close_db(db)
+
+    def record_channel_error(self, channel_id: int, error_message: str) -> bool:
+        """Record an error for a channel"""
+        db = self.get_db()
+        try:
+            channel = db.query(YouTubeChannel).filter(YouTubeChannel.id == channel_id).first()
+            if not channel:
+                return False
+
+            channel.record_error(error_message)
+            db.commit()
+            return True
+        except Exception as e:
+            db.rollback()
+            print(f"❌ Failed to record error for channel {channel_id}: {e}")
+            return False
+        finally:
+            self.close_db(db)
+
+    def get_channels_statistics(self) -> Dict[str, Any]:
+        """Get comprehensive statistics for all channels"""
+        db = self.get_db()
+        try:
+            total_channels = db.query(YouTubeChannel).count()
+            active_channels = db.query(YouTubeChannel).filter(YouTubeChannel.status == 'active').count()
+            
+            # Aggregate metrics
+            total_subscribers = db.query(func.sum(YouTubeChannel.subscribers)).scalar() or 0
+            total_revenue = db.query(func.sum(YouTubeChannel.monthly_revenue)).scalar() or 0.0
+            total_videos = db.query(func.sum(YouTubeChannel.total_videos)).scalar() or 0
+            total_views = db.query(func.sum(YouTubeChannel.total_views)).scalar() or 0
+
+            # Channel status breakdown
+            status_counts = {}
+            status_results = db.query(
+                YouTubeChannel.status, 
+                func.count(YouTubeChannel.id)
+            ).group_by(YouTubeChannel.status).all()
+            
+            for status, count in status_results:
+                status_counts[status] = count
+
+            # Genre breakdown
+            genre_counts = {}
+            genre_results = db.query(
+                YouTubeChannel.primary_genre, 
+                func.count(YouTubeChannel.id)
+            ).group_by(YouTubeChannel.primary_genre).all()
+            
+            for genre, count in genre_results:
+                if genre:
+                    genre_counts[genre] = count
+
+            return {
+                'total_channels': total_channels,
+                'active_channels': active_channels,
+                'total_subscribers': total_subscribers,
+                'total_revenue': total_revenue,
+                'total_videos': total_videos,
+                'total_views': total_views,
+                'status_breakdown': status_counts,
+                'genre_breakdown': genre_counts,
+                'avg_subscribers_per_channel': total_subscribers / max(total_channels, 1),
+                'avg_revenue_per_channel': total_revenue / max(active_channels, 1)
+            }
+        except Exception as e:
+            print(f"❌ Failed to get channels statistics: {e}")
+            return {}
         finally:
             self.close_db(db)

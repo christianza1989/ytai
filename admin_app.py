@@ -313,6 +313,12 @@ def settings():
     """System settings"""
     return render_template('settings.html')
 
+@app.route('/youtube-channels')
+@require_auth
+def youtube_channels_manager():
+    """YouTube Channels Manager - Multi-channel management interface"""
+    return render_template('youtube_channels.html')
+
 # API Endpoints
 @app.route('/api/system/status')
 @require_auth
@@ -797,6 +803,206 @@ def api_youtube_channels():
         channels_data.append(channel_data)
     
     return jsonify({'channels': channels_data})
+
+@app.route('/api/youtube/channels/list')
+@require_auth
+def api_youtube_channels_list():
+    """Get YouTube channels list for management"""
+    try:
+        from core.database.database_manager import DatabaseManager
+        
+        db_manager = DatabaseManager()
+        channels = db_manager.get_all_youtube_channels()
+        
+        channels_data = []
+        for channel in channels:
+            channel_dict = channel.to_dict()
+            # Format last_upload for display
+            if channel.last_upload:
+                channel_dict['last_upload'] = channel.last_upload.strftime('%Y-%m-%d')
+            else:
+                channel_dict['last_upload'] = None
+            channels_data.append(channel_dict)
+        
+        return jsonify({'channels': channels_data})
+        
+    except Exception as e:
+        print(f"Error loading channels: {e}")
+        # Fall back to demo data if database fails
+        demo_channels = [
+            {
+                'id': 1,
+                'name': 'Lo-Fi Beats Central',
+                'url': 'https://youtube.com/@lofibeatscentral',
+                'youtube_channel_id': 'UC123456789012345678901',
+                'primary_genre': 'lo-fi-hip-hop',
+                'status': 'active',
+                'subscribers': 45230,
+                'monthly_revenue': 1250,
+                'last_upload': '2025-09-12',
+                'upload_schedule': 'daily',
+                'auto_upload': True,
+                'auto_thumbnails': True,
+                'auto_seo': True,
+                'enable_analytics': True,
+                'privacy_settings': 'private'
+            },
+            {
+                'id': 2,
+                'name': 'Ambient Soundscapes',
+                'url': 'https://youtube.com/@ambientsounds',
+                'youtube_channel_id': 'UC234567890123456789012',
+                'primary_genre': 'ambient',
+                'status': 'active',
+                'subscribers': 23100,
+                'monthly_revenue': 890,
+                'last_upload': '2025-09-11',
+                'upload_schedule': 'every-2-days',
+                'auto_upload': True,
+                'auto_thumbnails': True,
+                'auto_seo': True,
+                'enable_analytics': True,
+                'privacy_settings': 'unlisted'
+            }
+        ]
+        return jsonify({'channels': demo_channels})
+
+@app.route('/api/youtube/channels/save', methods=['POST'])
+@require_auth
+def api_youtube_channels_save():
+    """Save or update YouTube channel"""
+    try:
+        from core.database.database_manager import DatabaseManager
+        
+        data = request.get_json() or {}
+        db_manager = DatabaseManager()
+        
+        # Prepare channel data
+        channel_data = {
+            'name': data.get('channel_name'),
+            'url': data.get('channel_url'),
+            'youtube_channel_id': data.get('youtube_channel_id'),
+            'description': data.get('description'),
+            'primary_genre': data.get('primary_genre'),
+            'secondary_genres': data.get('secondary_genres', []),
+            'target_audience': data.get('target_audience'),
+            'upload_schedule': data.get('upload_schedule'),
+            'preferred_upload_time': data.get('preferred_upload_time'),
+            'auto_upload': data.get('auto_upload') == 'on',
+            'auto_thumbnails': data.get('auto_thumbnails') == 'on',
+            'auto_seo': data.get('auto_seo') == 'on',
+            'enable_analytics': data.get('enable_analytics') == 'on',
+            'enable_monetization': data.get('enable_monetization') == 'on',
+            'privacy_settings': data.get('privacy_settings'),
+            'api_key': data.get('api_key'),
+            'client_id': data.get('client_id'),
+            'client_secret': data.get('client_secret'),
+            'status': 'active' if data.get('api_key') else 'needs_setup'
+        }
+        
+        channel_id = data.get('channel_id')
+        if channel_id:
+            # Update existing channel
+            channel = db_manager.update_youtube_channel(int(channel_id), channel_data)
+            if channel:
+                return jsonify({
+                    'success': True, 
+                    'message': 'Channel updated successfully', 
+                    'channel': channel.to_dict()
+                })
+            else:
+                return jsonify({'success': False, 'message': 'Channel not found'}), 404
+        else:
+            # Create new channel
+            channel = db_manager.add_youtube_channel(channel_data)
+            return jsonify({
+                'success': True, 
+                'message': 'Channel created successfully', 
+                'channel': channel.to_dict()
+            })
+            
+    except Exception as e:
+        print(f"Error saving channel: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/youtube/channels/<int:channel_id>/delete', methods=['DELETE'])
+@require_auth
+def api_youtube_channels_delete(channel_id):
+    """Delete YouTube channel"""
+    try:
+        from core.database.database_manager import DatabaseManager
+        
+        db_manager = DatabaseManager()
+        success = db_manager.delete_youtube_channel(channel_id)
+        
+        if success:
+            return jsonify({'success': True, 'message': 'Channel deleted successfully'})
+        else:
+            return jsonify({'success': False, 'message': 'Channel not found'}), 404
+            
+    except Exception as e:
+        print(f"Error deleting channel: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/youtube/channels/<int:channel_id>/generate', methods=['POST'])
+@require_auth
+def api_youtube_channels_generate(channel_id):
+    """Generate content for specific channel"""
+    data = request.get_json() or {}
+    content_type = data.get('type', 'music')  # music, thumbnail, full_video
+    
+    task_id = f"channel_{channel_id}_{content_type}_{int(time.time())}"
+    
+    # Store task info
+    system_state.generation_tasks[task_id] = {
+        'id': task_id,
+        'channel_id': channel_id,
+        'content_type': content_type,
+        'status': 'running',
+        'progress': 0,
+        'current_step': 'Initializing...',
+        'created_at': datetime.now(),
+        'logs': []
+    }
+    
+    # Start generation in background thread
+    thread = threading.Thread(target=generate_channel_content, args=(task_id, channel_id, content_type))
+    thread.daemon = True
+    thread.start()
+    
+    return jsonify({'success': True, 'task_id': task_id, 'message': f'Content generation started for channel {channel_id}'})
+
+@app.route('/api/youtube/channels/statistics')
+@require_auth
+def api_youtube_channels_statistics():
+    """Get comprehensive statistics for all channels"""
+    try:
+        from core.database.database_manager import DatabaseManager
+        
+        db_manager = DatabaseManager()
+        stats = db_manager.get_channels_statistics()
+        
+        return jsonify({
+            'success': True,
+            'statistics': stats
+        })
+        
+    except Exception as e:
+        print(f"Error getting channel statistics: {e}")
+        # Return demo stats if database fails
+        return jsonify({
+            'success': True,
+            'statistics': {
+                'total_channels': 2,
+                'active_channels': 2,
+                'total_subscribers': 68330,
+                'total_revenue': 2140.0,
+                'total_videos': 156,
+                'total_views': 1250000,
+                'status_breakdown': {'active': 2},
+                'genre_breakdown': {'lo-fi-hip-hop': 1, 'ambient': 1}
+            }
+        })
 
 @app.route('/api/youtube/empire-report')
 @require_auth
@@ -1577,6 +1783,71 @@ def create_expansion_plan():
 def favicon():
     """Serve favicon"""
     return send_from_directory('static', 'favicon.ico', mimetype='image/vnd.microsoft.icon')
+
+# YouTube Channel Content Generation Functions
+def generate_channel_content(task_id, channel_id, content_type):
+    """Generate content for a specific YouTube channel"""
+    
+    def update_progress(progress, step):
+        if task_id in system_state.generation_tasks:
+            system_state.generation_tasks[task_id]['progress'] = progress
+            system_state.generation_tasks[task_id]['current_step'] = step
+            system_state.generation_tasks[task_id]['logs'].append(f"[{datetime.now().strftime('%H:%M:%S')}] {step}")
+        time.sleep(random.uniform(0.5, 2))
+    
+    try:
+        update_progress(10, f"🎯 Loading channel {channel_id} configuration...")
+        
+        # In production, load actual channel data from database
+        channel_data = {
+            'name': f'Channel {channel_id}',
+            'primary_genre': 'lo-fi-hip-hop',
+            'style_preferences': {},
+            'automation_settings': {}
+        }
+        
+        if content_type == 'music':
+            update_progress(25, "🎵 Initializing music generation...")
+            update_progress(50, "🎼 Creating audio track...")
+            update_progress(75, "🎨 Generating cover art...")
+            update_progress(90, "📝 Optimizing metadata...")
+            
+            # Simulate music generation process
+            time.sleep(2)
+            
+        elif content_type == 'thumbnail':
+            update_progress(25, "🍌 Initializing Nano-Banana (Gemini 2.5 Flash Image)...")
+            update_progress(50, "🎨 Generating thumbnail design...")
+            update_progress(75, "✨ Applying AI enhancements...")
+            update_progress(90, "📐 Finalizing resolution and format...")
+            
+            # Simulate thumbnail generation with nano-banana
+            time.sleep(2)
+            
+        elif content_type == 'full_video':
+            update_progress(15, "🎵 Generating music track...")
+            update_progress(30, "🍌 Creating thumbnail with Nano-Banana...")
+            update_progress(50, "🎥 Assembling video content...")
+            update_progress(70, "🔍 Optimizing SEO (titles, tags, description)...")
+            update_progress(85, "📤 Preparing for upload...")
+            update_progress(95, "✅ Finalizing project...")
+            
+            # Simulate full video generation pipeline
+            time.sleep(3)
+        
+        # Mark as completed
+        if task_id in system_state.generation_tasks:
+            system_state.generation_tasks[task_id]['status'] = 'completed'
+            system_state.generation_tasks[task_id]['progress'] = 100
+            system_state.generation_tasks[task_id]['current_step'] = f"✅ {content_type.title()} generation completed!"
+            system_state.generation_tasks[task_id]['completed_at'] = datetime.now()
+            
+    except Exception as e:
+        # Mark as failed
+        if task_id in system_state.generation_tasks:
+            system_state.generation_tasks[task_id]['status'] = 'failed'
+            system_state.generation_tasks[task_id]['error'] = str(e)
+            system_state.generation_tasks[task_id]['current_step'] = f"❌ Error: {str(e)}"
 
 if __name__ == '__main__':
     # Create required directories

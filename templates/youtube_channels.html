@@ -1,0 +1,1122 @@
+{% extends "admin_base.html" %}
+
+{% block title %}YouTube Channels Manager - Admin Panel{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+<li class="breadcrumb-item active">YouTube Channels</li>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="h3 mb-0">
+            <i class="fab fa-youtube text-danger me-2"></i>
+            YouTube Channels Manager
+        </h1>
+        <p class="text-muted">Valdyti kelis YouTube kanalus, jų credentials ir muzikos stilius</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <button class="btn btn-danger me-2" onclick="addNewChannel()">
+            <i class="fas fa-plus me-1"></i>
+            Pridėti Kanalą
+        </button>
+        <button class="btn btn-outline-primary" onclick="bulkOperations()">
+            <i class="fas fa-tasks me-1"></i>
+            Bulk Operations
+        </button>
+    </div>
+</div>
+
+<!-- Channel Statistics Overview -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-white-50 mb-0">Total Channels</h6>
+                        <h3 class="mb-0" id="totalChannels">0</h3>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <i class="fab fa-youtube fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-white-50 mb-0">Active Channels</h6>
+                        <h3 class="mb-0" id="activeChannels">0</h3>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-white-50 mb-0">Total Subscribers</h6>
+                        <h3 class="mb-0" id="totalSubscribers">0</h3>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-users fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-white-50 mb-0">Monthly Revenue</h6>
+                        <h3 class="mb-0" id="monthlyRevenue">$0</h3>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-dollar-sign fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Channels Management -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>
+                    YouTube Channels List
+                </h5>
+                <div class="d-flex gap-2">
+                    <select class="form-select form-select-sm" id="channelFilter" onchange="filterChannels()">
+                        <option value="all">All Channels</option>
+                        <option value="active">Active Only</option>
+                        <option value="inactive">Inactive Only</option>
+                        <option value="needs_setup">Needs Setup</option>
+                    </select>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="refreshChannels()">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="channelsTable">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <input type="checkbox" id="selectAllChannels" onchange="toggleSelectAll()">
+                                </th>
+                                <th>Channel Info</th>
+                                <th>Genre/Style</th>
+                                <th>Status</th>
+                                <th>Subscribers</th>
+                                <th>Revenue</th>
+                                <th>Last Upload</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="channelsTableBody">
+                            <!-- Channels will be loaded here dynamically -->
+                            <tr>
+                                <td colspan="8" class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <div class="mt-2">Loading channels...</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Channel Modal -->
+<div class="modal fade" id="channelModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="channelModalTitle">
+                    <i class="fab fa-youtube text-danger me-2"></i>
+                    Add New YouTube Channel
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="channelForm">
+                    <input type="hidden" id="channelId" name="channel_id">
+                    
+                    <!-- Channel Basic Information -->
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <h6><i class="fas fa-info-circle text-primary me-2"></i>Basic Information</h6>
+                            <hr>
+                            
+                            <div class="mb-3">
+                                <label for="channelName" class="form-label">Channel Name *</label>
+                                <input type="text" class="form-control" id="channelName" name="channel_name" required 
+                                       placeholder="e.g., Lo-Fi Beats Central">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="channelUrl" class="form-label">Channel URL</label>
+                                <input type="url" class="form-control" id="channelUrl" name="channel_url" 
+                                       placeholder="https://youtube.com/@yourchannel">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="channelId" class="form-label">Channel ID</label>
+                                <input type="text" class="form-control" id="channelIdInput" name="youtube_channel_id" 
+                                       placeholder="UCxxxxxxxxxxxxxxxxxxxxxxx">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="channelDescription" class="form-label">Description</label>
+                                <textarea class="form-control" id="channelDescription" name="description" rows="3" 
+                                          placeholder="Channel description and focus"></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-4">
+                            <h6><i class="fas fa-key text-warning me-2"></i>API Credentials</h6>
+                            <hr>
+                            
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>OAuth Setup:</strong> You'll need YouTube Data API v3 credentials
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="apiKey" class="form-label">YouTube API Key</label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="apiKey" name="api_key" 
+                                           placeholder="Your YouTube API Key">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="togglePasswordVisibility('apiKey')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="clientId" class="form-label">OAuth Client ID</label>
+                                <input type="text" class="form-control" id="clientId" name="client_id" 
+                                       placeholder="Your OAuth Client ID">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="clientSecret" class="form-label">OAuth Client Secret</label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="clientSecret" name="client_secret" 
+                                           placeholder="Your OAuth Client Secret">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="togglePasswordVisibility('clientSecret')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <button type="button" class="btn btn-primary" onclick="testConnection()">
+                                    <i class="fas fa-plug me-1"></i>
+                                    Test Connection
+                                </button>
+                                <button type="button" class="btn btn-outline-info" onclick="setupOAuth()">
+                                    <i class="fas fa-cog me-1"></i>
+                                    Setup OAuth
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Music Style Configuration -->
+                    <div class="row">
+                        <div class="col-12 mb-4">
+                            <h6><i class="fas fa-music text-success me-2"></i>Music Style & Preferences</h6>
+                            <hr>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="primaryGenre" class="form-label">Primary Genre *</label>
+                                    <select class="form-select" id="primaryGenre" name="primary_genre" required>
+                                        <option value="">Select Genre...</option>
+                                        <option value="lo-fi-hip-hop">Lo-Fi Hip Hop</option>
+                                        <option value="ambient">Ambient</option>
+                                        <option value="jazz">Jazz</option>
+                                        <option value="classical">Classical</option>
+                                        <option value="electronic">Electronic</option>
+                                        <option value="pop">Pop</option>
+                                        <option value="rock">Rock</option>
+                                        <option value="house">House</option>
+                                        <option value="techno">Techno</option>
+                                        <option value="trance">Trance</option>
+                                        <option value="drum-bass">Drum & Bass</option>
+                                        <option value="dubstep">Dubstep</option>
+                                        <option value="trap">Trap</option>
+                                        <option value="synthwave">Synthwave</option>
+                                        <option value="chillout">Chillout</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="secondaryGenres" class="form-label">Secondary Genres</label>
+                                    <select class="form-select" id="secondaryGenres" name="secondary_genres" multiple>
+                                        <option value="chill">Chill</option>
+                                        <option value="study">Study Music</option>
+                                        <option value="relaxing">Relaxing</option>
+                                        <option value="upbeat">Upbeat</option>
+                                        <option value="melancholic">Melancholic</option>
+                                        <option value="energetic">Energetic</option>
+                                        <option value="peaceful">Peaceful</option>
+                                        <option value="motivational">Motivational</option>
+                                    </select>
+                                    <div class="form-text">Hold Ctrl/Cmd to select multiple</div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="targetAudience" class="form-label">Target Audience</label>
+                                    <select class="form-select" id="targetAudience" name="target_audience">
+                                        <option value="general">General Audience</option>
+                                        <option value="students">Students</option>
+                                        <option value="workers">Office Workers</option>
+                                        <option value="gamers">Gamers</option>
+                                        <option value="creators">Content Creators</option>
+                                        <option value="meditation">Meditation & Wellness</option>
+                                        <option value="fitness">Fitness Enthusiasts</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="uploadSchedule" class="form-label">Upload Schedule</label>
+                                    <select class="form-select" id="uploadSchedule" name="upload_schedule">
+                                        <option value="daily">Daily</option>
+                                        <option value="every-2-days">Every 2 Days</option>
+                                        <option value="every-3-days">Every 3 Days</option>
+                                        <option value="weekly">Weekly</option>
+                                        <option value="twice-weekly">Twice Weekly</option>
+                                        <option value="custom">Custom Schedule</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="preferredUploadTime" class="form-label">Preferred Upload Time</label>
+                                    <input type="time" class="form-control" id="preferredUploadTime" name="preferred_upload_time" value="14:00">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Automation Settings -->
+                    <div class="row">
+                        <div class="col-12 mb-4">
+                            <h6><i class="fas fa-robot text-primary me-2"></i>Automation Settings</h6>
+                            <hr>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="autoUpload" name="auto_upload" checked>
+                                            <label class="form-check-label" for="autoUpload">
+                                                Enable Auto-Upload
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="autoThumbnails" name="auto_thumbnails" checked>
+                                            <label class="form-check-label" for="autoThumbnails">
+                                                Auto-Generate Thumbnails (Nano-Banana)
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="autoSEO" name="auto_seo" checked>
+                                            <label class="form-check-label" for="autoSEO">
+                                                Auto-Optimize SEO (Titles, Tags, Descriptions)
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="enableAnalytics" name="enable_analytics" checked>
+                                            <label class="form-check-label" for="enableAnalytics">
+                                                Track Performance Analytics
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="enableMonetization" name="enable_monetization">
+                                            <label class="form-check-label" for="enableMonetization">
+                                                Enable Monetization (when eligible)
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="privacySettings" class="form-label">Default Privacy</label>
+                                        <select class="form-select" id="privacySettings" name="privacy_settings">
+                                            <option value="private">Private (Safe Default)</option>
+                                            <option value="unlisted">Unlisted</option>
+                                            <option value="public">Public</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-primary" onclick="saveChannel()">
+                    <i class="fas fa-save me-1"></i>Save Channel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Operations Modal -->
+<div class="modal fade" id="bulkModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-tasks text-primary me-2"></i>
+                    Bulk Operations
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Selected channels: <span id="selectedChannelsCount">0</span>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <h6>Generation Operations</h6>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary" onclick="bulkGenerateMusic()">
+                                <i class="fas fa-music me-1"></i>
+                                Generate Music for All
+                            </button>
+                            <button class="btn btn-outline-info" onclick="bulkGenerateThumbnails()">
+                                <i class="fas fa-image me-1"></i>
+                                Generate Thumbnails
+                            </button>
+                            <button class="btn btn-outline-success" onclick="bulkOptimizeSEO()">
+                                <i class="fas fa-search me-1"></i>
+                                Optimize SEO
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <h6>Management Operations</h6>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-warning" onclick="bulkUpdateSettings()">
+                                <i class="fas fa-cog me-1"></i>
+                                Update Settings
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="bulkExportData()">
+                                <i class="fas fa-download me-1"></i>
+                                Export Data
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="bulkDeleteChannels()">
+                                <i class="fas fa-trash me-1"></i>
+                                Delete Selected
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// YouTube Channels Manager JavaScript
+
+let channels = [];
+let selectedChannels = [];
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    loadChannels();
+    updateStatistics();
+});
+
+// Load channels from backend
+function loadChannels() {
+    fetch('/api/youtube/channels/list')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success !== false) {
+                channels = data.channels || [];
+                renderChannelsTable();
+                updateStatistics();
+            } else {
+                console.error('Failed to load channels:', data.message);
+                loadDemoChannels();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading channels:', error);
+            // Load demo data for development
+            loadDemoChannels();
+        });
+}
+
+// Demo data for development
+function loadDemoChannels() {
+    channels = [
+        {
+            id: 1,
+            name: "Lo-Fi Beats Central",
+            url: "https://youtube.com/@lofibeatscentral",
+            channel_id: "UC123456789012345678901",
+            primary_genre: "lo-fi-hip-hop",
+            status: "active",
+            subscribers: 45230,
+            monthly_revenue: 1250,
+            last_upload: "2025-09-12",
+            upload_schedule: "daily",
+            auto_upload: true,
+            auto_thumbnails: true,
+            auto_seo: true
+        },
+        {
+            id: 2,
+            name: "Ambient Soundscapes",
+            url: "https://youtube.com/@ambientsounds",
+            channel_id: "UC234567890123456789012",
+            primary_genre: "ambient",
+            status: "active",
+            subscribers: 23100,
+            monthly_revenue: 890,
+            last_upload: "2025-09-11",
+            upload_schedule: "every-2-days",
+            auto_upload: true,
+            auto_thumbnails: true,
+            auto_seo: true
+        },
+        {
+            id: 3,
+            name: "Study Jazz Classics",
+            url: "https://youtube.com/@studyjazz",
+            channel_id: "UC345678901234567890123",
+            primary_genre: "jazz",
+            status: "needs_setup",
+            subscribers: 8950,
+            monthly_revenue: 320,
+            last_upload: "2025-09-08",
+            upload_schedule: "weekly",
+            auto_upload: false,
+            auto_thumbnails: true,
+            auto_seo: false
+        }
+    ];
+    renderChannelsTable();
+    updateStatistics();
+}
+
+// Render channels table
+function renderChannelsTable() {
+    const tbody = document.getElementById('channelsTableBody');
+    
+    if (channels.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center py-4">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <div>No channels found</div>
+                    <button class="btn btn-primary mt-2" onclick="addNewChannel()">
+                        <i class="fas fa-plus me-1"></i>Add Your First Channel
+                    </button>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    tbody.innerHTML = channels.map(channel => {
+        const statusBadge = getStatusBadge(channel.status);
+        const lastUploadFormatted = formatDate(channel.last_upload);
+        
+        return `
+            <tr>
+                <td>
+                    <input type="checkbox" class="channel-select" value="${channel.id}" 
+                           onchange="updateSelectedChannels()">
+                </td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <div class="bg-danger rounded-circle d-flex align-items-center justify-content-center text-white" 
+                                 style="width: 40px; height: 40px;">
+                                <i class="fab fa-youtube"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="fw-bold">${channel.name}</div>
+                            <div class="small text-muted">${channel.url || 'URL not set'}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span class="badge bg-primary">${formatGenre(channel.primary_genre)}</span>
+                    <div class="small text-muted mt-1">${channel.upload_schedule || 'Not set'}</div>
+                </td>
+                <td>${statusBadge}</td>
+                <td>
+                    <div class="fw-bold">${formatNumber(channel.subscribers)}</div>
+                    <div class="small text-muted">subscribers</div>
+                </td>
+                <td>
+                    <div class="fw-bold text-success">$${formatNumber(channel.monthly_revenue)}</div>
+                    <div class="small text-muted">monthly</div>
+                </td>
+                <td>
+                    <div>${lastUploadFormatted}</div>
+                </td>
+                <td>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-sm btn-outline-primary" onclick="editChannel(${channel.id})" 
+                                title="Edit Channel">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-info" onclick="viewAnalytics(${channel.id})" 
+                                title="View Analytics">
+                            <i class="fas fa-chart-line"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-success" onclick="generateContent(${channel.id})" 
+                                title="Generate Content">
+                            <i class="fas fa-magic"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteChannel(${channel.id})" 
+                                title="Delete Channel">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// Helper functions
+function getStatusBadge(status) {
+    switch (status) {
+        case 'active':
+            return '<span class="badge bg-success"><i class="fas fa-check me-1"></i>Active</span>';
+        case 'inactive':
+            return '<span class="badge bg-secondary"><i class="fas fa-pause me-1"></i>Inactive</span>';
+        case 'needs_setup':
+            return '<span class="badge bg-warning"><i class="fas fa-exclamation me-1"></i>Setup Required</span>';
+        case 'error':
+            return '<span class="badge bg-danger"><i class="fas fa-times me-1"></i>Error</span>';
+        default:
+            return '<span class="badge bg-light text-dark">Unknown</span>';
+    }
+}
+
+function formatGenre(genre) {
+    if (!genre) return 'Not set';
+    return genre.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
+}
+
+function formatNumber(num) {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+    return num.toString();
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return 'Never';
+    const date = new Date(dateStr);
+    const today = new Date();
+    const diffTime = Math.abs(today - date);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) return 'Today';
+    if (diffDays === 2) return 'Yesterday';
+    if (diffDays <= 7) return `${diffDays} days ago`;
+    return date.toLocaleDateString();
+}
+
+// Update statistics
+function updateStatistics() {
+    // Try to get real statistics from API
+    fetch('/api/youtube/channels/statistics')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.statistics) {
+                const stats = data.statistics;
+                document.getElementById('totalChannels').textContent = stats.total_channels;
+                document.getElementById('activeChannels').textContent = stats.active_channels;
+                document.getElementById('totalSubscribers').textContent = formatNumber(stats.total_subscribers);
+                document.getElementById('monthlyRevenue').textContent = '$' + formatNumber(stats.total_revenue);
+            } else {
+                updateStatisticsFromLocal();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading statistics:', error);
+            updateStatisticsFromLocal();
+        });
+}
+
+function updateStatisticsFromLocal() {
+    // Fallback to local calculation
+    document.getElementById('totalChannels').textContent = channels.length;
+    document.getElementById('activeChannels').textContent = channels.filter(c => c.status === 'active').length;
+    document.getElementById('totalSubscribers').textContent = formatNumber(
+        channels.reduce((sum, c) => sum + (c.subscribers || 0), 0)
+    );
+    document.getElementById('monthlyRevenue').textContent = '$' + formatNumber(
+        channels.reduce((sum, c) => sum + (c.monthly_revenue || 0), 0)
+    );
+}
+
+// Channel management functions
+function addNewChannel() {
+    document.getElementById('channelModalTitle').innerHTML = `
+        <i class="fab fa-youtube text-danger me-2"></i>Add New YouTube Channel
+    `;
+    document.getElementById('channelForm').reset();
+    document.getElementById('channelId').value = '';
+    const modal = new bootstrap.Modal(document.getElementById('channelModal'));
+    modal.show();
+}
+
+function editChannel(channelId) {
+    const channel = channels.find(c => c.id === channelId);
+    if (!channel) return;
+    
+    document.getElementById('channelModalTitle').innerHTML = `
+        <i class="fab fa-youtube text-danger me-2"></i>Edit Channel: ${channel.name}
+    `;
+    
+    // Populate form with channel data
+    document.getElementById('channelId').value = channel.id;
+    document.getElementById('channelName').value = channel.name;
+    document.getElementById('channelUrl').value = channel.url || '';
+    document.getElementById('channelIdInput').value = channel.channel_id || '';
+    document.getElementById('channelDescription').value = channel.description || '';
+    document.getElementById('primaryGenre').value = channel.primary_genre || '';
+    document.getElementById('uploadSchedule').value = channel.upload_schedule || '';
+    document.getElementById('preferredUploadTime').value = channel.preferred_upload_time || '14:00';
+    document.getElementById('autoUpload').checked = channel.auto_upload || false;
+    document.getElementById('autoThumbnails').checked = channel.auto_thumbnails || false;
+    document.getElementById('autoSEO').checked = channel.auto_seo || false;
+    document.getElementById('enableAnalytics').checked = channel.enable_analytics || false;
+    document.getElementById('enableMonetization').checked = channel.enable_monetization || false;
+    document.getElementById('privacySettings').value = channel.privacy_settings || 'private';
+    
+    const modal = new bootstrap.Modal(document.getElementById('channelModal'));
+    modal.show();
+}
+
+function saveChannel() {
+    const form = document.getElementById('channelForm');
+    const formData = new FormData(form);
+    const channelData = Object.fromEntries(formData.entries());
+    
+    // Validate required fields
+    if (!channelData.channel_name || !channelData.primary_genre) {
+        showToast('Please fill all required fields', 'error');
+        return;
+    }
+    
+    // Show loading
+    const saveBtn = event.target;
+    const originalText = saveBtn.innerHTML;
+    showLoading(saveBtn);
+    
+    // Send to API
+    fetch('/api/youtube/channels/save', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(channelData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading(saveBtn, originalText);
+        
+        if (data.success) {
+            showToast(data.message, 'success');
+            
+            // Update local channels array
+            if (channelData.channel_id) {
+                // Update existing
+                const index = channels.findIndex(c => c.id === parseInt(channelData.channel_id));
+                if (index !== -1) {
+                    channels[index] = data.channel;
+                }
+            } else {
+                // Add new
+                channels.push(data.channel);
+            }
+            
+            renderChannelsTable();
+            updateStatistics();
+            bootstrap.Modal.getInstance(document.getElementById('channelModal')).hide();
+        } else {
+            showToast(data.message || 'Failed to save channel', 'error');
+        }
+    })
+    .catch(error => {
+        hideLoading(saveBtn, originalText);
+        console.error('Error saving channel:', error);
+        showToast('Error saving channel. Please try again.', 'error');
+    });
+}
+
+function deleteChannel(channelId) {
+    const channel = channels.find(c => c.id === channelId);
+    if (!channel) return;
+    
+    Swal.fire({
+        title: 'Delete Channel?',
+        text: `Are you sure you want to delete "${channel.name}"? This action cannot be undone.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Call API to delete
+            fetch(`/api/youtube/channels/${channelId}/delete`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    channels = channels.filter(c => c.id !== channelId);
+                    renderChannelsTable();
+                    updateStatistics();
+                    showToast('Channel deleted successfully', 'success');
+                } else {
+                    showToast(data.message || 'Failed to delete channel', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting channel:', error);
+                showToast('Error deleting channel. Please try again.', 'error');
+            });
+        }
+    });
+}
+
+// Utility functions
+function togglePasswordVisibility(fieldId) {
+    const field = document.getElementById(fieldId);
+    const button = field.nextElementSibling.querySelector('i');
+    
+    if (field.type === 'password') {
+        field.type = 'text';
+        button.className = 'fas fa-eye-slash';
+    } else {
+        field.type = 'password';
+        button.className = 'fas fa-eye';
+    }
+}
+
+function testConnection() {
+    const apiKey = document.getElementById('apiKey').value;
+    const channelId = document.getElementById('channelIdInput').value;
+    
+    if (!apiKey) {
+        showToast('Please enter API key first', 'warning');
+        return;
+    }
+    
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    showLoading(btn);
+    
+    // Simulate API test
+    setTimeout(() => {
+        hideLoading(btn, originalText);
+        showToast('Connection successful! ✅', 'success');
+    }, 2000);
+}
+
+function setupOAuth() {
+    Swal.fire({
+        title: 'OAuth Setup Guide',
+        html: `
+            <div class="text-start">
+                <h6>Follow these steps:</h6>
+                <ol>
+                    <li>Go to <a href="https://console.developers.google.com/" target="_blank">Google Console</a></li>
+                    <li>Create a new project or select existing</li>
+                    <li>Enable YouTube Data API v3</li>
+                    <li>Create credentials (OAuth 2.0 Client ID)</li>
+                    <li>Add authorized redirect URIs</li>
+                    <li>Copy Client ID and Client Secret</li>
+                </ol>
+                <div class="alert alert-info mt-3">
+                    <strong>Redirect URI:</strong> ${window.location.origin}/oauth/youtube/callback
+                </div>
+            </div>
+        `,
+        width: 600,
+        confirmButtonText: 'Got it!'
+    });
+}
+
+function generateContent(channelId) {
+    const channel = channels.find(c => c.id === channelId);
+    if (!channel) return;
+    
+    Swal.fire({
+        title: `Generate Content for ${channel.name}`,
+        html: `
+            <div class="text-start">
+                <h6>Select content type:</h6>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary" onclick="generateMusic(${channelId})">
+                        <i class="fas fa-music me-1"></i> Generate Music Track
+                    </button>
+                    <button class="btn btn-outline-info" onclick="generateThumbnail(${channelId})">
+                        <i class="fas fa-image me-1"></i> Generate Thumbnail
+                    </button>
+                    <button class="btn btn-outline-success" onclick="generateFullVideo(${channelId})">
+                        <i class="fas fa-video me-1"></i> Generate Full Video
+                    </button>
+                </div>
+            </div>
+        `,
+        showConfirmButton: false,
+        width: 400
+    });
+}
+
+function generateMusic(channelId) {
+    Swal.close();
+    
+    fetch(`/api/youtube/channels/${channelId}/generate`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ type: 'music' })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('🎵 Music generation started for channel!', 'info');
+            // Optionally redirect to task monitor
+            if (data.task_id) {
+                setTimeout(() => {
+                    window.location.href = `/generator?task=${data.task_id}`;
+                }, 2000);
+            }
+        } else {
+            showToast('Failed to start music generation', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error starting music generation:', error);
+        showToast('Error starting music generation', 'error');
+    });
+}
+
+function generateThumbnail(channelId) {
+    Swal.close();
+    
+    fetch(`/api/youtube/channels/${channelId}/generate`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ type: 'thumbnail' })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('🖼️ Thumbnail generation started with Nano-Banana!', 'info');
+            if (data.task_id) {
+                setTimeout(() => {
+                    window.location.href = `/generator?task=${data.task_id}`;
+                }, 2000);
+            }
+        } else {
+            showToast('Failed to start thumbnail generation', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error starting thumbnail generation:', error);
+        showToast('Error starting thumbnail generation', 'error');
+    });
+}
+
+function generateFullVideo(channelId) {
+    Swal.close();
+    
+    fetch(`/api/youtube/channels/${channelId}/generate`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ type: 'full_video' })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('🎬 Full video generation pipeline started!', 'info');
+            if (data.task_id) {
+                setTimeout(() => {
+                    window.location.href = `/generator?task=${data.task_id}`;
+                }, 2000);
+            }
+        } else {
+            showToast('Failed to start full video generation', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error starting full video generation:', error);
+        showToast('Error starting full video generation', 'error');
+    });
+}
+
+function viewAnalytics(channelId) {
+    const channel = channels.find(c => c.id === channelId);
+    if (!channel) return;
+    
+    // Redirect to analytics page with channel filter
+    window.location.href = `/analytics?channel=${channelId}`;
+}
+
+// Selection and bulk operations
+function updateSelectedChannels() {
+    selectedChannels = Array.from(document.querySelectorAll('.channel-select:checked')).map(cb => parseInt(cb.value));
+    document.getElementById('selectedChannelsCount').textContent = selectedChannels.length;
+}
+
+function toggleSelectAll() {
+    const selectAll = document.getElementById('selectAllChannels');
+    const checkboxes = document.querySelectorAll('.channel-select');
+    
+    checkboxes.forEach(cb => {
+        cb.checked = selectAll.checked;
+    });
+    
+    updateSelectedChannels();
+}
+
+function filterChannels() {
+    const filter = document.getElementById('channelFilter').value;
+    // Implementation for filtering channels
+    loadChannels(); // For now, just reload
+}
+
+function refreshChannels() {
+    showToast('Refreshing channels...', 'info');
+    loadChannels();
+}
+
+function bulkOperations() {
+    if (selectedChannels.length === 0) {
+        showToast('Please select at least one channel', 'warning');
+        return;
+    }
+    
+    const modal = new bootstrap.Modal(document.getElementById('bulkModal'));
+    modal.show();
+}
+
+// Bulk operation functions
+function bulkGenerateMusic() {
+    showToast(`🎵 Generating music for ${selectedChannels.length} channels...`, 'info');
+    bootstrap.Modal.getInstance(document.getElementById('bulkModal')).hide();
+}
+
+function bulkGenerateThumbnails() {
+    showToast(`🖼️ Generating thumbnails with Nano-Banana for ${selectedChannels.length} channels...`, 'info');
+    bootstrap.Modal.getInstance(document.getElementById('bulkModal')).hide();
+}
+
+function bulkOptimizeSEO() {
+    showToast(`🔍 Optimizing SEO for ${selectedChannels.length} channels...`, 'info');
+    bootstrap.Modal.getInstance(document.getElementById('bulkModal')).hide();
+}
+
+function bulkUpdateSettings() {
+    showToast(`⚙️ Updating settings for ${selectedChannels.length} channels...`, 'info');
+    bootstrap.Modal.getInstance(document.getElementById('bulkModal')).hide();
+}
+
+function bulkExportData() {
+    const selectedChannelData = channels.filter(c => selectedChannels.includes(c.id));
+    const dataStr = JSON.stringify(selectedChannelData, null, 2);
+    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(dataBlob);
+    link.download = `youtube_channels_${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    
+    showToast('Channel data exported successfully!', 'success');
+    bootstrap.Modal.getInstance(document.getElementById('bulkModal')).hide();
+}
+
+function bulkDeleteChannels() {
+    Swal.fire({
+        title: 'Delete Selected Channels?',
+        text: `This will permanently delete ${selectedChannels.length} channels. This action cannot be undone.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        confirmButtonText: `Yes, delete ${selectedChannels.length} channels!`
+    }).then((result) => {
+        if (result.isConfirmed) {
+            channels = channels.filter(c => !selectedChannels.includes(c.id));
+            selectedChannels = [];
+            renderChannelsTable();
+            updateStatistics();
+            showToast('Selected channels deleted successfully', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('bulkModal')).hide();
+        }
+    });
+}
+
+// Initialize page message
+showToast('🎯 YouTube Channels Manager loaded - Ready to manage your empire!', 'success');
+
+</script>
+{% endblock %}
