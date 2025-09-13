@@ -321,6 +321,12 @@ def settings():
     """System settings"""
     return render_template('settings.html')
 
+@app.route('/system-settings')
+@require_auth
+def system_settings():
+    """Advanced system settings with theme selection"""
+    return render_template('system_settings.html')
+
 @app.route('/youtube-channels')
 @require_auth
 def youtube_channels_manager():
@@ -2436,6 +2442,64 @@ def create_expansion_plan():
         return jsonify({
             'success': True,
             'expansion_plan': expansion_plan
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/settings/save', methods=['POST'])
+@require_auth
+def api_save_settings():
+    """Save system settings"""
+    try:
+        data = request.get_json() or {}
+        
+        # Here you could save to database or file
+        # For now, we'll just return success since client handles localStorage
+        
+        settings_file = Path('user_settings.json')
+        with open(settings_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Settings saved successfully',
+            'timestamp': datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/settings/load')
+@require_auth
+def api_load_settings():
+    """Load system settings"""
+    try:
+        settings_file = Path('user_settings.json')
+        if settings_file.exists():
+            with open(settings_file, 'r', encoding='utf-8') as f:
+                settings = json.load(f)
+        else:
+            # Default settings
+            settings = {
+                'theme': 'default',
+                'language': 'lt',
+                'autosave': '60',
+                'notifications': True,
+                'animations': True,
+                'refreshRate': '5000',
+                'maxTasks': '3',
+                'cache': True,
+                'debugMode': False
+            }
+        
+        return jsonify({
+            'success': True,
+            'settings': settings
         })
     except Exception as e:
         return jsonify({

@@ -1,0 +1,760 @@
+{% extends "admin_base.html" %}
+
+{% block title %}System Settings - AI Music Empire{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+<li class="breadcrumb-item active">System Settings</li>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Modern AI Theme Variables */
+    :root {
+        --ai-gradient-bg: linear-gradient(135deg, #0f1419 0%, #1a202c 25%, #2d3748 50%, #1e2a3a 75%, #0f1419 100%);
+        --ai-glass-bg: rgba(255, 255, 255, 0.05);
+        --ai-glass-border: rgba(255, 255, 255, 0.1);
+        --ai-glow-primary: #00d4ff;
+        --ai-glow-secondary: #7c3aed;
+        --ai-glow-success: #10b981;
+        --ai-glow-warning: #f59e0b;
+        --ai-text-primary: #ffffff;
+        --ai-text-secondary: #cbd5e0;
+        --ai-text-muted: #718096;
+    }
+
+    /* AI Theme Body */
+    body.ai-theme {
+        background: var(--ai-gradient-bg);
+        background-attachment: fixed;
+        color: var(--ai-text-primary);
+        min-height: 100vh;
+    }
+
+    body.ai-theme::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: 
+            radial-gradient(circle at 20% 50%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 80% 20%, rgba(124, 58, 237, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 40% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: -1;
+    }
+
+    /* Glassmorphism Cards */
+    .glass-card {
+        background: var(--ai-glass-bg);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--ai-glass-border);
+        border-radius: 20px;
+        box-shadow: 
+            0 8px 32px rgba(0, 0, 0, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .glass-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.05),
+            transparent
+        );
+        transition: left 0.6s ease;
+    }
+
+    .glass-card:hover::before {
+        left: 100%;
+    }
+
+    .glass-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 
+            0 15px 45px rgba(0, 0, 0, 0.4),
+            0 0 30px rgba(0, 212, 255, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        border-color: rgba(0, 212, 255, 0.3);
+    }
+
+    /* Theme Selector Cards */
+    .theme-selector {
+        cursor: pointer;
+        position: relative;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .theme-preview {
+        height: 120px;
+        position: relative;
+        border-radius: 16px 16px 0 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        transition: all 0.3s ease;
+    }
+
+    .theme-info {
+        padding: 20px;
+        text-align: center;
+    }
+
+    .theme-selector.active {
+        border-color: var(--ai-glow-primary);
+        box-shadow: 
+            0 0 30px rgba(0, 212, 255, 0.4),
+            0 8px 32px rgba(0, 0, 0, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .theme-selector.active::after {
+        content: '✓';
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: var(--ai-glow-primary);
+        color: #000;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: bold;
+        box-shadow: 0 0 15px rgba(0, 212, 255, 0.6);
+    }
+
+    /* Theme Variations */
+    .theme-default .theme-preview {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .theme-dark .theme-preview {
+        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    }
+
+    .theme-ai .theme-preview {
+        background: linear-gradient(135deg, #0f1419 0%, #1a202c 25%, #2d3748 50%, #1e2a3a 75%, #0f1419 100%);
+    }
+
+    .theme-cyberpunk .theme-preview {
+        background: linear-gradient(135deg, #ff00ff 0%, #00ffff 50%, #ff00ff 100%);
+    }
+
+    .theme-matrix .theme-preview {
+        background: linear-gradient(135deg, #000000 0%, #003300 50%, #00ff00 100%);
+    }
+
+    .theme-neon .theme-preview {
+        background: linear-gradient(135deg, #ff006e 0%, #8338ec 50%, #3a86ff 100%);
+    }
+
+    /* Glow Effects */
+    .glow-primary {
+        box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        border-color: var(--ai-glow-primary);
+    }
+
+    .glow-success {
+        box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+        border-color: var(--ai-glow-success);
+    }
+
+    .glow-warning {
+        box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+        border-color: var(--ai-glow-warning);
+    }
+
+    /* AI Theme Overrides */
+    body.ai-theme .sidebar {
+        background: var(--ai-glass-bg);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-right: 1px solid var(--ai-glass-border);
+    }
+
+    body.ai-theme .top-navbar {
+        background: var(--ai-glass-bg);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-bottom: 1px solid var(--ai-glass-border);
+        color: var(--ai-text-primary);
+    }
+
+    body.ai-theme .card {
+        background: var(--ai-glass-bg);
+        border: 1px solid var(--ai-glass-border);
+        color: var(--ai-text-primary);
+    }
+
+    body.ai-theme .form-control,
+    body.ai-theme .form-select {
+        background: var(--ai-glass-bg);
+        border: 1px solid var(--ai-glass-border);
+        color: var(--ai-text-primary);
+    }
+
+    body.ai-theme .form-control:focus,
+    body.ai-theme .form-select:focus {
+        background: var(--ai-glass-bg);
+        border-color: var(--ai-glow-primary);
+        box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        color: var(--ai-text-primary);
+    }
+
+    /* Settings Header */
+    .settings-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .settings-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--ai-glow-primary), var(--ai-glow-secondary));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 0.5rem;
+    }
+
+    .settings-subtitle {
+        color: var(--ai-text-secondary);
+        font-size: 1.1rem;
+    }
+
+    /* Animation Classes */
+    @keyframes pulse-glow {
+        0% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.2); }
+        50% { box-shadow: 0 0 30px rgba(0, 212, 255, 0.4); }
+        100% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.2); }
+    }
+
+    .pulse-animation {
+        animation: pulse-glow 2s infinite;
+    }
+
+    /* Custom Scrollbar for AI Theme */
+    body.ai-theme ::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    body.ai-theme ::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    body.ai-theme ::-webkit-scrollbar-thumb {
+        background: var(--ai-glow-primary);
+        border-radius: 4px;
+        box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+    }
+
+    body.ai-theme ::-webkit-scrollbar-thumb:hover {
+        background: var(--ai-glow-secondary);
+        box-shadow: 0 0 15px rgba(124, 58, 237, 0.4);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Settings Header -->
+<div class="settings-header">
+    <h1 class="settings-title">
+        <i class="fas fa-cogs me-3"></i>System Settings
+    </h1>
+    <p class="settings-subtitle">Configure your AI Music Empire experience</p>
+</div>
+
+<!-- Theme Selection Section -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="glass-card p-4">
+            <div class="d-flex align-items-center mb-4">
+                <i class="fas fa-palette text-primary me-3" style="font-size: 1.5rem;"></i>
+                <div>
+                    <h3 class="mb-0">Interface Themes</h3>
+                    <p class="text-muted mb-0">Choose your preferred visual style</p>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <!-- Default Theme -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="glass-card theme-selector theme-default" onclick="selectTheme('default')" id="theme-default">
+                        <div class="theme-preview">
+                            <i class="fas fa-sun"></i>
+                        </div>
+                        <div class="theme-info">
+                            <h5 class="mb-1">Default</h5>
+                            <small class="text-muted">Classic light interface</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dark Theme -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="glass-card theme-selector theme-dark" onclick="selectTheme('dark')" id="theme-dark">
+                        <div class="theme-preview">
+                            <i class="fas fa-moon"></i>
+                        </div>
+                        <div class="theme-info">
+                            <h5 class="mb-1">Dark Mode</h5>
+                            <small class="text-muted">Easy on the eyes</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Theme (New) -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="glass-card theme-selector theme-ai active pulse-animation" onclick="selectTheme('ai')" id="theme-ai">
+                        <div class="theme-preview">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="theme-info">
+                            <h5 class="mb-1">AI Futuristic</h5>
+                            <small class="text-muted">Glassmorphism & glows</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cyberpunk Theme -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="glass-card theme-selector theme-cyberpunk" onclick="selectTheme('cyberpunk')" id="theme-cyberpunk">
+                        <div class="theme-preview">
+                            <i class="fas fa-microchip"></i>
+                        </div>
+                        <div class="theme-info">
+                            <h5 class="mb-1">Cyberpunk</h5>
+                            <small class="text-muted">Neon & synthwave vibes</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Matrix Theme -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="glass-card theme-selector theme-matrix" onclick="selectTheme('matrix')" id="theme-matrix">
+                        <div class="theme-preview">
+                            <i class="fas fa-code"></i>
+                        </div>
+                        <div class="theme-info">
+                            <h5 class="mb-1">Matrix</h5>
+                            <small class="text-muted">Green terminal style</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Neon Theme -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="glass-card theme-selector theme-neon" onclick="selectTheme('neon')" id="theme-neon">
+                        <div class="theme-preview">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <div class="theme-info">
+                            <h5 class="mb-1">Neon Lights</h5>
+                            <small class="text-muted">Vibrant colors</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 text-center">
+                <button class="btn btn-primary glow-primary" onclick="applySelectedTheme()">
+                    <i class="fas fa-check me-2"></i>Apply Theme
+                </button>
+                <button class="btn btn-outline-secondary ms-2" onclick="resetToDefault()">
+                    <i class="fas fa-undo me-2"></i>Reset to Default
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Configuration -->
+<div class="row">
+    <!-- General Settings -->
+    <div class="col-lg-6 mb-4">
+        <div class="glass-card p-4">
+            <div class="d-flex align-items-center mb-4">
+                <i class="fas fa-sliders-h text-success me-3" style="font-size: 1.5rem;"></i>
+                <div>
+                    <h4 class="mb-0">General Settings</h4>
+                    <p class="text-muted mb-0">Core system configuration</p>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">System Language</label>
+                <select class="form-select glow-success">
+                    <option value="lt">Lietuvių (Lithuanian)</option>
+                    <option value="en">English</option>
+                    <option value="ru">Русский (Russian)</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Auto-save Interval</label>
+                <select class="form-select glow-success">
+                    <option value="30">30 seconds</option>
+                    <option value="60">1 minute</option>
+                    <option value="300">5 minutes</option>
+                    <option value="600">10 minutes</option>
+                </select>
+            </div>
+
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="enableNotifications" checked>
+                <label class="form-check-label" for="enableNotifications">
+                    Enable system notifications
+                </label>
+            </div>
+
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="enableAnimations" checked>
+                <label class="form-check-label" for="enableAnimations">
+                    Enable UI animations
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Settings -->
+    <div class="col-lg-6 mb-4">
+        <div class="glass-card p-4">
+            <div class="d-flex align-items-center mb-4">
+                <i class="fas fa-tachometer-alt text-warning me-3" style="font-size: 1.5rem;"></i>
+                <div>
+                    <h4 class="mb-0">Performance</h4>
+                    <p class="text-muted mb-0">Optimize system performance</p>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Refresh Rate</label>
+                <select class="form-select glow-warning">
+                    <option value="1000">High (1s)</option>
+                    <option value="5000" selected>Normal (5s)</option>
+                    <option value="10000">Low (10s)</option>
+                    <option value="30000">Ultra Low (30s)</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Max Concurrent Tasks</label>
+                <input type="range" class="form-range" min="1" max="10" value="3" id="maxTasks">
+                <div class="d-flex justify-content-between text-muted">
+                    <small>1</small>
+                    <small id="maxTasksValue">3</small>
+                    <small>10</small>
+                </div>
+            </div>
+
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="enableCache" checked>
+                <label class="form-check-label" for="enableCache">
+                    Enable caching
+                </label>
+            </div>
+
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="enableDebugMode">
+                <label class="form-check-label" for="enableDebugMode">
+                    Debug mode
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="row">
+    <div class="col-12">
+        <div class="glass-card p-4 text-center">
+            <div class="d-flex flex-wrap justify-content-center gap-3">
+                <button class="btn btn-success glow-success" onclick="saveAllSettings()">
+                    <i class="fas fa-save me-2"></i>Save All Settings
+                </button>
+                <button class="btn btn-primary glow-primary" onclick="exportSettings()">
+                    <i class="fas fa-download me-2"></i>Export Configuration
+                </button>
+                <button class="btn btn-outline-info" onclick="importSettings()">
+                    <i class="fas fa-upload me-2"></i>Import Configuration
+                </button>
+                <button class="btn btn-outline-danger" onclick="resetAllSettings()">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Reset All
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Theme Management System
+    let currentTheme = 'default';
+    let selectedTheme = 'ai'; // Start with AI theme selected
+    
+    // Initialize theme system
+    document.addEventListener('DOMContentLoaded', function() {
+        loadCurrentTheme();
+        initializeSliders();
+    });
+    
+    function loadCurrentTheme() {
+        // Load theme from localStorage or use default
+        const savedTheme = localStorage.getItem('systemTheme') || 'default';
+        currentTheme = savedTheme;
+        
+        // Apply theme without showing as selected (since we're in settings)
+        // We'll show AI theme as selected by default in the interface
+        updateThemeSelection();
+    }
+    
+    function selectTheme(themeName) {
+        // Remove active class from all themes
+        document.querySelectorAll('.theme-selector').forEach(el => {
+            el.classList.remove('active', 'pulse-animation');
+        });
+        
+        // Add active class to selected theme
+        const selectedEl = document.getElementById(`theme-${themeName}`);
+        selectedEl.classList.add('active', 'pulse-animation');
+        
+        selectedTheme = themeName;
+        
+        // Show preview notification
+        showToast(`Theme "${getThemeName(themeName)}" selected. Click Apply to activate.`, 'info');
+    }
+    
+    function applySelectedTheme() {
+        // Apply the selected theme
+        currentTheme = selectedTheme;
+        localStorage.setItem('systemTheme', currentTheme);
+        
+        // Apply theme classes to body
+        applyThemeToBody(currentTheme);
+        
+        // Update base template theme toggle
+        updateBaseTheme(currentTheme);
+        
+        showToast(`Theme "${getThemeName(currentTheme)}" applied successfully!`, 'success');
+        
+        // Add some visual feedback
+        const activeTheme = document.getElementById(`theme-${currentTheme}`);
+        activeTheme.style.transform = 'scale(1.05)';
+        setTimeout(() => {
+            activeTheme.style.transform = '';
+        }, 300);
+    }
+    
+    function applyThemeToBody(themeName) {
+        // Remove all theme classes
+        document.body.classList.remove('dark-theme', 'ai-theme', 'cyberpunk-theme', 'matrix-theme', 'neon-theme');
+        
+        // Apply specific theme class
+        switch(themeName) {
+            case 'dark':
+                document.body.classList.add('dark-theme');
+                break;
+            case 'ai':
+                document.body.classList.add('ai-theme');
+                break;
+            case 'cyberpunk':
+                document.body.classList.add('cyberpunk-theme');
+                break;
+            case 'matrix':
+                document.body.classList.add('matrix-theme');
+                break;
+            case 'neon':
+                document.body.classList.add('neon-theme');
+                break;
+            default:
+                // Default theme - no additional classes
+                break;
+        }
+    }
+    
+    function updateBaseTheme(themeName) {
+        // Update the base template's theme toggle to reflect the new theme
+        const isDark = themeName !== 'default';
+        localStorage.setItem('darkMode', isDark.toString());
+    }
+    
+    function updateThemeSelection() {
+        // Update which theme appears as active in the selection
+        document.querySelectorAll('.theme-selector').forEach(el => {
+            el.classList.remove('active', 'pulse-animation');
+        });
+        
+        const currentEl = document.getElementById(`theme-${selectedTheme}`);
+        if (currentEl) {
+            currentEl.classList.add('active', 'pulse-animation');
+        }
+    }
+    
+    function getThemeName(themeKey) {
+        const names = {
+            'default': 'Default',
+            'dark': 'Dark Mode',
+            'ai': 'AI Futuristic',
+            'cyberpunk': 'Cyberpunk',
+            'matrix': 'Matrix',
+            'neon': 'Neon Lights'
+        };
+        return names[themeKey] || themeKey;
+    }
+    
+    function resetToDefault() {
+        selectedTheme = 'default';
+        updateThemeSelection();
+        showToast('Default theme selected. Click Apply to activate.', 'info');
+    }
+    
+    // Settings Management
+    function saveAllSettings() {
+        const settings = {
+            theme: currentTheme,
+            language: document.querySelector('select[name="language"]')?.value || 'lt',
+            autosave: document.querySelector('select[name="autosave"]')?.value || '60',
+            notifications: document.getElementById('enableNotifications').checked,
+            animations: document.getElementById('enableAnimations').checked,
+            refreshRate: document.querySelector('select[name="refreshRate"]')?.value || '5000',
+            maxTasks: document.getElementById('maxTasks').value,
+            cache: document.getElementById('enableCache').checked,
+            debugMode: document.getElementById('enableDebugMode').checked
+        };
+        
+        localStorage.setItem('systemSettings', JSON.stringify(settings));
+        
+        showToast('All settings saved successfully!', 'success');
+        
+        // Send to server
+        fetch('/api/settings/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(settings)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Settings synchronized with server!', 'success');
+            }
+        })
+        .catch(error => {
+            console.error('Settings save error:', error);
+            showToast('Settings saved locally but server sync failed.', 'warning');
+        });
+    }
+    
+    function exportSettings() {
+        const settings = JSON.parse(localStorage.getItem('systemSettings') || '{}');
+        const dataStr = JSON.stringify(settings, null, 2);
+        const dataBlob = new Blob([dataStr], {type: 'application/json'});
+        
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(dataBlob);
+        link.download = 'ai_music_empire_settings.json';
+        link.click();
+        
+        showToast('Settings exported successfully!', 'success');
+    }
+    
+    function importSettings() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        
+        input.onchange = function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const settings = JSON.parse(e.target.result);
+                        localStorage.setItem('systemSettings', JSON.stringify(settings));
+                        
+                        // Apply imported theme
+                        if (settings.theme) {
+                            selectedTheme = settings.theme;
+                            applySelectedTheme();
+                        }
+                        
+                        showToast('Settings imported successfully!', 'success');
+                        
+                        // Reload page to apply all settings
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                        
+                    } catch (error) {
+                        showToast('Invalid settings file format!', 'error');
+                    }
+                };
+                reader.readAsText(file);
+            }
+        };
+        
+        input.click();
+    }
+    
+    function resetAllSettings() {
+        Swal.fire({
+            title: 'Reset All Settings?',
+            text: 'This will restore all settings to their default values.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, reset all!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                localStorage.removeItem('systemSettings');
+                localStorage.removeItem('systemTheme');
+                localStorage.removeItem('darkMode');
+                
+                showToast('All settings reset to defaults!', 'success');
+                
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            }
+        });
+    }
+    
+    // Initialize sliders
+    function initializeSliders() {
+        const maxTasksSlider = document.getElementById('maxTasks');
+        const maxTasksValue = document.getElementById('maxTasksValue');
+        
+        maxTasksSlider.addEventListener('input', function() {
+            maxTasksValue.textContent = this.value;
+        });
+    }
+    
+    // Apply AI theme immediately when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-apply AI theme for demonstration
+        setTimeout(() => {
+            applyThemeToBody('ai');
+        }, 500);
+    });
+</script>
+{% endblock %}

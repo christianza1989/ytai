@@ -240,7 +240,114 @@
             height: 1rem;
         }
 
-        /* Dark mode toggle */
+        /* Dark Theme Styles */
+        body.dark-theme {
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+        }
+        
+        body.dark-theme .top-navbar {
+            background: #2d2d2d;
+            border-bottom-color: #404040;
+            color: #e0e0e0;
+        }
+        
+        body.dark-theme .card {
+            background-color: #2d2d2d;
+            color: #e0e0e0;
+            border-color: #404040;
+        }
+        
+        body.dark-theme .card-header {
+            background: linear-gradient(135deg, #1e3a5f, #2c5f8b) !important;
+            border-bottom-color: #404040;
+        }
+        
+        body.dark-theme .table {
+            background-color: #2d2d2d;
+            color: #e0e0e0;
+        }
+        
+        body.dark-theme .table td,
+        body.dark-theme .table th {
+            border-color: #404040;
+        }
+        
+        body.dark-theme .table thead th {
+            background-color: #1a1a1a;
+        }
+        
+        body.dark-theme .form-control,
+        body.dark-theme .form-select {
+            background-color: #2d2d2d;
+            border-color: #404040;
+            color: #e0e0e0;
+        }
+        
+        body.dark-theme .form-control:focus,
+        body.dark-theme .form-select:focus {
+            background-color: #2d2d2d;
+            border-color: #007bff;
+            color: #e0e0e0;
+        }
+        
+        body.dark-theme .modal-content {
+            background-color: #2d2d2d;
+            color: #e0e0e0;
+        }
+        
+        body.dark-theme .modal-header {
+            background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+            border-bottom-color: #404040;
+        }
+        
+        body.dark-theme .alert {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #e0e0e0;
+        }
+        
+        body.dark-theme .breadcrumb-item a {
+            color: #60a5fa;
+        }
+        
+        body.dark-theme .log-container {
+            background: #0d1117;
+            border-color: #21262d;
+        }
+        
+        body.dark-theme ::-webkit-scrollbar-track {
+            background: #2d2d2d;
+        }
+        
+        body.dark-theme ::-webkit-scrollbar-thumb {
+            background: #505050;
+        }
+        
+        body.dark-theme ::-webkit-scrollbar-thumb:hover {
+            background: #606060;
+        }
+        
+        body.dark-theme .btn-outline-light {
+            color: #e0e0e0;
+            border-color: #404040;
+        }
+        
+        body.dark-theme .btn-outline-light:hover {
+            background-color: #404040;
+            border-color: #404040;
+            color: #ffffff;
+        }
+        
+        body.dark-theme .text-muted {
+            color: #888 !important;
+        }
+        
+        body.dark-theme .border {
+            border-color: #404040 !important;
+        }
+        
+        /* Dark mode toggle button */
         .theme-toggle {
             background: none;
             border: none;
@@ -463,7 +570,14 @@
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'settings' %}active{% endif %}" href="{{ url_for('settings') }}">
                                 <i class="fas fa-sliders-h"></i>
-                                System Settings
+                                Legacy Settings
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'system_settings' %}active{% endif %}" href="{{ url_for('system_settings') }}">
+                                <i class="fas fa-palette text-primary"></i>
+                                System Themes
+                                <span class="badge bg-primary ms-1">🎨 NEW</span>
                             </a>
                         </li>
                     </ul>
@@ -561,10 +675,36 @@
         function toggleTheme() {
             // Theme toggle functionality
             document.body.classList.toggle('dark-theme');
-            const icon = document.querySelector('.theme-toggle i');
-            icon.classList.toggle('fa-moon');
-            icon.classList.toggle('fa-sun');
+            const isDarkMode = document.body.classList.contains('dark-theme');
+            
+            // Update icon
+            const icons = document.querySelectorAll('.theme-toggle i');
+            icons.forEach(icon => {
+                if (isDarkMode) {
+                    icon.className = 'fas fa-sun';
+                } else {
+                    icon.className = 'fas fa-moon';
+                }
+            });
+            
+            // Save preference to localStorage
+            localStorage.setItem('darkMode', isDarkMode);
+            
+            // Show toast notification
+            showToast(`Switched to ${isDarkMode ? 'Dark' : 'Light'} Mode`, 'info');
         }
+        
+        // Load theme preference on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const darkMode = localStorage.getItem('darkMode') === 'true';
+            if (darkMode) {
+                document.body.classList.add('dark-theme');
+                const icons = document.querySelectorAll('.theme-toggle i');
+                icons.forEach(icon => {
+                    icon.className = 'fas fa-sun';
+                });
+            }
+        });
         
         // Auto-refresh system status
         function updateSystemStatus() {

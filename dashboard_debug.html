@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Admin Panel</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #e74c3c;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --info-color: #3498db;
+            --light-bg: #ecf0f1;
+            --dark-text: #2c3e50;
+        }
+
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .sidebar {
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin: 4px 0;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            color: white;
+            background-color: rgba(255,255,255,0.1);
+            transform: translateX(5px);
+        }
+
+        .sidebar .nav-link i {
+            width: 20px;
+            text-align: center;
+            margin-right: 10px;
+        }
+
+        .nav-section-divider {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            padding: 0.5rem 1rem;
+            color: rgba(255,255,255,0.6);
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .nav-section-divider:first-child {
+            border-top: none;
+            margin-top: 0;
+        }
+
+        .main-content {
+            padding: 0;
+        }
+
+        .top-navbar {
+            background: white;
+            border-bottom: 1px solid #dee2e6;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--info-color), #2980b9);
+            color: white;
+            border-radius: 12px 12px 0 0 !important;
+            border: none;
+            font-weight: 600;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .stat-card .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .stat-card .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .progress {
+            height: 8px;
+            border-radius: 10px;
+        }
+
+        .btn {
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .table {
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .table thead th {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+        }
+
+        .log-container {
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            max-height: 400px;
+            overflow-y: auto;
+            color: #00ff00;
+        }
+
+        .log-entry {
+            margin: 2px 0;
+            word-wrap: break-word;
+        }
+
+        .alert {
+            border: none;
+            border-radius: 10px;
+            padding: 15px 20px;
+        }
+
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+        }
+
+        .modal-header {
+            border-bottom: 1px solid #dee2e6;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            padding: 10px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--info-color);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        .breadcrumb {
+            background: transparent;
+            padding: 0;
+        }
+
+        .breadcrumb-item + .breadcrumb-item::before {
+            content: "›";
+            font-weight: bold;
+        }
+
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        /* Dark Theme Styles */
+        body.dark-theme {
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+        }
+        
+        body.dark-theme .top-navbar {
+            background: #2d2d2d;
+            border-bottom-color: #404040;
+            color: #e0e0e0;
+        }
+        
+        body.dark-theme .card {
+            background-color: #2d2d2d;
+            color: #e0e0e0;
+            border-color: #404040;
+        }
+        
+        body.dark-theme .card-header {
+            background: linear-gradient(135deg, #1e3a5f, #2c5f8b) !important;
+            border-bottom-color: #404040;
+        }
+        
+        body.dark-theme .table {
+            background-color: #2d2d2d;
+            color: #e0e0e0;
+        }
+        
+        body.dark-theme .table td,
+        body.dark-theme .table th {
+            border-color: #404040;
+        }
+        
+        body.dark-theme .table thead th {
+            background-color: #1a1a1a;
+        }
+        
+        body.dark-theme .form-control,
+        body.dark-theme .form-select {
+            background-color: #2d2d2d;
+            border-color: #404040;
+            color: #e0e0e0;
+        }
+        
+        body.dark-theme .form-control:focus,
+        body.dark-theme .form-select:focus {
+            background-color: #2d2d2d;
+            border-color: #007bff;
+            color: #e0e0e0;
+        }
+        
+        body.dark-theme .modal-content {
+            background-color: #2d2d2d;
+            color: #e0e0e0;
+        }
+        
+        body.dark-theme .modal-header {
+            background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+            border-bottom-color: #404040;
+        }
+        
+        body.dark-theme .alert {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #e0e0e0;
+        }
+        
+        body.dark-theme .breadcrumb-item a {
+            color: #60a5fa;
+        }
+        
+        body.dark-theme .log-container {
+            background: #0d1117;
+            border-color: #21262d;
+        }
+        
+        body.dark-theme ::-webkit-scrollbar-track {
+            background: #2d2d2d;
+        }
+        
+        body.dark-theme ::-webkit-scrollbar-thumb {
+            background: #505050;
+        }
+        
+        body.dark-theme ::-webkit-scrollbar-thumb:hover {
+            background: #606060;
+        }
+        
+        body.dark-theme .btn-outline-light {
+            color: #e0e0e0;
+            border-color: #404040;
+        }
+        
+        body.dark-theme .btn-outline-light:hover {
+            background-color: #404040;
+            border-color: #404040;
+            color: #ffffff;
+        }
+        
+        body.dark-theme .text-muted {
+            color: #888 !important;
+        }
+        
+        body.dark-theme .border {
+            border-color: #404040 !important;
+        }
+        
+        /* Dark mode toggle button */
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.8);
+            font-size: 1.2rem;
+            padding: 8px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            color: white;
+            background-color: rgba(255,255,255,0.1);
+        }
+
+        /* Responsive improvements */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                position: fixed;
+                z-index: 1050;
+                width: 250px;
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0 !important;
+            }
+
+            .stat-card .stat-number {
+                font-size: 2rem;
+            }
+        }
+
+        /* Loading animations */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+    </style>
+    
+    
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse" id="sidebar">
+                <div class="position-sticky pt-3">
+                    <!-- Logo/Brand -->
+                    <div class="text-center mb-4">
+                        <h4 class="text-white mb-0">🎵 AI Music Empire</h4>
+                        <small class="text-light opacity-75">24/7 Autonomous System</small>
+                        
+                        <!-- Status Indicator -->
+                        <div class="text-center mt-3 mb-2">
+                            <div class="badge bg-success px-3 py-2">
+                                <i class="fas fa-circle text-light me-1" style="animation: pulse 2s infinite;"></i>
+                                24/7 ACTIVE
+                            </div>
+                        </div>
+
+                        <!-- Quick Actions -->
+                        <div class="d-flex justify-content-center gap-2 mt-2">
+                            <a href="/automation-control" class="btn btn-warning btn-sm" title="24/7 Control">
+                                <i class="fas fa-play"></i>
+                            </a>
+                            <a href="/youtube-channels" class="btn btn-danger btn-sm" title="Channels">
+                                <i class="fab fa-youtube"></i>
+                            </a>
+                            <a href="/generator" class="btn btn-primary btn-sm" title="Generate">
+                                <i class="fas fa-magic"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Navigation -->
+                    <ul class="nav flex-column">
+                        <!-- MAIN OVERVIEW -->
+                        <li class="nav-item">
+                            <a class="nav-link active" href="/">
+                                <i class="fas fa-tachometer-alt"></i>
+                                Dashboard
+                            </a>
+                        </li>
+
+                        <!-- DIVIDER: 24/7 AUTOMATION -->
+                        <li class="nav-section-divider">
+                            24/7 Automation
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link " href="/youtube-channels">
+                                <i class="fab fa-youtube text-danger"></i>
+                                YouTube Channels
+                                <span class="badge bg-success ms-1">📺 7</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link " href="/automation-control">
+                                <i class="fas fa-play-circle text-warning"></i>
+                                24/7 Control Center
+                                <span class="badge bg-success ms-1">🤖 RUNNING</span>
+                            </a>
+                        </li>
+
+                        <!-- DIVIDER: CONTENT CREATION -->
+                        <li class="nav-section-divider">
+                            Content Creation
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link " href="/generator">
+                                <i class="fas fa-magic"></i>
+                                Music Generator
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link " href="/batch">
+                                <i class="fas fa-tasks"></i>
+                                Batch Operations
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link " href="/projects">
+                                <i class="fas fa-folder"></i>
+                                Projects Manager
+                            </a>
+                        </li>
+
+                        <!-- DIVIDER: ADVANCED EMPIRES -->
+                        <li class="nav-section-divider">
+                            AI Empires
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link " href="/youtube-empire">
+                                <i class="fab fa-youtube text-danger"></i>
+                                YouTube Empire
+                                <span class="badge bg-success ms-1">💰</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link " href="/voice-empire">
+                                <i class="fas fa-microphone-alt text-primary"></i>
+                                Voice Empire
+                                <span class="badge bg-warning ms-1">🎭+$4.5K</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link " href="/trending-hijacker">
+                                <i class="fas fa-rocket text-danger"></i>
+                                Trending Hijacker
+                                <span class="badge bg-danger ms-1">💎+$6K</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link " href="/unlimited-empire">
+                                <i class="fas fa-infinity text-success"></i>
+                                Unlimited Empire
+                                <span class="badge bg-info ms-1">🚀</span>
+                            </a>
+                        </li>
+
+                        <!-- DIVIDER: ANALYTICS & MONITORING -->
+                        <li class="nav-section-divider">
+                            Analytics
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link " href="/analytics">
+                                <i class="fas fa-chart-line"></i>
+                                Analytics Dashboard
+                            </a>
+                        </li>
+
+                        <!-- DIVIDER: CONFIGURATION -->
+                        <li class="nav-section-divider">
+                            Configuration
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link " href="/api-config">
+                                <i class="fas fa-key"></i>
+                                API Configuration
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link " href="/settings">
+                                <i class="fas fa-sliders-h"></i>
+                                System Settings
+                            </a>
+                        </li>
+                    </ul>
+
+                    <!-- Footer -->
+                    <div class="mt-auto pt-4 pb-3">
+                        <div class="text-center">
+                            <!-- System Info -->
+                            <small class="text-light opacity-50 d-block mb-2">
+                                <i class="fas fa-server me-1"></i>
+                                v2.1 | 7 Channels | 2 Running
+                            </small>
+                            
+                            <div class="d-flex justify-content-center gap-2">
+                                <button class="btn btn-outline-light btn-sm" onclick="toggleTheme()" title="Toggle Theme">
+                                    <i class="fas fa-moon"></i>
+                                </button>
+                                <a href="/settings" class="btn btn-outline-light btn-sm" title="Settings">
+                                    <i class="fas fa-cog"></i>
+                                </a>
+                                <a href="/logout" class="btn btn-outline-danger btn-sm" title="Logout">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 main-content">
+                <!-- Top navbar -->
+                <nav class="navbar navbar-expand-lg top-navbar px-4 py-3">
+                    <button class="navbar-toggler d-md-none" type="button" onclick="toggleSidebar()">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    
+                    <div class="navbar-nav me-auto">
+                        <!-- Breadcrumb -->
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+                                
+<li class="breadcrumb-item active">Dashboard</li>
+
+                            </ol>
+                        </nav>
+                    </div>
+                    
+                    <div class="navbar-nav">
+                        <!-- Live status indicator -->
+                        <div class="nav-item">
+                            <span class="status-badge status-connected" id="live-status">
+                                <i class="fas fa-circle me-1"></i>
+                                Live
+                            </span>
+                        </div>
+                    </div>
+                </nav>
+
+                <!-- Page content -->
+                <div class="container-fluid px-4 py-3">
+                    <!-- Flash messages -->
+                    
+                        
+                    
+
+                    
+<!-- Quick Stats Row -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="h3 mb-3">
+            <i class="fas fa-tachometer-alt text-primary me-2"></i>
+            Dashboard Overview
+        </h1>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body stat-card">
+                <div class="stat-number text-white" id="totalProjects">
+                    16
+                </div>
+                <div class="stat-label text-white-50">
+                    <i class="fas fa-folder me-1"></i>
+                    Total Projects
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card bg-success text-white">
+            <div class="card-body stat-card">
+                <div class="stat-number text-white" id="totalFiles">
+                    62
+                </div>
+                <div class="stat-label text-white-50">
+                    <i class="fas fa-file-audio me-1"></i>
+                    Generated Files
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card bg-warning text-white">
+            <div class="card-body stat-card">
+                <div class="stat-number text-white" id="totalSize">
+                    1.1MB
+                </div>
+                <div class="stat-label text-white-50">
+                    <i class="fas fa-hdd me-1"></i>
+                    Storage Used
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card bg-info text-white">
+            <div class="card-body stat-card">
+                <div class="stat-number text-white" id="sunoCredits">
+                    N/A
+                </div>
+                <div class="stat-label text-white-50">
+                    <i class="fas fa-coins me-1"></i>
+                    Suno Credits
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Row -->
+<div class="row">
+    <!-- API Status -->
+    <div class="col-xl-6 col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-plug me-2"></i>
+                API Services Status
+            </div>
+            <div class="card-body">
+                <!-- Suno API -->
+                <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
+                    <div>
+                        <h6 class="mb-1">
+                            <i class="fas fa-music text-primary me-2"></i>
+                            Suno API
+                        </h6>
+                        <small class="text-muted">Music Generation Service</small>
+                    </div>
+                    <div class="text-end">
+                        
+                        <span class="status-badge 
+                            status-warning">
+                            <i class="fas fa-exclamation me-1"></i>
+                            Not_Configured
+                        </span>
+                        
+                            <div class="small text-danger mt-1">API key not configured</div>
+                        
+                    </div>
+                </div>
+
+                <!-- Gemini AI -->
+                <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
+                    <div>
+                        <h6 class="mb-1">
+                            <i class="fas fa-brain text-info me-2"></i>
+                            Gemini AI
+                        </h6>
+                        <small class="text-muted">Text Generation Service</small>
+                    </div>
+                    <div class="text-end">
+                        
+                        <span class="status-badge 
+                            status-warning">
+                            <i class="fas fa-exclamation me-1"></i>
+                            Not_Configured
+                        </span>
+                        
+                            <div class="small text-danger mt-1">API key not configured</div>
+                        
+                    </div>
+                </div>
+
+                <!-- Nano-Banana Image Generation -->
+                <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                    <div>
+                        <h6 class="mb-1">
+                            <i class="fas fa-image text-success me-2"></i>
+                            🍌 Nano-Banana
+                        </h6>
+                        <small class="text-muted">Gemini 2.5 Flash Image Generation</small>
+                    </div>
+                    <div class="text-end">
+                        
+                        <span class="status-badge 
+                            status-warning">
+                            <i class="fas fa-exclamation me-1"></i>
+                            Not_Configured
+                        </span>
+                        
+                            <div class="small text-danger mt-1">Gemini API key required for image generation</div>
+                        
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <a href="/api-config" class="btn btn-primary btn-sm">
+                        <i class="fas fa-cog me-1"></i>
+                        Configure APIs
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="col-xl-6 col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-history me-2"></i>
+                Recent Activity
+            </div>
+            <div class="card-body">
+                
+                    
+                    <div class="d-flex align-items-center mb-3 p-2 bg-light rounded">
+                        <div class="me-3">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                <i class="fas fa-music"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">Demo Greitas Testas</h6>
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>
+                                2025-09-13 22:11:30
+                            </small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-success">2 tracks</span>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-center mb-3 p-2 bg-light rounded">
+                        <div class="me-3">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                <i class="fas fa-music"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">Demo Greitas Testas</h6>
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>
+                                2025-09-13 20:26:00
+                            </small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-success">2 tracks</span>
+                        </div>
+                    </div>
+                    
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-bolt me-2"></i>
+                Quick Actions
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <a href="/generator" class="btn btn-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4">
+                            <i class="fas fa-magic fa-2x mb-2"></i>
+                            <span>New Generation</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <a href="/batch" class="btn btn-success w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4">
+                            <i class="fas fa-tasks fa-2x mb-2"></i>
+                            <span>Batch Process</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <a href="/analytics" class="btn btn-info w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4">
+                            <i class="fas fa-chart-line fa-2x mb-2"></i>
+                            <span>Analytics</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <a href="/projects" class="btn btn-warning w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4">
+                            <i class="fas fa-folder fa-2x mb-2"></i>
+                            <span>Browse Projects</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Demo Testing Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-light border-success">
+            <div class="card-header bg-success text-white">
+                <i class="fas fa-play-circle me-2"></i>
+                Demo / Test Režimas
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h5 class="mb-3">Išbandykite sistemą be API</h5>
+                        <p class="text-muted mb-0">
+                            Demo režimas sukuria tikrus failus su simuliuotais duomenimis. 
+                            Galite išbandyti visą procesą be jokių API prisijungimų ar kreditų.
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="row">
+                            <div class="col-sm-6 mb-2">
+                                <button type="button" class="btn btn-success w-100" id="dashboardQuickDemo">
+                                    <i class="fas fa-bolt me-2"></i>
+                                    Greitas Demo
+                                    <br><small>~30s</small>
+                                </button>
+                            </div>
+                            <div class="col-sm-6 mb-2">
+                                <button type="button" class="btn btn-info w-100" id="dashboardFullDemo">
+                                    <i class="fas fa-star me-2"></i>
+                                    Pilnas Demo
+                                    <br><small>~60s</small>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Demo Status -->
+                <div class="mt-3">
+                    <div class="alert alert-info d-none" id="dashboardDemoStatus">
+                        <div class="d-flex align-items-center">
+                            <div class="spinner-border spinner-border-sm text-info me-3" role="status"></div>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold" id="dashboardDemoStep">Pradedamas demo...</div>
+                                <div class="progress mt-2" style="height: 15px;">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                         id="dashboardDemoProgress" role="progressbar" style="width: 0%">
+                                        <span id="dashboardDemoPercent">0%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Information -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-server me-2"></i>
+                System Information
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6>Environment</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Python:</strong> 3.12.11</li>
+                            <li><strong>Server Time:</strong> <span id="serverTime">2025-09-13T23:06:44</span></li>
+                            <li><strong>Uptime:</strong> 488279.1h</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Storage</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Projects:</strong> 16</li>
+                            <li><strong>Files:</strong> 62</li>
+                            <li><strong>Total Size:</strong> 1.1 MB</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Services</h6>
+                        <ul class="list-unstyled">
+                            <li>
+                                <strong>Web Server:</strong> 
+                                <span class="badge bg-success">Running</span>
+                            </li>
+                            <li>
+                                <strong>Background Tasks:</strong> 
+                                <span class="badge bg-info" id="activeTasks">0 active</span>
+                            </li>
+                            <li>
+                                <strong>Last Update:</strong> 
+                                <span id="lastUpdate">Just now</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Global JavaScript functions
+        
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('show');
+        }
+        
+        function toggleTheme() {
+            // Theme toggle functionality
+            document.body.classList.toggle('dark-theme');
+            const isDarkMode = document.body.classList.contains('dark-theme');
+            
+            // Update icon
+            const icons = document.querySelectorAll('.theme-toggle i');
+            icons.forEach(icon => {
+                if (isDarkMode) {
+                    icon.className = 'fas fa-sun';
+                } else {
+                    icon.className = 'fas fa-moon';
+                }
+            });
+            
+            // Save preference to localStorage
+            localStorage.setItem('darkMode', isDarkMode);
+            
+            // Show toast notification
+            showToast(`Switched to ${isDarkMode ? 'Dark' : 'Light'} Mode`, 'info');
+        }
+        
+        // Load theme preference on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const darkMode = localStorage.getItem('darkMode') === 'true';
+            if (darkMode) {
+                document.body.classList.add('dark-theme');
+                const icons = document.querySelectorAll('.theme-toggle i');
+                icons.forEach(icon => {
+                    icon.className = 'fas fa-sun';
+                });
+            }
+        });
+        
+        // Auto-refresh system status
+        function updateSystemStatus() {
+            fetch('/api/system/status')
+                .then(response => response.json())
+                .then(data => {
+                    // Update live status indicator
+                    const statusElement = document.getElementById('live-status');
+                    if (statusElement) {
+                        statusElement.className = 'status-badge status-connected';
+                        statusElement.innerHTML = '<i class="fas fa-circle me-1"></i>Live';
+                    }
+                    
+                    // Trigger custom event for page-specific updates
+                    document.dispatchEvent(new CustomEvent('systemStatusUpdate', { detail: data }));
+                })
+                .catch(error => {
+                    console.error('Status update failed:', error);
+                    const statusElement = document.getElementById('live-status');
+                    if (statusElement) {
+                        statusElement.className = 'status-badge status-error';
+                        statusElement.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i>Error';
+                    }
+                });
+        }
+        
+        // Initialize status updates
+        updateSystemStatus();
+        setInterval(updateSystemStatus, 5000); // Update every 5 seconds
+        
+        // Utility functions
+        function showLoading(element) {
+            element.innerHTML = '<span class="loading"></span> Loading...';
+            element.disabled = true;
+        }
+        
+        function hideLoading(element, originalText) {
+            element.innerHTML = originalText;
+            element.disabled = false;
+        }
+        
+        function showToast(message, type = 'success') {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                icon: type,
+                title: message
+            });
+        }
+        
+        function confirmDelete(message = 'Are you sure?') {
+            return Swal.fire({
+                title: 'Confirm Delete',
+                text: message,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it!'
+            });
+        }
+        
+        // Close sidebar on main content click (mobile)
+        document.addEventListener('click', function(event) {
+            if (window.innerWidth <= 768) {
+                const sidebar = document.getElementById('sidebar');
+                const isClickInsideSidebar = sidebar.contains(event.target);
+                const isToggleButton = event.target.closest('.navbar-toggler');
+                
+                if (!isClickInsideSidebar && !isToggleButton && sidebar.classList.contains('show')) {
+                    sidebar.classList.remove('show');
+                }
+            }
+        });
+        
+    </script>
+    
+    
+<script>
+    // Dashboard-specific JavaScript
+    
+    // Listen for system status updates
+    document.addEventListener('systemStatusUpdate', function(event) {
+        const data = event.detail;
+        
+        // Update stats
+        if (data.system_stats) {
+            document.getElementById('totalProjects').textContent = data.system_stats.total_projects || 0;
+            document.getElementById('totalFiles').textContent = data.system_stats.total_files || 0;
+            document.getElementById('totalSize').textContent = (data.system_stats.total_size_mb || 0).toFixed(1) + 'MB';
+        }
+        
+        // Update Suno credits
+        if (data.api_status && data.api_status.suno && data.api_status.suno.status === 'connected') {
+            document.getElementById('sunoCredits').textContent = data.api_status.suno.credits || 'N/A';
+        }
+        
+        // Update active tasks
+        const activeTasks = Object.keys(data.generation_tasks || {}).length;
+        document.getElementById('activeTasks').textContent = activeTasks + ' active';
+        
+        // Update last update time
+        document.getElementById('lastUpdate').textContent = 'Just now';
+    });
+    
+    // Update server time every second
+    function updateServerTime() {
+        const now = new Date();
+        document.getElementById('serverTime').textContent = now.toLocaleString();
+    }
+    
+    setInterval(updateServerTime, 1000);
+    
+    // Dashboard Demo functionality
+    let dashboardDemoTaskId = null;
+    let dashboardDemoInterval = null;
+    
+    function startDashboardQuickDemo() {
+        const btn = document.getElementById('dashboardQuickDemo');
+        const originalText = btn.innerHTML;
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Pradedama...';
+        
+        fetch('/api/demo/quick-test', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                dashboardDemoTaskId = data.task_id;
+                showDashboardDemoStatus();
+                startDashboardDemoPolling();
+            } else {
+                resetDashboardDemo();
+                Swal.fire('Klaida', 'Demo pradėti nepavyko', 'error');
+            }
+        })
+        .catch(error => {
+            resetDashboardDemo();
+            Swal.fire('Klaida', 'Demo pradėti nepavyko: ' + error.message, 'error');
+        });
+    }
+    
+    function startDashboardFullDemo() {
+        const btn = document.getElementById('dashboardFullDemo');
+        const originalText = btn.innerHTML;
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Pradedama...';
+        
+        fetch('/api/demo/full-process', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: 'Dashboard Demo Projektas' })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                dashboardDemoTaskId = data.task_id;
+                showDashboardDemoStatus();
+                startDashboardDemoPolling();
+            } else {
+                resetDashboardDemo();
+                Swal.fire('Klaida', 'Demo pradėti nepavyko', 'error');
+            }
+        })
+        .catch(error => {
+            resetDashboardDemo();
+            Swal.fire('Klaida', 'Demo pradėti nepavyko: ' + error.message, 'error');
+        });
+    }
+    
+    function showDashboardDemoStatus() {
+        document.getElementById('dashboardDemoStatus').classList.remove('d-none');
+        document.getElementById('dashboardQuickDemo').disabled = true;
+        document.getElementById('dashboardFullDemo').disabled = true;
+    }
+    
+    function startDashboardDemoPolling() {
+        if (dashboardDemoInterval) clearInterval(dashboardDemoInterval);
+        
+        dashboardDemoInterval = setInterval(() => {
+            if (!dashboardDemoTaskId) return;
+            
+            fetch(`/api/generate/status/${dashboardDemoTaskId}`)
+            .then(response => response.json())
+            .then(data => {
+                updateDashboardDemoProgress(data);
+                
+                if (data.status === 'completed' || data.status === 'failed') {
+                    clearInterval(dashboardDemoInterval);
+                    handleDashboardDemoCompletion(data);
+                }
+            })
+            .catch(error => console.error('Demo polling error:', error));
+        }, 1000);
+    }
+    
+    function updateDashboardDemoProgress(task) {
+        document.getElementById('dashboardDemoStep').textContent = task.current_step || 'Apdorojama...';
+        document.getElementById('dashboardDemoProgress').style.width = task.progress + '%';
+        document.getElementById('dashboardDemoPercent').textContent = task.progress + '%';
+    }
+    
+    function handleDashboardDemoCompletion(task) {
+        if (task.status === 'completed' && task.result && task.result.success) {
+            document.getElementById('dashboardDemoStatus').innerHTML = `
+                <div class="alert alert-success">
+                    <h6><i class="fas fa-check-circle me-2"></i>Demo baigtas sėkmingai!</h6>
+                    <p class="mb-2"><strong>Projektas:</strong> ${task.result.project_name}</p>
+                    <a href="/projects" class="btn btn-success btn-sm">Peržiūrėti Projektus</a>
+                </div>
+            `;
+            
+            Swal.fire({
+                title: 'Demo Baigtas!',
+                text: 'Projektas sukurtas sėkmingai: ' + task.result.project_name,
+                icon: 'success',
+                showCancelButton: true,
+                confirmButtonText: 'Peržiūrėti Projektus',
+                cancelButtonText: 'Uždaryti'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '/projects';
+                }
+            });
+            
+            // Refresh stats
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            document.getElementById('dashboardDemoStatus').innerHTML = `
+                <div class="alert alert-danger">
+                    <h6><i class="fas fa-exclamation-circle me-2"></i>Demo nepavyko</h6>
+                    <p class="mb-0">${task.result?.error || 'Nežinoma klaida'}</p>
+                </div>
+            `;
+        }
+        
+        resetDashboardDemo();
+    }
+    
+    function resetDashboardDemo() {
+        document.getElementById('dashboardQuickDemo').disabled = false;
+        document.getElementById('dashboardFullDemo').disabled = false;
+        document.getElementById('dashboardQuickDemo').innerHTML = `
+            <i class="fas fa-bolt me-2"></i>
+            Greitas Demo
+            <br><small>~30s</small>
+        `;
+        document.getElementById('dashboardFullDemo').innerHTML = `
+            <i class="fas fa-star me-2"></i>
+            Pilnas Demo
+            <br><small>~60s</small>
+        `;
+        dashboardDemoTaskId = null;
+    }
+    
+    // Event listeners for dashboard demo
+    document.getElementById('dashboardQuickDemo').addEventListener('click', startDashboardQuickDemo);
+    document.getElementById('dashboardFullDemo').addEventListener('click', startDashboardFullDemo);
+
+    // Welcome message for first-time users
+    window.addEventListener('load', function() {
+        const totalProjects = parseInt(document.getElementById('totalProjects').textContent);
+        if (totalProjects === 0) {
+            setTimeout(() => {
+                Swal.fire({
+                    title: 'Welcome to Admin Panel!',
+                    html: `
+                        <div class="text-start">
+                            <p>Pradėkite sukurdami savo pirmą muzikos projektą.</p>
+                            <div class="bg-light p-3 rounded mb-3">
+                                <h6 class="text-success"><i class="fas fa-lightbulb me-2"></i>Patarimas:</h6>
+                                <p class="mb-0 small">Išbandykite <strong>Demo režimą</strong> pirmiau - sukurs tikrus failus be API prisijungimų!</p>
+                            </div>
+                        </div>
+                    `,
+                    icon: 'info',
+                    confirmButtonText: 'Išbandyti Demo',
+                    showCancelButton: true,
+                    cancelButtonText: 'Vėliau'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        startDashboardQuickDemo();
+                    }
+                });
+            }, 1000);
+        }
+    });
+</script>
+
+</body>
+</html>
