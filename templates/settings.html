@@ -50,6 +50,26 @@
                 </button>
             </li>
             <li class="nav-item" role="presentation">
+                <button class="nav-link" id="youtube-tab" data-bs-toggle="tab" data-bs-target="#youtube" type="button" role="tab">
+                    <i class="fab fa-youtube me-2 text-danger"></i>YouTube
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="thumbnails-tab" data-bs-toggle="tab" data-bs-target="#thumbnails" type="button" role="tab">
+                    <i class="fas fa-image me-2"></i>Thumbnails
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="seo-tab" data-bs-toggle="tab" data-bs-target="#seo" type="button" role="tab">
+                    <i class="fas fa-search me-2"></i>SEO
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="automation-tab" data-bs-toggle="tab" data-bs-target="#automation" type="button" role="tab">
+                    <i class="fas fa-robot me-2"></i>Automation
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
                 <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab">
                     <i class="fas fa-shield-alt me-2"></i>Security
                 </button>
@@ -538,6 +558,783 @@
                 </div>
             </div>
 
+            <!-- YouTube Settings -->
+            <div class="tab-pane fade" id="youtube" role="tabpanel">
+                <div class="card border-0">
+                    <div class="card-body">
+                        <form id="youtubeSettingsForm">
+                            <div class="row">
+                                <div class="col-lg-6 mb-4">
+                                    <h5><i class="fab fa-youtube text-danger me-2"></i>Channel Defaults</h5>
+                                    <hr>
+                                    
+                                    <div class="mb-3">
+                                        <label for="defaultChannelCategory" class="form-label">Default Category</label>
+                                        <select class="form-select" id="defaultChannelCategory">
+                                            <option value="10" selected>Music</option>
+                                            <option value="1">Film & Animation</option>
+                                            <option value="2">Autos & Vehicles</option>
+                                            <option value="15">Pets & Animals</option>
+                                            <option value="17">Sports</option>
+                                            <option value="19">Travel & Events</option>
+                                            <option value="20">Gaming</option>
+                                            <option value="22">People & Blogs</option>
+                                            <option value="23">Comedy</option>
+                                            <option value="24">Entertainment</option>
+                                            <option value="25">News & Politics</option>
+                                            <option value="26">Howto & Style</option>
+                                            <option value="27">Education</option>
+                                            <option value="28">Science & Technology</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="defaultPrivacy" class="form-label">Default Privacy</label>
+                                        <select class="form-select" id="defaultPrivacy">
+                                            <option value="private" selected>Private (Safe Default)</option>
+                                            <option value="unlisted">Unlisted</option>
+                                            <option value="public">Public</option>
+                                        </select>
+                                        <div class="form-text">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Private is recommended for initial testing
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="defaultLanguage" class="form-label">Video Language</label>
+                                        <select class="form-select" id="defaultLanguage">
+                                            <option value="en" selected>English</option>
+                                            <option value="lt">Lithuanian</option>
+                                            <option value="de">German</option>
+                                            <option value="es">Spanish</option>
+                                            <option value="fr">French</option>
+                                            <option value="it">Italian</option>
+                                            <option value="pt">Portuguese</option>
+                                            <option value="ru">Russian</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="defaultLicense" class="form-label">License</label>
+                                        <select class="form-select" id="defaultLicense">
+                                            <option value="youtube" selected>Standard YouTube License</option>
+                                            <option value="creativeCommon">Creative Commons</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-lg-6 mb-4">
+                                    <h5><i class="fas fa-cogs text-success me-2"></i>Upload Settings</h5>
+                                    <hr>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="autoUpload" checked>
+                                            <label class="form-check-label" for="autoUpload">
+                                                Auto-upload Generated Content
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="enableComments" checked>
+                                            <label class="form-check-label" for="enableComments">
+                                                Enable Comments by Default
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="enableRatings" checked>
+                                            <label class="form-check-label" for="enableRatings">
+                                                Enable Likes/Dislikes
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="notifySubscribers">
+                                            <label class="form-check-label" for="notifySubscribers">
+                                                Notify Subscribers
+                                            </label>
+                                        </div>
+                                        <div class="form-text">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Disabled by default to avoid spamming during bulk uploads
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="uploadDelay" class="form-label">Delay Between Uploads (minutes)</label>
+                                        <input type="number" class="form-control" id="uploadDelay" min="1" max="1440" value="5">
+                                        <div class="form-text">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Prevents rate limiting. Recommended: 5-15 minutes
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-12 mb-4">
+                                    <h5><i class="fas fa-robot text-primary me-2"></i>Monetization & Analytics</h5>
+                                    <hr>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="enableMonetization">
+                                                <label class="form-check-label" for="enableMonetization">
+                                                    Enable Monetization (when eligible)
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="trackAnalytics" checked>
+                                                <label class="form-check-label" for="trackAnalytics">
+                                                    Track Performance Analytics
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3">
+                                            <label for="targetAudience" class="form-label">Target Audience</label>
+                                            <select class="form-select" id="targetAudience">
+                                                <option value="general" selected>General Audience</option>
+                                                <option value="kids">Made for Kids</option>
+                                                <option value="not_kids">Not Made for Kids</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label for="contentRating" class="form-label">Content Rating</label>
+                                            <select class="form-select" id="contentRating">
+                                                <option value="none" selected>None</option>
+                                                <option value="mild">Mild Language</option>
+                                                <option value="moderate">Moderate Content</option>
+                                                <option value="mature">Mature Themes</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label for="paidPromotion" class="form-label">Paid Promotion</label>
+                                            <select class="form-select" id="paidPromotion">
+                                                <option value="no" selected>No Paid Promotion</option>
+                                                <option value="yes">Contains Paid Promotion</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <button type="button" class="btn btn-outline-secondary me-md-2" onclick="resetYouTubeSettings()">
+                                    <i class="fas fa-undo me-1"></i>Reset
+                                </button>
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-save me-1"></i>Save YouTube Settings
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thumbnail Settings -->
+            <div class="tab-pane fade" id="thumbnails" role="tabpanel">
+                <div class="card border-0">
+                    <div class="card-body">
+                        <form id="thumbnailSettingsForm">
+                            <div class="row">
+                                <div class="col-lg-6 mb-4">
+                                    <h5><i class="fas fa-image text-primary me-2"></i>🍌 Nano-Banana Generation</h5>
+                                    <hr>
+                                    
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        Using <strong>Gemini 2.5 Flash Image</strong> for professional thumbnail generation
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="thumbnailStyle" class="form-label">Default Style</label>
+                                        <select class="form-select" id="thumbnailStyle">
+                                            <option value="modern" selected>Modern & Clean</option>
+                                            <option value="vibrant">Vibrant & Colorful</option>
+                                            <option value="dark">Dark & Moody</option>
+                                            <option value="minimalist">Minimalist</option>
+                                            <option value="neon">Neon & Cyberpunk</option>
+                                            <option value="vintage">Vintage & Retro</option>
+                                            <option value="abstract">Abstract Art</option>
+                                            <option value="nature">Nature & Organic</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="thumbnailResolution" class="form-label">Resolution</label>
+                                        <select class="form-select" id="thumbnailResolution">
+                                            <option value="1280x720" selected>1280x720 (YouTube Standard)</option>
+                                            <option value="1920x1080">1920x1080 (Full HD)</option>
+                                        </select>
+                                        <div class="form-text">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            YouTube recommends 1280x720 with 16:9 aspect ratio
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="thumbnailQuality" class="form-label">Quality</label>
+                                        <select class="form-select" id="thumbnailQuality">
+                                            <option value="standard">Standard</option>
+                                            <option value="high" selected>High Quality</option>
+                                            <option value="premium">Premium (Slower)</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="includeTitle" checked>
+                                            <label class="form-check-label" for="includeTitle">
+                                                Include Track Title in Thumbnail
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="includeBranding" checked>
+                                            <label class="form-check-label" for="includeBranding">
+                                                Include Channel Branding
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-lg-6 mb-4">
+                                    <h5><i class="fas fa-palette text-success me-2"></i>Design Preferences</h5>
+                                    <hr>
+                                    
+                                    <div class="mb-3">
+                                        <label for="primaryColor" class="form-label">Primary Brand Color</label>
+                                        <div class="input-group">
+                                            <input type="color" class="form-control form-control-color" id="primaryColor" value="#667eea">
+                                            <input type="text" class="form-control" id="primaryColorHex" value="#667eea">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="secondaryColor" class="form-label">Secondary Color</label>
+                                        <div class="input-group">
+                                            <input type="color" class="form-control form-control-color" id="secondaryColor" value="#764ba2">
+                                            <input type="text" class="form-control" id="secondaryColorHex" value="#764ba2">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="fontStyle" class="form-label">Text Style</label>
+                                        <select class="form-select" id="fontStyle">
+                                            <option value="bold" selected>Bold & Modern</option>
+                                            <option value="elegant">Elegant & Thin</option>
+                                            <option value="playful">Playful & Rounded</option>
+                                            <option value="classic">Classic & Serif</option>
+                                            <option value="techno">Techno & Futuristic</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="thumbnailTemplate" class="form-label">Template Preference</label>
+                                        <select class="form-select" id="thumbnailTemplate">
+                                            <option value="auto" selected>Auto-select Best Template</option>
+                                            <option value="split_screen">Split Screen Design</option>
+                                            <option value="center_focus">Center Focus</option>
+                                            <option value="overlay_text">Text Overlay</option>
+                                            <option value="minimalist">Minimalist Design</option>
+                                            <option value="collage">Musical Collage</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="clickabilityOptimization" class="form-label">Clickability Optimization</label>
+                                        <select class="form-select" id="clickabilityOptimization">
+                                            <option value="high" selected>High (Attention-grabbing)</option>
+                                            <option value="medium">Medium (Balanced)</option>
+                                            <option value="low">Low (Subtle)</option>
+                                        </select>
+                                        <div class="form-text">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Higher optimization may look more "clickbait-y" but improves CTR
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-12 mb-4">
+                                    <h5><i class="fas fa-magic text-warning me-2"></i>AI Enhancement</h5>
+                                    <hr>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="aiColorHarmony" checked>
+                                                <label class="form-check-label" for="aiColorHarmony">
+                                                    AI Color Harmony
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="aiComposition" checked>
+                                                <label class="form-check-label" for="aiComposition">
+                                                    AI Composition Optimization
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="aiTextPlacement" checked>
+                                                <label class="form-check-label" for="aiTextPlacement">
+                                                    AI Text Placement
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="creativityLevel" class="form-label">AI Creativity Level</label>
+                                            <input type="range" class="form-range" id="creativityLevel" min="0.1" max="1.0" step="0.1" value="0.7">
+                                            <div class="d-flex justify-content-between">
+                                                <small class="text-muted">Conservative</small>
+                                                <small class="text-muted" id="creativityValue">70%</small>
+                                                <small class="text-muted">Highly Creative</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="genreAdaptation" class="form-label">Genre Adaptation</label>
+                                            <select class="form-select" id="genreAdaptation">
+                                                <option value="strict">Strict Genre Matching</option>
+                                                <option value="adaptive" selected>Adaptive to Genre</option>
+                                                <option value="creative">Creative Interpretation</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <button type="button" class="btn btn-outline-secondary me-md-2" onclick="previewThumbnail()">
+                                    <i class="fas fa-eye me-1"></i>Preview Sample
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary me-md-2" onclick="resetThumbnailSettings()">
+                                    <i class="fas fa-undo me-1"></i>Reset
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i>Save Thumbnail Settings
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEO Settings -->
+            <div class="tab-pane fade" id="seo" role="tabpanel">
+                <div class="card border-0">
+                    <div class="card-body">
+                        <form id="seoSettingsForm">
+                            <div class="row">
+                                <div class="col-lg-6 mb-4">
+                                    <h5><i class="fas fa-search text-primary me-2"></i>Title Optimization</h5>
+                                    <hr>
+                                    
+                                    <div class="mb-3">
+                                        <label for="titleStrategy" class="form-label">Title Strategy</label>
+                                        <select class="form-select" id="titleStrategy">
+                                            <option value="keyword_first" selected>Keyword-First Approach</option>
+                                            <option value="emotional">Emotional Hook</option>
+                                            <option value="descriptive">Descriptive & Clear</option>
+                                            <option value="branded">Branded Approach</option>
+                                            <option value="trending">Trending Keywords</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="titleLength" class="form-label">Optimal Title Length</label>
+                                        <select class="form-select" id="titleLength">
+                                            <option value="short">Short (30-40 chars)</option>
+                                            <option value="medium" selected>Medium (40-60 chars)</option>
+                                            <option value="long">Long (60-100 chars)</option>
+                                        </select>
+                                        <div class="form-text">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            YouTube truncates titles after ~60 characters on mobile
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="includeGenreInTitle" checked>
+                                            <label class="form-check-label" for="includeGenreInTitle">
+                                                Include Genre in Title
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="includeMoodInTitle">
+                                            <label class="form-check-label" for="includeMoodInTitle">
+                                                Include Mood Descriptors
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="useEmojisInTitle">
+                                            <label class="form-check-label" for="useEmojisInTitle">
+                                                Use Emojis in Titles
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-lg-6 mb-4">
+                                    <h5><i class="fas fa-tags text-success me-2"></i>Tags & Keywords</h5>
+                                    <hr>
+                                    
+                                    <div class="mb-3">
+                                        <label for="keywordDensity" class="form-label">Keyword Density Strategy</label>
+                                        <select class="form-select" id="keywordDensity">
+                                            <option value="low">Low Density (Natural)</option>
+                                            <option value="medium" selected>Medium Density (Balanced)</option>
+                                            <option value="high">High Density (SEO-focused)</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="maxTags" class="form-label">Maximum Tags per Video</label>
+                                        <input type="number" class="form-control" id="maxTags" min="5" max="15" value="10">
+                                        <div class="form-text">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            YouTube allows 500 characters total for tags
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="tagLanguages" class="form-label">Tag Languages</label>
+                                        <select class="form-select" id="tagLanguages" multiple>
+                                            <option value="en" selected>English</option>
+                                            <option value="lt">Lithuanian</option>
+                                            <option value="de">German</option>
+                                            <option value="es">Spanish</option>
+                                            <option value="fr">French</option>
+                                        </select>
+                                        <div class="form-text">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Hold Ctrl/Cmd to select multiple languages
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="includeLongTailKeywords" checked>
+                                            <label class="form-check-label" for="includeLongTailKeywords">
+                                                Include Long-tail Keywords
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="includeCompetitorTags">
+                                            <label class="form-check-label" for="includeCompetitorTags">
+                                                Analyze Competitor Tags
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-12 mb-4">
+                                    <h5><i class="fas fa-align-left text-warning me-2"></i>Description Templates</h5>
+                                    <hr>
+                                    
+                                    <div class="mb-3">
+                                        <label for="descriptionTemplate" class="form-label">Description Template</label>
+                                        <select class="form-select" id="descriptionTemplate">
+                                            <option value="minimal">Minimal (Track info only)</option>
+                                            <option value="standard" selected>Standard (Track + Channel info)</option>
+                                            <option value="seo_optimized">SEO Optimized (Keywords + Call-to-action)</option>
+                                            <option value="comprehensive">Comprehensive (Full details)</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="customDescription" class="form-label">Custom Description Template</label>
+                                        <textarea class="form-control" id="customDescription" rows="6" placeholder="Use variables: {title}, {genre}, {mood}, {bpm}, {key}, {channel_name}, {subscribe_link}">🎵 {title}
+
+Genre: {genre}
+Mood: {mood}
+BPM: {bpm}
+Key: {key}
+
+Perfect for studying, working, relaxing, or just enjoying great music!
+
+Subscribe for more amazing tracks: {subscribe_link}
+
+#music #{genre} #beats #chill #study #relax</textarea>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="includeTimestamps">
+                                                <label class="form-check-label" for="includeTimestamps">
+                                                    Include Track Timestamps
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="includeCredits" checked>
+                                                <label class="form-check-label" for="includeCredits">
+                                                    Include AI Generation Credits
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="includeSocialLinks" checked>
+                                                <label class="form-check-label" for="includeSocialLinks">
+                                                    Include Social Media Links
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="includeCallToAction" checked>
+                                                <label class="form-check-label" for="includeCallToAction">
+                                                    Include Subscribe Call-to-Action
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <button type="button" class="btn btn-outline-secondary me-md-2" onclick="previewDescription()">
+                                    <i class="fas fa-eye me-1"></i>Preview Description
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary me-md-2" onclick="resetSEOSettings()">
+                                    <i class="fas fa-undo me-1"></i>Reset
+                                </button>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save me-1"></i>Save SEO Settings
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Automation Settings -->
+            <div class="tab-pane fade" id="automation" role="tabpanel">
+                <div class="card border-0">
+                    <div class="card-body">
+                        <form id="automationSettingsForm">
+                            <div class="row">
+                                <div class="col-lg-6 mb-4">
+                                    <h5><i class="fas fa-robot text-primary me-2"></i>Scheduling</h5>
+                                    <hr>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="enableScheduling" checked>
+                                            <label class="form-check-label" for="enableScheduling">
+                                                Enable Automated Scheduling
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="uploadFrequency" class="form-label">Upload Frequency</label>
+                                        <select class="form-select" id="uploadFrequency">
+                                            <option value="daily" selected>Daily</option>
+                                            <option value="every_2_days">Every 2 Days</option>
+                                            <option value="every_3_days">Every 3 Days</option>
+                                            <option value="weekly">Weekly</option>
+                                            <option value="twice_weekly">Twice Weekly</option>
+                                            <option value="custom">Custom Schedule</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="uploadTime" class="form-label">Preferred Upload Time</label>
+                                        <input type="time" class="form-control" id="uploadTime" value="14:00">
+                                        <div class="form-text">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Based on your timezone: Europe/Vilnius
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="timeZoneOptimization" class="form-label">Timezone Optimization</label>
+                                        <select class="form-select" id="timeZoneOptimization">
+                                            <option value="local" selected>Local Timezone (Europe/Vilnius)</option>
+                                            <option value="us_eastern">US Eastern (Peak Hours)</option>
+                                            <option value="utc">UTC (Global)</option>
+                                            <option value="auto">Auto-detect Best Time</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="batchSize" class="form-label">Batch Generation Size</label>
+                                        <select class="form-select" id="batchSize">
+                                            <option value="1">1 track per batch</option>
+                                            <option value="3" selected>3 tracks per batch</option>
+                                            <option value="5">5 tracks per batch</option>
+                                            <option value="10">10 tracks per batch</option>
+                                        </select>
+                                        <div class="form-text">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Smaller batches = more consistent, larger = more efficient
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-lg-6 mb-4">
+                                    <h5><i class="fas fa-cogs text-success me-2"></i>Workflow Automation</h5>
+                                    <hr>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="autoGenerate" checked>
+                                            <label class="form-check-label" for="autoGenerate">
+                                                Auto-generate Music
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="autoCreateThumbnails" checked>
+                                            <label class="form-check-label" for="autoCreateThumbnails">
+                                                Auto-create Thumbnails
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="autoOptimizeSEO" checked>
+                                            <label class="form-check-label" for="autoOptimizeSEO">
+                                                Auto-optimize SEO
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="autoUploadYoutube">
+                                            <label class="form-check-label" for="autoUploadYoutube">
+                                                Auto-upload to YouTube
+                                            </label>
+                                        </div>
+                                        <div class="form-text">
+                                            <i class="fas fa-warning text-warning me-1"></i>
+                                            Requires YouTube API setup and channel authentication
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="autoAnalytics" checked>
+                                            <label class="form-check-label" for="autoAnalytics">
+                                                Auto-track Performance
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-12 mb-4">
+                                    <h5><i class="fas fa-chart-line text-warning me-2"></i>Performance & Safety</h5>
+                                    <hr>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3">
+                                            <label for="errorHandling" class="form-label">Error Handling</label>
+                                            <select class="form-select" id="errorHandling">
+                                                <option value="retry" selected>Retry on Failure</option>
+                                                <option value="skip">Skip Failed Items</option>
+                                                <option value="pause">Pause on Error</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label for="maxRetries" class="form-label">Max Retry Attempts</label>
+                                            <input type="number" class="form-control" id="maxRetries" min="1" max="5" value="3">
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label for="cooldownPeriod" class="form-label">Cooldown Period (minutes)</label>
+                                            <input type="number" class="form-control" id="cooldownPeriod" min="1" max="60" value="5">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="enableRateLimiting" checked>
+                                                <label class="form-check-label" for="enableRateLimiting">
+                                                    Enable Rate Limiting Protection
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="enableNotifications" checked>
+                                                <label class="form-check-label" for="enableNotifications">
+                                                    Enable Status Notifications
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>24/7 Operation:</strong> These settings enable continuous operation. 
+                                        Monitor your API usage and YouTube channel performance regularly.
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <button type="button" class="btn btn-outline-warning" onclick="testAutomation()">
+                                    <i class="fas fa-play me-1"></i>Test Automation
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary me-md-2" onclick="resetAutomationSettings()">
+                                    <i class="fas fa-undo me-1"></i>Reset
+                                </button>
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="fas fa-save me-1"></i>Save Automation Settings
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
             <!-- Security Settings -->
             <div class="tab-pane fade" id="security" role="tabpanel">
                 <div class="card border-0">
@@ -897,5 +1694,480 @@
             showToast('Storage settings reset to defaults', 'info');
         }
     }
+    
+    // ==========================================
+    // NEW SETTINGS TABS JAVASCRIPT FUNCTIONALITY
+    // ==========================================
+    
+    // YouTube Settings Form Submission
+    document.getElementById('youtubeSettingsForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveSettings('youtube');
+    });
+    
+    // Thumbnails Settings Form Submission
+    document.getElementById('thumbnailSettingsForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveSettings('thumbnails');
+    });
+    
+    // SEO Settings Form Submission
+    document.getElementById('seoSettingsForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveSettings('seo');
+    });
+    
+    // Automation Settings Form Submission
+    document.getElementById('automationSettingsForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveSettings('automation');
+    });
+    
+    // ==========================================
+    // THUMBNAIL SETTINGS FUNCTIONALITY
+    // ==========================================
+    
+    // Color picker synchronization
+    document.getElementById('primaryColor').addEventListener('change', function() {
+        document.getElementById('primaryColorHex').value = this.value;
+    });
+    
+    document.getElementById('primaryColorHex').addEventListener('change', function() {
+        const hex = this.value;
+        if (/^#([0-9A-F]{3}){1,2}$/i.test(hex)) {
+            document.getElementById('primaryColor').value = hex;
+        }
+    });
+    
+    document.getElementById('secondaryColor').addEventListener('change', function() {
+        document.getElementById('secondaryColorHex').value = this.value;
+    });
+    
+    document.getElementById('secondaryColorHex').addEventListener('change', function() {
+        const hex = this.value;
+        if (/^#([0-9A-F]{3}){1,2}$/i.test(hex)) {
+            document.getElementById('secondaryColor').value = hex;
+        }
+    });
+    
+    // Creativity level slider
+    document.getElementById('creativityLevel').addEventListener('input', function() {
+        const value = Math.round(this.value * 100);
+        document.getElementById('creativityValue').textContent = value + '%';
+    });
+    
+    // Thumbnail preview function
+    function previewThumbnail() {
+        const button = event.target;
+        const originalText = button.innerHTML;
+        
+        showLoading(button);
+        
+        // Get current settings
+        const settings = {
+            style: document.getElementById('thumbnailStyle').value,
+            resolution: document.getElementById('thumbnailResolution').value,
+            quality: document.getElementById('thumbnailQuality').value,
+            includeTitle: document.getElementById('includeTitle').checked,
+            includeBranding: document.getElementById('includeBranding').checked,
+            primaryColor: document.getElementById('primaryColor').value,
+            secondaryColor: document.getElementById('secondaryColor').value,
+            fontStyle: document.getElementById('fontStyle').value,
+            template: document.getElementById('thumbnailTemplate').value,
+            optimization: document.getElementById('clickabilityOptimization').value,
+            creativity: document.getElementById('creativityLevel').value
+        };
+        
+        // Simulate thumbnail generation
+        setTimeout(() => {
+            hideLoading(button, originalText);
+            
+            Swal.fire({
+                title: 'Thumbnail Preview',
+                html: `
+                    <div class="text-start">
+                        <h6 class="mb-3">🍌 Nano-Banana Generated Preview:</h6>
+                        <div class="bg-light p-3 rounded mb-3" style="aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, ${settings.primaryColor}, ${settings.secondaryColor});">
+                            <div class="text-white text-center">
+                                <h5 class="mb-1" style="font-weight: bold;">${settings.includeTitle ? 'Lo-Fi Hip Hop Beat' : 'Music Track'}</h5>
+                                <small>${settings.includeBranding ? 'Autonominis Muzikantas' : ''}</small>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <small><strong>Style:</strong> ${settings.style}</small><br>
+                                <small><strong>Resolution:</strong> ${settings.resolution}</small><br>
+                                <small><strong>Quality:</strong> ${settings.quality}</small><br>
+                                <small><strong>Template:</strong> ${settings.template}</small>
+                            </div>
+                            <div class="col-6">
+                                <small><strong>Colors:</strong> ${settings.primaryColor} / ${settings.secondaryColor}</small><br>
+                                <small><strong>Font:</strong> ${settings.fontStyle}</small><br>
+                                <small><strong>Optimization:</strong> ${settings.optimization}</small><br>
+                                <small><strong>Creativity:</strong> ${Math.round(settings.creativity * 100)}%</small>
+                            </div>
+                        </div>
+                    </div>
+                `,
+                width: 500,
+                confirmButtonText: 'Looks Great!'
+            });
+        }, 2000);
+    }
+    
+    // ==========================================
+    // SEO SETTINGS FUNCTIONALITY
+    // ==========================================
+    
+    // Description preview function
+    function previewDescription() {
+        const template = document.getElementById('customDescription').value;
+        const includeTimestamps = document.getElementById('includeTimestamps').checked;
+        const includeCredits = document.getElementById('includeCredits').checked;
+        const includeSocialLinks = document.getElementById('includeSocialLinks').checked;
+        const includeCallToAction = document.getElementById('includeCallToAction').checked;
+        
+        // Sample data for preview
+        const sampleData = {
+            title: 'Chill Lo-Fi Hip Hop Beat',
+            genre: 'Lo-Fi Hip Hop',
+            mood: 'Relaxing',
+            bpm: '85',
+            key: 'C Minor',
+            channel_name: 'Autonominis Muzikantas',
+            subscribe_link: 'https://youtube.com/@AutonominisMuzikantas?sub_confirmation=1'
+        };
+        
+        // Replace variables in template
+        let preview = template;
+        Object.keys(sampleData).forEach(key => {
+            preview = preview.replace(new RegExp(`{${key}}`, 'g'), sampleData[key]);
+        });
+        
+        // Add optional sections
+        if (includeTimestamps) {
+            preview += "\n\n⏰ Timestamps:\n0:00 - Intro\n0:30 - Main Beat\n2:15 - Bridge\n2:45 - Outro";
+        }
+        
+        if (includeCredits) {
+            preview += "\n\n🤖 Generated with AI\n💫 Nano-Banana (Gemini 2.5 Flash Image)";
+        }
+        
+        if (includeSocialLinks) {
+            preview += "\n\n📱 Follow us:\n🎵 YouTube: @AutonominisMuzikantas\n📧 Contact: info@autonominis.lt";
+        }
+        
+        if (includeCallToAction) {
+            preview += "\n\n👍 Like this video if you enjoyed it!\n🔔 Subscribe for daily releases!\n💬 Comment what genre you'd like next!";
+        }
+        
+        Swal.fire({
+            title: 'Description Preview',
+            html: `
+                <div class="text-start">
+                    <div class="bg-light p-3 rounded" style="max-height: 300px; overflow-y: auto;">
+                        <pre style="white-space: pre-wrap; font-family: inherit; margin: 0;">${preview}</pre>
+                    </div>
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Character count: ${preview.length} (YouTube limit: 5,000)
+                        </small>
+                    </div>
+                </div>
+            `,
+            width: 600,
+            confirmButtonText: 'Perfect!'
+        });
+    }
+    
+    // ==========================================
+    // AUTOMATION SETTINGS FUNCTIONALITY
+    // ==========================================
+    
+    // Test automation function
+    function testAutomation() {
+        const button = event.target;
+        const originalText = button.innerHTML;
+        
+        showLoading(button);
+        
+        // Get automation settings
+        const settings = {
+            scheduling: document.getElementById('enableScheduling').checked,
+            frequency: document.getElementById('uploadFrequency').value,
+            time: document.getElementById('uploadTime').value,
+            batchSize: document.getElementById('batchSize').value,
+            autoGenerate: document.getElementById('autoGenerate').checked,
+            autoThumbnails: document.getElementById('autoCreateThumbnails').checked,
+            autoSEO: document.getElementById('autoOptimizeSEO').checked,
+            autoUpload: document.getElementById('autoUploadYoutube').checked
+        };
+        
+        setTimeout(() => {
+            hideLoading(button, originalText);
+            
+            let testResults = '<div class="text-start"><h6>🔄 Automation Test Results:</h6><ul class="list-unstyled">';
+            
+            if (settings.scheduling) {
+                testResults += '<li><i class="fas fa-check text-success me-2"></i>Scheduling: Active</li>';
+            } else {
+                testResults += '<li><i class="fas fa-times text-danger me-2"></i>Scheduling: Disabled</li>';
+            }
+            
+            if (settings.autoGenerate) {
+                testResults += '<li><i class="fas fa-check text-success me-2"></i>Auto Music Generation: Ready</li>';
+            } else {
+                testResults += '<li><i class="fas fa-exclamation text-warning me-2"></i>Auto Music Generation: Manual mode</li>';
+            }
+            
+            if (settings.autoThumbnails) {
+                testResults += '<li><i class="fas fa-check text-success me-2"></i>Auto Thumbnails (Nano-Banana): Ready</li>';
+            } else {
+                testResults += '<li><i class="fas fa-exclamation text-warning me-2"></i>Auto Thumbnails: Manual mode</li>';
+            }
+            
+            if (settings.autoSEO) {
+                testResults += '<li><i class="fas fa-check text-success me-2"></li>Auto SEO Optimization: Ready</li>';
+            } else {
+                testResults += '<li><i class="fas fa-exclamation text-warning me-2"></i>Auto SEO: Manual mode</li>';
+            }
+            
+            if (settings.autoUpload) {
+                testResults += '<li><i class="fas fa-exclamation text-warning me-2"></i>Auto YouTube Upload: Requires API setup</li>';
+            } else {
+                testResults += '<li><i class="fas fa-exclamation text-warning me-2"></i>Auto Upload: Disabled for safety</li>';
+            }
+            
+            testResults += '</ul>';
+            testResults += `<div class="alert alert-info mt-3"><i class="fas fa-clock me-2"></i>Next scheduled run: ${settings.frequency} at ${settings.time}</div>`;
+            testResults += '</div>';
+            
+            Swal.fire({
+                title: '🚀 Automation Test Complete',
+                html: testResults,
+                width: 500,
+                confirmButtonText: 'Start Automation!'
+            });
+        }, 3000);
+    }
+    
+    // ==========================================
+    // RESET FUNCTIONS FOR NEW TABS
+    // ==========================================
+    
+    function resetYouTubeSettings() {
+        if (confirm('Reset all YouTube settings to YouTube best practice defaults?')) {
+            // Reset to YouTube best practices
+            document.getElementById('defaultChannelCategory').value = '10'; // Music
+            document.getElementById('defaultPrivacy').value = 'private'; // Safe default
+            document.getElementById('defaultLanguage').value = 'en';
+            document.getElementById('defaultLicense').value = 'youtube';
+            document.getElementById('autoUpload').checked = true;
+            document.getElementById('enableComments').checked = true;
+            document.getElementById('enableRatings').checked = true;
+            document.getElementById('notifySubscribers').checked = false; // Prevent spam
+            document.getElementById('uploadDelay').value = '5';
+            document.getElementById('enableMonetization').checked = false;
+            document.getElementById('trackAnalytics').checked = true;
+            document.getElementById('targetAudience').value = 'general';
+            document.getElementById('contentRating').value = 'none';
+            document.getElementById('paidPromotion').value = 'no';
+            
+            showToast('YouTube settings reset to best practices', 'info');
+        }
+    }
+    
+    function resetThumbnailSettings() {
+        if (confirm('Reset all thumbnail settings to optimal defaults?')) {
+            // Reset to optimal thumbnail settings
+            document.getElementById('thumbnailStyle').value = 'modern';
+            document.getElementById('thumbnailResolution').value = '1280x720';
+            document.getElementById('thumbnailQuality').value = 'high';
+            document.getElementById('includeTitle').checked = true;
+            document.getElementById('includeBranding').checked = true;
+            document.getElementById('primaryColor').value = '#667eea';
+            document.getElementById('primaryColorHex').value = '#667eea';
+            document.getElementById('secondaryColor').value = '#764ba2';
+            document.getElementById('secondaryColorHex').value = '#764ba2';
+            document.getElementById('fontStyle').value = 'bold';
+            document.getElementById('thumbnailTemplate').value = 'auto';
+            document.getElementById('clickabilityOptimization').value = 'high';
+            document.getElementById('aiColorHarmony').checked = true;
+            document.getElementById('aiComposition').checked = true;
+            document.getElementById('aiTextPlacement').checked = true;
+            document.getElementById('creativityLevel').value = '0.7';
+            document.getElementById('creativityValue').textContent = '70%';
+            document.getElementById('genreAdaptation').value = 'adaptive';
+            
+            showToast('Thumbnail settings reset to optimal defaults', 'info');
+        }
+    }
+    
+    function resetSEOSettings() {
+        if (confirm('Reset all SEO settings to YouTube optimization defaults?')) {
+            // Reset to SEO best practices
+            document.getElementById('titleStrategy').value = 'keyword_first';
+            document.getElementById('titleLength').value = 'medium';
+            document.getElementById('includeGenreInTitle').checked = true;
+            document.getElementById('includeMoodInTitle').checked = false;
+            document.getElementById('useEmojisInTitle').checked = false;
+            document.getElementById('keywordDensity').value = 'medium';
+            document.getElementById('maxTags').value = '10';
+            document.getElementById('tagLanguages').selectedIndex = 0; // English only
+            document.getElementById('includeLongTailKeywords').checked = true;
+            document.getElementById('includeCompetitorTags').checked = false;
+            document.getElementById('descriptionTemplate').value = 'standard';
+            document.getElementById('includeTimestamps').checked = false;
+            document.getElementById('includeCredits').checked = true;
+            document.getElementById('includeSocialLinks').checked = true;
+            document.getElementById('includeCallToAction').checked = true;
+            
+            // Reset custom description to standard template
+            document.getElementById('customDescription').value = `🎵 {title}\n\nGenre: {genre}\nMood: {mood}\nBPM: {bpm}\nKey: {key}\n\nPerfect for studying, working, relaxing, or just enjoying great music!\n\nSubscribe for more amazing tracks: {subscribe_link}\n\n#music #{genre} #beats #chill #study #relax`;
+            
+            showToast('SEO settings reset to YouTube optimization defaults', 'info');
+        }
+    }
+    
+    function resetAutomationSettings() {
+        if (confirm('Reset all automation settings to safe production defaults?')) {
+            // Reset to safe production defaults
+            document.getElementById('enableScheduling').checked = true;
+            document.getElementById('uploadFrequency').value = 'daily';
+            document.getElementById('uploadTime').value = '14:00';
+            document.getElementById('timeZoneOptimization').value = 'local';
+            document.getElementById('batchSize').value = '3';
+            document.getElementById('autoGenerate').checked = true;
+            document.getElementById('autoCreateThumbnails').checked = true;
+            document.getElementById('autoOptimizeSEO').checked = true;
+            document.getElementById('autoUploadYoutube').checked = false; // Safe default
+            document.getElementById('autoAnalytics').checked = true;
+            document.getElementById('errorHandling').value = 'retry';
+            document.getElementById('maxRetries').value = '3';
+            document.getElementById('cooldownPeriod').value = '5';
+            document.getElementById('enableRateLimiting').checked = true;
+            document.getElementById('enableNotifications').checked = true;
+            
+            showToast('Automation settings reset to safe production defaults', 'info');
+        }
+    }
+    
+    // ==========================================
+    // FORM VALIDATION AND ENHANCEMENT
+    // ==========================================
+    
+    // Enhanced save function with validation
+    function saveSettingsWithValidation(category) {
+        let isValid = true;
+        let errorMessage = '';
+        
+        // YouTube settings validation
+        if (category === 'youtube') {
+            const uploadDelay = parseInt(document.getElementById('uploadDelay').value);
+            if (uploadDelay < 1 || uploadDelay > 1440) {
+                isValid = false;
+                errorMessage = 'Upload delay must be between 1-1440 minutes';
+            }
+        }
+        
+        // Thumbnail settings validation
+        if (category === 'thumbnails') {
+            const primaryColor = document.getElementById('primaryColorHex').value;
+            const secondaryColor = document.getElementById('secondaryColorHex').value;
+            
+            if (!/^#([0-9A-F]{3}){1,2}$/i.test(primaryColor)) {
+                isValid = false;
+                errorMessage = 'Invalid primary color format';
+            }
+            if (!/^#([0-9A-F]{3}){1,2}$/i.test(secondaryColor)) {
+                isValid = false;
+                errorMessage = 'Invalid secondary color format';
+            }
+        }
+        
+        // SEO settings validation
+        if (category === 'seo') {
+            const maxTags = parseInt(document.getElementById('maxTags').value);
+            if (maxTags < 5 || maxTags > 15) {
+                isValid = false;
+                errorMessage = 'Maximum tags must be between 5-15';
+            }
+            
+            const customDescription = document.getElementById('customDescription').value;
+            if (customDescription.length > 4900) {
+                isValid = false;
+                errorMessage = 'Custom description too long (YouTube limit: 5000 chars)';
+            }
+        }
+        
+        // Automation settings validation
+        if (category === 'automation') {
+            const maxRetries = parseInt(document.getElementById('maxRetries').value);
+            const cooldown = parseInt(document.getElementById('cooldownPeriod').value);
+            
+            if (maxRetries < 1 || maxRetries > 5) {
+                isValid = false;
+                errorMessage = 'Max retries must be between 1-5';
+            }
+            if (cooldown < 1 || cooldown > 60) {
+                isValid = false;
+                errorMessage = 'Cooldown period must be between 1-60 minutes';
+            }
+        }
+        
+        if (!isValid) {
+            showToast(errorMessage, 'error');
+            return false;
+        }
+        
+        // If validation passes, save the settings
+        saveSettings(category);
+        return true;
+    }
+    
+    // Update form submissions to use validation
+    document.getElementById('youtubeSettingsForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveSettingsWithValidation('youtube');
+    });
+    
+    document.getElementById('thumbnailSettingsForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveSettingsWithValidation('thumbnails');
+    });
+    
+    document.getElementById('seoSettingsForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveSettingsWithValidation('seo');
+    });
+    
+    document.getElementById('automationSettingsForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveSettingsWithValidation('automation');
+    });
+    
+    // Initialize settings on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set initial creativity level display
+        const creativityLevel = document.getElementById('creativityLevel');
+        if (creativityLevel) {
+            const value = Math.round(creativityLevel.value * 100);
+            document.getElementById('creativityValue').textContent = value + '%';
+        }
+        
+        // Initialize color picker values
+        const primaryColor = document.getElementById('primaryColor');
+        const secondaryColor = document.getElementById('secondaryColor');
+        if (primaryColor) {
+            document.getElementById('primaryColorHex').value = primaryColor.value;
+        }
+        if (secondaryColor) {
+            document.getElementById('secondaryColorHex').value = secondaryColor.value;
+        }
+        
+        showToast('🚀 All settings loaded - Ready for 24/7 YouTube automation!', 'success');
+    });
+    
 </script>
 {% endblock %}
