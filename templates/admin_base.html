@@ -58,6 +58,23 @@
             margin-right: 10px;
         }
 
+        .nav-section-divider {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            padding: 0.5rem 1rem;
+            color: rgba(255,255,255,0.6);
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .nav-section-divider:first-child {
+            border-top: none;
+            margin-top: 0;
+        }
+
         .main-content {
             padding: 0;
         }
@@ -277,6 +294,11 @@
             to { transform: rotate(360deg); }
         }
 
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
         /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
@@ -307,28 +329,68 @@
                 <div class="position-sticky pt-3">
                     <!-- Logo/Brand -->
                     <div class="text-center mb-4">
-                        <h4 class="text-white mb-0">🎵 Admin Panel</h4>
-                        <small class="text-light opacity-75">Autonominis Muzikantas</small>
+                        <h4 class="text-white mb-0">🎵 AI Music Empire</h4>
+                        <small class="text-light opacity-75">24/7 Autonomous System</small>
+                        
+                        <!-- Status Indicator -->
+                        <div class="text-center mt-3 mb-2">
+                            <div class="badge bg-success px-3 py-2">
+                                <i class="fas fa-circle text-light me-1" style="animation: pulse 2s infinite;"></i>
+                                24/7 ACTIVE
+                            </div>
+                        </div>
+
+                        <!-- Quick Actions -->
+                        <div class="d-flex justify-content-center gap-2 mt-2">
+                            <a href="{{ url_for('automation_control') }}" class="btn btn-warning btn-sm" title="24/7 Control">
+                                <i class="fas fa-play"></i>
+                            </a>
+                            <a href="{{ url_for('youtube_channels_manager') }}" class="btn btn-danger btn-sm" title="Channels">
+                                <i class="fab fa-youtube"></i>
+                            </a>
+                            <a href="{{ url_for('generator') }}" class="btn btn-primary btn-sm" title="Generate">
+                                <i class="fas fa-magic"></i>
+                            </a>
+                        </div>
                     </div>
 
                     <!-- Navigation -->
                     <ul class="nav flex-column">
+                        <!-- MAIN OVERVIEW -->
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
                                 <i class="fas fa-tachometer-alt"></i>
                                 Dashboard
                             </a>
                         </li>
+
+                        <!-- DIVIDER: 24/7 AUTOMATION -->
+                        <li class="nav-section-divider">
+                            24/7 Automation
+                        </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'generator' %}active{% endif %}" href="{{ url_for('generator') }}">
-                                <i class="fas fa-magic"></i>
-                                Generator
+                            <a class="nav-link {% if request.endpoint == 'youtube_channels_manager' %}active{% endif %}" href="{{ url_for('youtube_channels_manager') }}">
+                                <i class="fab fa-youtube text-danger"></i>
+                                YouTube Channels
+                                <span class="badge bg-success ms-1">📺 7</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'projects' %}active{% endif %}" href="{{ url_for('projects') }}">
-                                <i class="fas fa-folder"></i>
-                                Projektai
+                            <a class="nav-link {% if request.endpoint == 'automation_control' %}active{% endif %}" href="{{ url_for('automation_control') }}">
+                                <i class="fas fa-play-circle text-warning"></i>
+                                24/7 Control Center
+                                <span class="badge bg-success ms-1">🤖 RUNNING</span>
+                            </a>
+                        </li>
+
+                        <!-- DIVIDER: CONTENT CREATION -->
+                        <li class="nav-section-divider">
+                            Content Creation
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'generator' %}active{% endif %}" href="{{ url_for('generator') }}">
+                                <i class="fas fa-magic"></i>
+                                Music Generator
                             </a>
                         </li>
                         <li class="nav-item">
@@ -338,10 +400,15 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'analytics' %}active{% endif %}" href="{{ url_for('analytics') }}">
-                                <i class="fas fa-chart-line"></i>
-                                Analytics
+                            <a class="nav-link {% if request.endpoint == 'projects' %}active{% endif %}" href="{{ url_for('projects') }}">
+                                <i class="fas fa-folder"></i>
+                                Projects Manager
                             </a>
+                        </li>
+
+                        <!-- DIVIDER: ADVANCED EMPIRES -->
+                        <li class="nav-section-divider">
+                            AI Empires
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'youtube_empire' %}active{% endif %}" href="{{ url_for('youtube_empire') }}">
@@ -353,7 +420,7 @@
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'voice_empire' %}active{% endif %}" href="{{ url_for('voice_empire') }}">
                                 <i class="fas fa-microphone-alt text-primary"></i>
-                                Voice Cloning Empire
+                                Voice Empire
                                 <span class="badge bg-warning ms-1">🎭+$4.5K</span>
                             </a>
                         </li>
@@ -368,33 +435,35 @@
                             <a class="nav-link {% if request.endpoint == 'unlimited_empire' %}active{% endif %}" href="{{ url_for('unlimited_empire') }}">
                                 <i class="fas fa-infinity text-success"></i>
                                 Unlimited Empire
-                                <span class="badge bg-info ms-1">🚀 AI UNLIMITED</span>
+                                <span class="badge bg-info ms-1">🚀</span>
                             </a>
+                        </li>
+
+                        <!-- DIVIDER: ANALYTICS & MONITORING -->
+                        <li class="nav-section-divider">
+                            Analytics
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'analytics' %}active{% endif %}" href="{{ url_for('analytics') }}">
+                                <i class="fas fa-chart-line"></i>
+                                Analytics Dashboard
+                            </a>
+                        </li>
+
+                        <!-- DIVIDER: CONFIGURATION -->
+                        <li class="nav-section-divider">
+                            Configuration
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'api_config' %}active{% endif %}" href="{{ url_for('api_config') }}">
-                                <i class="fas fa-cog"></i>
-                                API Config
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'youtube_channels_manager' %}active{% endif %}" href="{{ url_for('youtube_channels_manager') }}">
-                                <i class="fab fa-youtube text-danger"></i>
-                                YouTube Channels
-                                <span class="badge bg-success ms-1">📺</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'automation_control' %}active{% endif %}" href="{{ url_for('automation_control') }}">
-                                <i class="fas fa-play-circle text-warning"></i>
-                                24/7 Automation
-                                <span class="badge bg-primary ms-1">🤖</span>
+                                <i class="fas fa-key"></i>
+                                API Configuration
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'settings' %}active{% endif %}" href="{{ url_for('settings') }}">
                                 <i class="fas fa-sliders-h"></i>
-                                Settings
+                                System Settings
                             </a>
                         </li>
                     </ul>
@@ -402,12 +471,23 @@
                     <!-- Footer -->
                     <div class="mt-auto pt-4 pb-3">
                         <div class="text-center">
-                            <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme">
-                                <i class="fas fa-moon"></i>
-                            </button>
-                            <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm mt-2">
-                                <i class="fas fa-sign-out-alt"></i> Logout
-                            </a>
+                            <!-- System Info -->
+                            <small class="text-light opacity-50 d-block mb-2">
+                                <i class="fas fa-server me-1"></i>
+                                v2.1 | 7 Channels | 2 Running
+                            </small>
+                            
+                            <div class="d-flex justify-content-center gap-2">
+                                <button class="btn btn-outline-light btn-sm" onclick="toggleTheme()" title="Toggle Theme">
+                                    <i class="fas fa-moon"></i>
+                                </button>
+                                <a href="{{ url_for('settings') }}" class="btn btn-outline-light btn-sm" title="Settings">
+                                    <i class="fas fa-cog"></i>
+                                </a>
+                                <a href="{{ url_for('logout') }}" class="btn btn-outline-danger btn-sm" title="Logout">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
