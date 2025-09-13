@@ -140,6 +140,7 @@ system_state = SystemState()
 
 # Authentication functions
 from functools import wraps
+from dataclasses import asdict
 
 def require_auth(f):
     """Simple authentication decorator"""
@@ -745,6 +746,292 @@ def api_demo_full_process():
     thread.start()
     
     return jsonify({'success': True, 'task_id': task_id, 'demo_mode': True})
+
+# YouTube Empire Management API Endpoints
+@app.route('/youtube-empire')
+@require_auth
+def youtube_empire():
+    """YouTube Empire management page"""
+    return render_template('youtube_empire.html')
+
+@app.route('/api/youtube/channels')
+@require_auth
+def api_youtube_channels():
+    """Get all YouTube channels configuration"""
+    from youtube_empire_manager import YouTubeEmpireManager
+    
+    manager = YouTubeEmpireManager()
+    channels_data = []
+    
+    for channel_id, channel in manager.channels.items():
+        channel_data = asdict(channel) if hasattr(channel, '__dict__') else {
+            'id': channel_id,
+            'name': getattr(channel, 'name', 'Unknown'),
+            'style': getattr(channel, 'style', 'general'),
+            'upload_schedule': getattr(channel, 'upload_schedule', 'weekly'),
+            'subscribers': getattr(channel, 'subscribers', 0),
+            'performance_score': getattr(channel, 'performance_score', 0.5)
+        }
+        channels_data.append(channel_data)
+    
+    return jsonify({'channels': channels_data})
+
+@app.route('/api/youtube/empire-report')
+@require_auth
+def api_empire_report():
+    """Generate comprehensive empire profitability report"""
+    from youtube_empire_manager import YouTubeEmpireManager
+    
+    manager = YouTubeEmpireManager()
+    report = manager.generate_youtube_empire_report()
+    
+    return jsonify(report)
+
+@app.route('/api/youtube/batch-generate', methods=['POST'])
+@require_auth
+def api_youtube_batch_generate():
+    """Start massive batch generation for all channels"""
+    data = request.get_json() or {}
+    batch_size = data.get('batch_size', 20)
+    
+    task_id = f"youtube_batch_{int(time.time())}"
+    
+    # Store task info
+    system_state.generation_tasks[task_id] = {
+        'id': task_id,
+        'status': 'queued',
+        'progress': 0,
+        'current_step': f'Pradedamas masinis generavimas {batch_size} video...',
+        'logs': [],
+        'parameters': data,
+        'created_at': datetime.now().isoformat(),
+        'result': None,
+        'youtube_batch': True,
+        'batch_size': batch_size
+    }
+    
+    def run_youtube_batch():
+        try:
+            from youtube_empire_manager import YouTubeEmpireManager
+            import asyncio
+            
+            system_state.generation_tasks[task_id]['status'] = 'running'
+            
+            manager = YouTubeEmpireManager()
+            
+            # Update progress
+            def update_progress(progress, step):
+                system_state.generation_tasks[task_id]['progress'] = progress
+                system_state.generation_tasks[task_id]['current_step'] = step
+                system_state.generation_tasks[task_id]['logs'].append(f"[{datetime.now().strftime('%H:%M:%S')}] {step}")
+            
+            update_progress(10, "🚀 Inicijuojama YouTube imperija...")
+            time.sleep(1)
+            
+            update_progress(25, f"🎵 Generuojama {batch_size} video {len(manager.channels)} kanalams...")
+            
+            # Simulate async batch generation
+            async def simulate_batch():
+                return await manager.generate_multi_channel_content(batch_size)
+            
+            # Run async function in thread
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            results = loop.run_until_complete(simulate_batch())
+            loop.close()
+            
+            update_progress(70, "💰 Apskaičiuojami pelno projektai...")
+            time.sleep(1)
+            
+            # Generate empire report
+            report = manager.generate_youtube_empire_report()
+            
+            update_progress(85, "📊 Kuriamos analitikos ataskaitos...")
+            time.sleep(1)
+            
+            # Save batch data
+            batch_dir = manager.save_generation_data(results)
+            
+            update_progress(100, f"✅ Baigta! Sukurta {len(results)} video projektų")
+            
+            system_state.generation_tasks[task_id]['result'] = {
+                'success': True,
+                'videos_generated': len(results),
+                'batch_directory': str(batch_dir),
+                'empire_report': report,
+                'estimated_monthly_revenue': report['empire_overview']['total_estimated_monthly_revenue'],
+                'annual_projection': report['empire_overview']['annual_revenue_projection']
+            }
+            system_state.generation_tasks[task_id]['status'] = 'completed'
+            
+        except Exception as e:
+            system_state.generation_tasks[task_id]['status'] = 'failed'
+            system_state.generation_tasks[task_id]['result'] = {'success': False, 'error': str(e)}
+    
+    thread = threading.Thread(target=run_youtube_batch, daemon=True)
+    thread.start()
+    
+    return jsonify({'success': True, 'task_id': task_id})
+
+@app.route('/api/youtube/upload-schedule', methods=['POST'])
+@require_auth  
+def api_youtube_upload_schedule():
+    """Schedule optimized YouTube uploads"""
+    data = request.get_json() or {}
+    
+    # This would integrate with actual YouTube API
+    scheduled_uploads = []
+    
+    # Mock scheduling for demo
+    for i in range(data.get('video_count', 5)):
+        scheduled_uploads.append({
+            'video_id': f'scheduled_{i}',
+            'channel': f'channel_{i % 3}',
+            'upload_time': (datetime.now() + timedelta(hours=i*2)).isoformat(),
+            'title': f'Auto-scheduled video {i+1}',
+            'estimated_views': random.randint(5000, 50000)
+        })
+    
+    return jsonify({
+        'success': True,
+        'scheduled_count': len(scheduled_uploads),
+        'uploads': scheduled_uploads
+    })
+
+@app.route('/api/youtube/engagement-bot', methods=['POST'])
+@require_auth
+def api_youtube_engagement_bot():
+    """Activate engagement bot for videos"""
+    data = request.get_json() or {}
+    
+    from youtube_empire_manager import EngagementBot
+    
+    bot = EngagementBot()
+    
+    # Mock engagement generation
+    engagement_plan = []
+    
+    for i in range(data.get('video_count', 5)):
+        video_metadata = {
+            'video_id': f'video_{i}',
+            'style': random.choice(['lofi', 'trap', 'meditation', 'gaming'])
+        }
+        
+        # Generate comments for each video
+        comments = asyncio.run(bot.generate_engagement_comments(video_metadata, 3))
+        engagement_plan.extend(comments)
+    
+    return jsonify({
+        'success': True,
+        'engagement_actions': len(engagement_plan),
+        'comments_scheduled': len([e for e in engagement_plan if e['engagement_type'] == 'auto_comment']),
+        'plan': engagement_plan[:10]  # Show first 10 for preview
+    })
+
+@app.route('/api/seo/optimize', methods=['POST'])
+@require_auth
+def api_seo_optimize():
+    """Optimize video metadata for maximum SEO"""
+    data = request.get_json() or {}
+    
+    from seo_optimizer import SEOOptimizer
+    
+    optimizer = SEOOptimizer()
+    
+    style = data.get('style', 'lofi')
+    mood = data.get('mood', 'chill')
+    custom_title = data.get('title')
+    
+    # Generate optimized metadata
+    optimized_metadata = optimizer.optimize_video_metadata(style, mood, custom_title)
+    
+    return jsonify({
+        'success': True,
+        'optimized_metadata': optimized_metadata
+    })
+
+@app.route('/api/seo/batch-optimize', methods=['POST'])
+@require_auth
+def api_seo_batch_optimize():
+    """Batch SEO optimization for multiple videos"""
+    data = request.get_json() or {}
+    
+    from seo_optimizer import SEOOptimizer
+    from youtube_empire_manager import YouTubeEmpireManager
+    
+    optimizer = SEOOptimizer()
+    manager = YouTubeEmpireManager()
+    
+    batch_size = data.get('batch_size', 10)
+    optimize_results = []
+    
+    # Generate optimized metadata for each channel style
+    for channel_id, channel in list(manager.channels.items())[:batch_size]:
+        try:
+            optimized = optimizer.optimize_video_metadata(
+                style=channel.style,
+                mood=random.choice(['chill', 'epic', 'peaceful', 'intense'])
+            )
+            
+            optimize_results.append({
+                'channel_id': channel_id,
+                'channel_name': channel.name,
+                'style': channel.style,
+                'optimized_metadata': optimized,
+                'success': True
+            })
+        except Exception as e:
+            optimize_results.append({
+                'channel_id': channel_id,
+                'error': str(e),
+                'success': False
+            })
+    
+    # Calculate total potential
+    total_estimated_views = sum(r['optimized_metadata']['estimated_views'] 
+                               for r in optimize_results if r['success'])
+    total_estimated_revenue = sum(r['optimized_metadata']['revenue_potential']['estimated_revenue'] 
+                                 for r in optimize_results if r['success'])
+    avg_seo_score = sum(r['optimized_metadata']['seo_score'] 
+                       for r in optimize_results if r['success']) / len([r for r in optimize_results if r['success']])
+    
+    return jsonify({
+        'success': True,
+        'batch_results': optimize_results,
+        'batch_summary': {
+            'total_videos': len(optimize_results),
+            'successful_optimizations': len([r for r in optimize_results if r['success']]),
+            'total_estimated_views': total_estimated_views,
+            'total_estimated_revenue': round(total_estimated_revenue, 2),
+            'average_seo_score': round(avg_seo_score, 1)
+        }
+    })
+
+@app.route('/api/youtube/trending-analysis')
+@require_auth
+def api_trending_analysis():
+    """Get trending analysis for all styles"""
+    from seo_optimizer import YouTubeTrendingAnalyzer
+    
+    analyzer = YouTubeTrendingAnalyzer()
+    
+    trending_data = {}
+    
+    for style in ['lofi', 'trap', 'meditation', 'gaming']:
+        # Generate sample optimized metadata
+        sample_optimization = analyzer.generate_optimized_title(style, trending_boost=True)
+        
+        trending_data[style] = {
+            'trending_keywords': analyzer.trending_keywords.get(style, {}),
+            'rpm_data': analyzer.rpm_data.get(style, {}),
+            'optimal_upload_times': analyzer.upload_schedule.get(style, {}),
+            'sample_title': sample_optimization
+        }
+    
+    return jsonify({
+        'trending_analysis': trending_data,
+        'generated_at': datetime.now().isoformat()
+    })
 
 @app.route('/favicon.ico')
 def favicon():

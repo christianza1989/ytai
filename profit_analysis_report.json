@@ -1,0 +1,459 @@
+{
+  "empire_overview": {
+    "total_channels": 4,
+    "total_subscribers": 58700,
+    "total_views": 2990000,
+    "total_revenue": 7570.0,
+    "average_rpm": 2.68,
+    "monthly_performance": {
+      "views": 123455,
+      "revenue": 636.11,
+      "watch_time_hours": 123781.2,
+      "new_subscribers": 2790,
+      "videos_uploaded": 37,
+      "views_growth_percent": 0,
+      "revenue_growth_percent": 0
+    }
+  },
+  "channel_performance": [
+    {
+      "id": "lofi_study_vibes",
+      "name": "Lo-Fi Study Vibes",
+      "style": "lofi",
+      "subscribers": 12500,
+      "total_revenue": 2150.0,
+      "average_rpm": 2.53,
+      "period_performance": {
+        "views": 456496,
+        "revenue": 2362.56,
+        "watch_time_hours": 456667.2,
+        "new_subscribers": 11520,
+        "videos_uploaded": 480,
+        "rpm": 5.18,
+        "avg_watch_time_per_view": 1.0
+      }
+    },
+    {
+      "id": "epic_gaming_sounds",
+      "name": "Epic Gaming Sounds",
+      "style": "gaming",
+      "subscribers": 22100,
+      "total_revenue": 2760.0,
+      "average_rpm": 2.3,
+      "period_performance": {
+        "views": 221732,
+        "revenue": 1238.44,
+        "watch_time_hours": 222712.7,
+        "new_subscribers": 4564,
+        "videos_uploaded": 210,
+        "rpm": 5.59,
+        "avg_watch_time_per_view": 1.0
+      }
+    },
+    {
+      "id": "healing_frequencies",
+      "name": "Healing Frequencies 432Hz",
+      "style": "meditation",
+      "subscribers": 15200,
+      "total_revenue": 1680.0,
+      "average_rpm": 4.0,
+      "period_performance": {
+        "views": 223776,
+        "revenue": 1143.59,
+        "watch_time_hours": 230307.7,
+        "new_subscribers": 5229,
+        "videos_uploaded": 210,
+        "rpm": 5.11,
+        "avg_watch_time_per_view": 1.03
+      }
+    },
+    {
+      "id": "trap_beast_beats",
+      "name": "Trap Beast Beats",
+      "style": "trap",
+      "subscribers": 8900,
+      "total_revenue": 980.0,
+      "average_rpm": 1.88,
+      "period_performance": {
+        "views": 218960,
+        "revenue": 1037.12,
+        "watch_time_hours": 213656.1,
+        "new_subscribers": 4697,
+        "videos_uploaded": 210,
+        "rpm": 4.74,
+        "avg_watch_time_per_view": 0.98
+      }
+    }
+  ],
+  "revenue_projections": {
+    "daily": 21.54,
+    "weekly": 150.8,
+    "monthly": 646.27,
+    "quarterly": 1938.83,
+    "yearly": 7863.01,
+    "views_per_day": 4234,
+    "views_per_month": 127020,
+    "monthly_goal": {
+      "target_revenue": 2850.0,
+      "actual_revenue": 1310.9,
+      "revenue_progress_percent": 46.0,
+      "target_views": 1130000,
+      "actual_views": 714929,
+      "views_progress_percent": 63.3
+    }
+  },
+  "top_performing_videos": [
+    {
+      "id": "video_0093",
+      "title": "Generated Gaming Video #10",
+      "upload_date": "2025-08-23",
+      "views": 72152,
+      "revenue": 243.54,
+      "rpm": 3.38,
+      "ctr": 2.0,
+      "seo_score": 45,
+      "channel_name": "Epic Gaming Sounds",
+      "channel_style": "gaming"
+    },
+    {
+      "id": "video_0089",
+      "title": "Generated Gaming Video #6",
+      "upload_date": "2025-08-02",
+      "views": 76773,
+      "revenue": 230.41,
+      "rpm": 3.0,
+      "ctr": 10.8,
+      "seo_score": 65,
+      "channel_name": "Epic Gaming Sounds",
+      "channel_style": "gaming"
+    },
+    {
+      "id": "video_0090",
+      "title": "Generated Gaming Video #7",
+      "upload_date": "2025-08-09",
+      "views": 79423,
+      "revenue": 226.51,
+      "rpm": 2.85,
+      "ctr": 5.4,
+      "seo_score": 65,
+      "channel_name": "Epic Gaming Sounds",
+      "channel_style": "gaming"
+    },
+    {
+      "id": "video_0091",
+      "title": "Generated Gaming Video #8",
+      "upload_date": "2025-06-16",
+      "views": 67447,
+      "revenue": 218.52,
+      "rpm": 3.24,
+      "ctr": 3.2,
+      "seo_score": 93,
+      "channel_name": "Epic Gaming Sounds",
+      "channel_style": "gaming"
+    },
+    {
+      "id": "video_0094",
+      "title": "Generated Gaming Video #11",
+      "upload_date": "2025-07-29",
+      "views": 59296,
+      "revenue": 199.63,
+      "rpm": 3.37,
+      "ctr": 4.0,
+      "seo_score": 60,
+      "channel_name": "Epic Gaming Sounds",
+      "channel_style": "gaming"
+    },
+    {
+      "id": "video_0087",
+      "title": "Generated Gaming Video #4",
+      "upload_date": "2025-08-20",
+      "views": 58556,
+      "revenue": 166.71,
+      "rpm": 2.85,
+      "ctr": 5.6,
+      "seo_score": 59,
+      "channel_name": "Epic Gaming Sounds",
+      "channel_style": "gaming"
+    },
+    {
+      "id": "video_0084",
+      "title": "Generated Gaming Video #1",
+      "upload_date": "2025-07-28",
+      "views": 51536,
+      "revenue": 161.18,
+      "rpm": 3.13,
+      "ctr": 5.0,
+      "seo_score": 83,
+      "channel_name": "Epic Gaming Sounds",
+      "channel_style": "gaming"
+    },
+    {
+      "id": "video_0100",
+      "title": "Generated Gaming Video #17",
+      "upload_date": "2025-08-12",
+      "views": 50977,
+      "revenue": 144.28,
+      "rpm": 2.83,
+      "ctr": 8.0,
+      "seo_score": 72,
+      "channel_name": "Epic Gaming Sounds",
+      "channel_style": "gaming"
+    },
+    {
+      "id": "video_0099",
+      "title": "Generated Gaming Video #16",
+      "upload_date": "2025-06-18",
+      "views": 77418,
+      "revenue": 141.66,
+      "rpm": 1.83,
+      "ctr": 10.3,
+      "seo_score": 91,
+      "channel_name": "Epic Gaming Sounds",
+      "channel_style": "gaming"
+    },
+    {
+      "id": "video_0026",
+      "title": "Generated Lofi Video #26",
+      "upload_date": "2025-07-18",
+      "views": 34079,
+      "revenue": 136.43,
+      "rpm": 4.0,
+      "ctr": 9.0,
+      "seo_score": 60,
+      "channel_name": "Lo-Fi Study Vibes",
+      "channel_style": "lofi"
+    }
+  ],
+  "optimization_opportunities": {
+    "low_seo_videos": [
+      {
+        "id": "video_0009",
+        "title": "Generated Lofi Video #9",
+        "views": 35900,
+        "revenue": 98.05,
+        "rpm": 2.73,
+        "seo_score": 52,
+        "channel_name": "Lo-Fi Study Vibes",
+        "optimization_potential": {
+          "current_revenue": 98.01,
+          "potential_revenue": 127.41,
+          "revenue_increase": 29.4,
+          "improvement_percent": 30.0,
+          "potential_views": 46670,
+          "potential_rpm": 2.73
+        }
+      },
+      {
+        "id": "video_0078",
+        "title": "Generated Meditation Video #22",
+        "views": 10269,
+        "revenue": 53.72,
+        "rpm": 5.23,
+        "seo_score": 54,
+        "channel_name": "Healing Frequencies 432Hz",
+        "optimization_potential": {
+          "current_revenue": 53.71,
+          "potential_revenue": 69.82,
+          "revenue_increase": 16.11,
+          "improvement_percent": 30.0,
+          "potential_views": 13349,
+          "potential_rpm": 5.23
+        }
+      },
+      {
+        "id": "video_0018",
+        "title": "Generated Lofi Video #18",
+        "views": 27164,
+        "revenue": 78.53,
+        "rpm": 2.89,
+        "seo_score": 55,
+        "channel_name": "Lo-Fi Study Vibes",
+        "optimization_potential": {
+          "current_revenue": 78.5,
+          "potential_revenue": 102.05,
+          "revenue_increase": 23.55,
+          "improvement_percent": 30.0,
+          "potential_views": 35313,
+          "potential_rpm": 2.89
+        }
+      },
+      {
+        "id": "video_0097",
+        "title": "Generated Gaming Video #14",
+        "views": 24233,
+        "revenue": 79.64,
+        "rpm": 3.29,
+        "seo_score": 51,
+        "channel_name": "Epic Gaming Sounds",
+        "optimization_potential": {
+          "current_revenue": 79.73,
+          "potential_revenue": 103.64,
+          "revenue_increase": 23.92,
+          "improvement_percent": 30.0,
+          "potential_views": 31502,
+          "potential_rpm": 3.29
+        }
+      },
+      {
+        "id": "video_0101",
+        "title": "Generated Gaming Video #18",
+        "views": 53103,
+        "revenue": 99.62,
+        "rpm": 1.88,
+        "seo_score": 80,
+        "channel_name": "Epic Gaming Sounds",
+        "optimization_potential": {
+          "current_revenue": 99.83,
+          "potential_revenue": 119.8,
+          "revenue_increase": 19.97,
+          "improvement_percent": 20.0,
+          "potential_views": 53103,
+          "potential_rpm": 2.26
+        }
+      },
+      {
+        "id": "video_0044",
+        "title": "Generated Trap Video #15",
+        "views": 17504,
+        "revenue": 27.18,
+        "rpm": 1.55,
+        "seo_score": 71,
+        "channel_name": "Trap Beast Beats",
+        "optimization_potential": {
+          "current_revenue": 27.13,
+          "potential_revenue": 37.44,
+          "revenue_increase": 10.31,
+          "improvement_percent": 38.0,
+          "potential_views": 20129,
+          "potential_rpm": 1.86
+        }
+      },
+      {
+        "id": "video_0037",
+        "title": "Generated Trap Video #8",
+        "views": 18997,
+        "revenue": 44.94,
+        "rpm": 2.37,
+        "seo_score": 50,
+        "channel_name": "Trap Beast Beats",
+        "optimization_potential": {
+          "current_revenue": 45.02,
+          "potential_revenue": 70.24,
+          "revenue_increase": 25.21,
+          "improvement_percent": 56.0,
+          "potential_views": 24696,
+          "potential_rpm": 2.84
+        }
+      },
+      {
+        "id": "video_0040",
+        "title": "Generated Trap Video #11",
+        "views": 18732,
+        "revenue": 49.52,
+        "rpm": 2.64,
+        "seo_score": 53,
+        "channel_name": "Trap Beast Beats",
+        "optimization_potential": {
+          "current_revenue": 49.45,
+          "potential_revenue": 64.29,
+          "revenue_increase": 14.83,
+          "improvement_percent": 30.0,
+          "potential_views": 24351,
+          "potential_rpm": 2.64
+        }
+      },
+      {
+        "id": "video_0045",
+        "title": "Generated Trap Video #16",
+        "views": 19156,
+        "revenue": 28.84,
+        "rpm": 1.51,
+        "seo_score": 94,
+        "channel_name": "Trap Beast Beats",
+        "optimization_potential": {
+          "current_revenue": 28.93,
+          "potential_revenue": 34.71,
+          "revenue_increase": 5.79,
+          "improvement_percent": 20.0,
+          "potential_views": 19156,
+          "potential_rpm": 1.81
+        }
+      },
+      {
+        "id": "video_0046",
+        "title": "Generated Trap Video #17",
+        "views": 11738,
+        "revenue": 24.53,
+        "rpm": 2.09,
+        "seo_score": 55,
+        "channel_name": "Trap Beast Beats",
+        "optimization_potential": {
+          "current_revenue": 24.53,
+          "potential_revenue": 38.27,
+          "revenue_increase": 13.74,
+          "improvement_percent": 56.0,
+          "potential_views": 15259,
+          "potential_rpm": 2.51
+        }
+      }
+    ],
+    "declining_channels": [
+      {
+        "id": "lofi_study_vibes",
+        "name": "Lo-Fi Study Vibes",
+        "style": "lofi",
+        "recent_avg_revenue": 3.9,
+        "older_avg_revenue": 4.89,
+        "decline_percent": 20.2
+      }
+    ],
+    "style_analysis": [
+      {
+        "style": "meditation",
+        "channel_count": 30,
+        "average_rpm": 4.0,
+        "total_recent_revenue": 163.37,
+        "expansion_recommended": false
+      },
+      {
+        "style": "lofi",
+        "channel_count": 30,
+        "average_rpm": 2.53,
+        "total_recent_revenue": 147.66,
+        "expansion_recommended": false
+      },
+      {
+        "style": "gaming",
+        "channel_count": 30,
+        "average_rpm": 2.3,
+        "total_recent_revenue": 176.92,
+        "expansion_recommended": false
+      },
+      {
+        "style": "trap",
+        "channel_count": 30,
+        "average_rpm": 1.88,
+        "total_recent_revenue": 148.16,
+        "expansion_recommended": false
+      }
+    ]
+  },
+  "key_insights": {
+    "total_optimization_potential": 182.83,
+    "best_performing_style": "gaming",
+    "fastest_growing_channel": "Lo-Fi Study Vibes",
+    "most_profitable_video": {
+      "id": "video_0093",
+      "title": "Generated Gaming Video #10",
+      "upload_date": "2025-08-23",
+      "views": 72152,
+      "revenue": 243.54,
+      "rpm": 3.38,
+      "ctr": 2.0,
+      "seo_score": 45,
+      "channel_name": "Epic Gaming Sounds",
+      "channel_style": "gaming"
+    }
+  },
+  "generated_at": "2025-09-13T13:35:34.559032"
+}

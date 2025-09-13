@@ -1,0 +1,44 @@
+{
+  "empire_overview": {
+    "total_channels": 4,
+    "total_monthly_videos": 84,
+    "total_estimated_monthly_views": 920934,
+    "total_estimated_monthly_revenue": 2086.48,
+    "annual_revenue_projection": 25037.77
+  },
+  "channel_breakdown": {
+    "lofi_study_vibes": {
+      "name": "Lo-Fi Study Vibes",
+      "style": "lofi",
+      "monthly_videos": 30,
+      "estimated_monthly_views": 404100,
+      "estimated_monthly_revenue": 1256.7017917641656,
+      "rpm": 3.11
+    },
+    "trap_beast_beats": {
+      "name": "Trap Beast Beats",
+      "style": "trap",
+      "monthly_videos": 12,
+      "estimated_monthly_views": 86844,
+      "estimated_monthly_revenue": 90.60771367405886,
+      "rpm": 1.04
+    },
+    "healing_frequencies": {
+      "name": "Healing Frequencies 432Hz",
+      "style": "meditation",
+      "monthly_videos": 30,
+      "estimated_monthly_views": 73170,
+      "estimated_monthly_revenue": 223.73734160340385,
+      "rpm": 3.06
+    },
+    "epic_gaming_sounds": {
+      "name": "Epic Gaming Sounds",
+      "style": "gaming",
+      "monthly_videos": 12,
+      "estimated_monthly_views": 356820,
+      "estimated_monthly_revenue": 515.4336459552258,
+      "rpm": 1.44
+    }
+  },
+  "generated_at": "2025-09-13T13:33:59.728598"
+}

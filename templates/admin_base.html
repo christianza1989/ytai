@@ -344,6 +344,13 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'youtube_empire' %}active{% endif %}" href="{{ url_for('youtube_empire') }}">
+                                <i class="fab fa-youtube text-danger"></i>
+                                YouTube Empire
+                                <span class="badge bg-success ms-1">💰</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'api_config' %}active{% endif %}" href="{{ url_for('api_config') }}">
                                 <i class="fas fa-cog"></i>
                                 API Config
