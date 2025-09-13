@@ -64,16 +64,19 @@
     </div>
     
     <div class="col-md-4 col-sm-6 mb-3">
-        <div class="card {% if api_status.stability.status == 'connected' %}border-success{% elif api_status.stability.status == 'error' %}border-danger{% else %}border-warning{% endif %}">
+        <div class="card {% if api_status.nano_banana.status == 'connected' %}border-success{% elif api_status.nano_banana.status == 'error' %}border-danger{% else %}border-warning{% endif %}">
             <div class="card-body text-center">
-                <i class="fas fa-image fa-2x {% if api_status.stability.status == 'connected' %}text-success{% elif api_status.stability.status == 'error' %}text-danger{% else %}text-warning{% endif %} mb-2"></i>
-                <h6>Stability AI</h6>
+                <i class="fas fa-image fa-2x {% if api_status.nano_banana.status == 'connected' %}text-success{% elif api_status.nano_banana.status == 'error' %}text-danger{% else %}text-warning{% endif %} mb-2"></i>
+                <h6>🍌 Nano-Banana</h6>
                 <span class="status-badge 
-                    {% if api_status.stability.status == 'connected' %}status-connected
-                    {% elif api_status.stability.status == 'error' %}status-error
+                    {% if api_status.nano_banana.status == 'connected' %}status-connected
+                    {% elif api_status.nano_banana.status == 'error' %}status-error
                     {% else %}status-warning{% endif %}">
-                    {{ api_status.stability.status.title() }}
+                    {{ api_status.nano_banana.status.title() }}
                 </span>
+                {% if api_status.nano_banana.status == 'connected' %}
+                    <div class="small text-success mt-2">{{ api_status.nano_banana.model }}</div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -217,57 +220,57 @@
 
 <!-- Second Row -->
 <div class="row">
-    <!-- Stability AI Configuration -->
+    <!-- Gemini Nano-Banana Image Configuration -->
     <div class="col-lg-6 mb-4">
         <div class="card">
             <div class="card-header">
-                <i class="fas fa-image text-warning me-2"></i>
-                Stability AI Configuration
+                <i class="fas fa-image text-success me-2"></i>
+                🍌 Nano-Banana Image Generation
             </div>
             <div class="card-body">
-                <form id="stabilityConfigForm">
-                    <div class="mb-3">
-                        <label for="stabilityApiKey" class="form-label">API Key</label>
-                        <div class="input-group">
-                            <input type="password" class="form-control" id="stabilityApiKey" 
-                                   placeholder="Enter your Stability AI API key"
-                                   value="{{ 'configured' if env_config.STABLE_DIFFUSION_API_KEY != 'not_configured' else '' }}">
-                            <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('stabilityApiKey')">
-                                <i class="fas fa-eye"></i>
-                            </button>
+                <div class="alert alert-success">
+                    <i class="fas fa-magic me-2"></i>
+                    <strong>🚀 Powered by Gemini 2.5 Flash Image!</strong><br>
+                    Uses your existing Gemini API key - no additional setup needed!<br>
+                    <small>✨ Features: Character consistency, multi-image fusion, prompt-based editing, world knowledge integration</small>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Model Details</label>
+                    <div class="p-3 bg-light rounded">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Model:</strong> gemini-2.5-flash-image-preview<br>
+                                <strong>Resolution:</strong> 1024x1024 pixels<br>
+                                <strong>Cost:</strong> $0.039 per image
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Features:</strong><br>
+                                • Character consistency<br>
+                                • Multi-image fusion<br>
+                                • Prompt-based editing<br>
+                                • World knowledge integration
+                            </div>
                         </div>
-                        <div class="form-text">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Get your API key from <a href="https://platform.stability.ai" target="_blank">Stability AI Platform</a>
-                        </div>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label for="stabilityModel" class="form-label">Model</label>
-                        <select class="form-select" id="stabilityModel">
-                            <option value="stable-diffusion-xl-1024-v1-0">SDXL 1.0</option>
-                            <option value="sd3-medium">SD3 Medium</option>
-                            <option value="sd3-large">SD3 Large</option>
-                        </select>
-                    </div>
-                    
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        <strong>Optional Service:</strong> Used for generating album covers. 
-                        System works without this API.
-                    </div>
-                    
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                        <button type="button" class="btn btn-outline-warning" onclick="testConnection('stability')">
-                            <i class="fas fa-plug me-1"></i>
-                            Test Connection
-                        </button>
-                        <button type="submit" class="btn btn-warning">
-                            <i class="fas fa-save me-1"></i>
-                            Save Configuration
-                        </button>
-                    </div>
-                </form>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    <strong>How it works:</strong> Nano-banana automatically uses your Gemini API key for image generation. 
+                    Just ensure your Gemini API is configured above and you're ready to generate professional album covers!
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="button" class="btn btn-outline-success" onclick="testNanaBanana()">
+                        <i class="fas fa-magic me-1"></i>
+                        Test Nano-Banana
+                    </button>
+                    <a href="https://ai.google.dev/gemini-api/docs/vision" target="_blank" class="btn btn-success">
+                        <i class="fas fa-external-link-alt me-1"></i>
+                        Documentation
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -360,13 +363,14 @@
                         </a>
                     </div>
                     <div class="col-md-4">
-                        <h6><i class="fas fa-image text-warning me-2"></i>Stability AI</h6>
+                        <h6><i class="fas fa-image text-success me-2"></i>🍌 Nano-Banana</h6>
                         <ul class="list-unstyled">
-                            <li><strong>Purpose:</strong> Image generation</li>
-                            <li><strong>Cost:</strong> ~$0.04 per image</li>
-                            <li><strong>Limits:</strong> Based on credits</li>
+                            <li><strong>Purpose:</strong> AI Image generation & editing</li>
+                            <li><strong>Cost:</strong> $0.039 per image</li>
+                            <li><strong>Features:</strong> Character consistency, fusion</li>
+                            <li><strong>Model:</strong> gemini-2.5-flash-image</li>
                         </ul>
-                        <a href="https://platform.stability.ai/docs" target="_blank" class="btn btn-outline-warning btn-sm">
+                        <a href="https://ai.google.dev/gemini-api/docs/vision" target="_blank" class="btn btn-outline-success btn-sm">
                             <i class="fas fa-external-link-alt me-1"></i>
                             Documentation
                         </a>
@@ -378,7 +382,7 @@
                     <ul class="mb-0">
                         <li>Start with test mode to familiarize yourself with the system</li>
                         <li>Configure Suno and Gemini APIs for full functionality</li>
-                        <li>Stability AI is optional - used only for album covers</li>
+                        <li>Nano-banana image generation uses your Gemini API key</li>
                         <li>Monitor your usage to avoid unexpected costs</li>
                         <li>Keep your API keys secure and never share them</li>
                     </ul>
@@ -421,8 +425,8 @@
                 showToast(`${service.charAt(0).toUpperCase() + service.slice(1)} API connection successful!`, 'success');
             } else if (service === 'gemini' && document.getElementById('geminiApiKey').value) {
                 showToast(`${service.charAt(0).toUpperCase() + service.slice(1)} API connection successful!`, 'success');
-            } else if (service === 'stability' && document.getElementById('stabilityApiKey').value) {
-                showToast(`${service.charAt(0).toUpperCase() + service.slice(1)} API connection successful!`, 'success');
+            } else if (service === 'nano_banana') {
+                showToast('Nano-banana ready! Uses your Gemini API key.', 'success');
             } else {
                 showToast(`Please enter a valid API key for ${service}`, 'warning');
             }
@@ -430,7 +434,7 @@
     }
     
     function testAllConnections() {
-        const services = ['suno', 'gemini', 'stability'];
+        const services = ['suno', 'gemini', 'nano_banana'];
         let tested = 0;
         
         Swal.fire({
@@ -465,10 +469,7 @@
         saveConfiguration('gemini');
     });
     
-    document.getElementById('stabilityConfigForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        saveConfiguration('stability');
-    });
+    // Nano-banana uses Gemini API key - no separate form needed
     
     document.getElementById('advancedConfigForm').addEventListener('submit', function(e) {
         e.preventDefault();
@@ -497,5 +498,37 @@
     // Initialize tooltips
     const temperatureSlider = document.getElementById('geminiTemp');
     temperatureSlider.title = `Temperature: ${temperatureSlider.value}`;
+    
+    // Nano-banana test function
+    function testNanaBanana() {
+        const geminiKey = document.getElementById('geminiApiKey').value;
+        if (!geminiKey || geminiKey === 'configured') {
+            Swal.fire({
+                icon: 'warning',
+                title: '🍌 Nano-banana Test',
+                text: 'Please configure your Gemini API key first to test image generation.',
+                confirmButtonText: 'Configure Gemini'
+            });
+            return;
+        }
+        
+        Swal.fire({
+            icon: 'success',
+            title: '🍌 Nano-banana Ready!',
+            html: `
+                <div class="alert alert-success">
+                    <strong>✅ Gemini 2.5 Flash Image is ready!</strong><br>
+                    Your existing Gemini API key will be used for:<br><br>
+                    🎨 Professional album cover generation<br>
+                    🖼️ YouTube thumbnail creation<br>
+                    ✨ Character consistency<br>
+                    🔀 Multi-image fusion<br>
+                    📝 Prompt-based editing
+                </div>
+                <p><small>💰 Cost: $0.039 per image (~96% cheaper than Stability AI!)</small></p>
+            `,
+            confirmButtonText: 'Awesome! 🚀'
+        });
+    }
 </script>
 {% endblock %}

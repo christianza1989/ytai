@@ -80,14 +80,14 @@ class SystemState:
         except Exception as e:
             status['gemini'] = {'status': 'error', 'model': None, 'error': str(e)}
         
-        # Stability AI
+        # Gemini Nano-Banana (Image Generation)
         try:
-            if os.getenv('STABLE_DIFFUSION_API_KEY') and os.getenv('STABLE_DIFFUSION_API_KEY') != 'your_stable_diffusion_key_here':
-                status['stability'] = {'status': 'connected', 'error': None}
+            if os.getenv('GEMINI_API_KEY') and os.getenv('GEMINI_API_KEY') != 'your_gemini_api_key_here':
+                status['nano_banana'] = {'status': 'connected', 'model': 'gemini-2.5-flash-image-preview', 'error': None}
             else:
-                status['stability'] = {'status': 'not_configured', 'error': 'API key not configured'}
+                status['nano_banana'] = {'status': 'not_configured', 'error': 'Gemini API key required for image generation'}
         except Exception as e:
-            status['stability'] = {'status': 'error', 'error': str(e)}
+            status['nano_banana'] = {'status': 'error', 'error': str(e)}
         
         self.api_status = status
         return status
@@ -243,7 +243,7 @@ def api_config():
     
     # Get current env values (masked for security)
     env_config = {}
-    for key in ['SUNO_API_KEY', 'GEMINI_API_KEY', 'STABLE_DIFFUSION_API_KEY', 'GEMINI_MODEL']:
+    for key in ['SUNO_API_KEY', 'GEMINI_API_KEY', 'GEMINI_MODEL']:
         value = os.getenv(key, '')
         if value and value != f'your_{key.lower()}_here':
             env_config[key] = value[:8] + '...' + value[-4:] if len(value) > 12 else 'configured'
