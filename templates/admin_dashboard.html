@@ -138,26 +138,26 @@
                     </div>
                 </div>
 
-                <!-- Stability AI -->
+                <!-- Nano-Banana Image Generation -->
                 <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
                     <div>
                         <h6 class="mb-1">
-                            <i class="fas fa-image text-warning me-2"></i>
-                            Stability AI
+                            <i class="fas fa-image text-success me-2"></i>
+                            🍌 Nano-Banana
                         </h6>
-                        <small class="text-muted">Image Generation Service</small>
+                        <small class="text-muted">Gemini 2.5 Flash Image Generation</small>
                     </div>
                     <div class="text-end">
-                        {% set stability_status = api_status.stability %}
+                        {% set nano_banana_status = api_status.nano_banana %}
                         <span class="status-badge 
-                            {% if stability_status.status == 'connected' %}status-connected
-                            {% elif stability_status.status == 'error' %}status-error
+                            {% if nano_banana_status.status == 'connected' %}status-connected
+                            {% elif nano_banana_status.status == 'error' %}status-error
                             {% else %}status-warning{% endif %}">
-                            <i class="fas fa-{{ 'check' if stability_status.status == 'connected' else 'times' if stability_status.status == 'error' else 'exclamation' }} me-1"></i>
-                            {{ stability_status.status.title() }}
+                            <i class="fas fa-{{ 'check' if nano_banana_status.status == 'connected' else 'times' if nano_banana_status.status == 'error' else 'exclamation' }} me-1"></i>
+                            {{ nano_banana_status.status.title() }}
                         </span>
-                        {% if stability_status.error %}
-                            <div class="small text-danger mt-1">{{ stability_status.error }}</div>
+                        {% if nano_banana_status.error %}
+                            <div class="small text-danger mt-1">{{ nano_banana_status.error }}</div>
                         {% endif %}
                     </div>
                 </div>

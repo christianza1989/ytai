@@ -291,12 +291,12 @@
                         
                         <div class="mb-2">
                             <div class="d-flex justify-content-between align-items-center">
-                                <span><i class="fas fa-image me-2"></i>Stability AI</span>
+                                <span><i class="fas fa-image me-2"></i>🍌 Nano-Banana</span>
                                 <span class="status-badge 
-                                    {% if api_status.stability.status == 'connected' %}status-connected
-                                    {% elif api_status.stability.status == 'error' %}status-error
+                                    {% if api_status.nano_banana.status == 'connected' %}status-connected
+                                    {% elif api_status.nano_banana.status == 'error' %}status-error
                                     {% else %}status-warning{% endif %}">
-                                    {{ api_status.stability.status.title() }}
+                                    {{ api_status.nano_banana.status.title() }}
                                 </span>
                             </div>
                         </div>
@@ -315,8 +315,8 @@
                                 <span id="geminiCost">~$0.01</span>
                             </div>
                             <div class="d-flex justify-content-between">
-                                <span>Stability AI:</span>
-                                <span id="stabilityCost">~$0.04</span>
+                                <span>🍌 Nano-Banana:</span>
+                                <span id="stabilityCost">~$0.039</span>
                             </div>
                             <hr>
                             <div class="d-flex justify-content-between fw-bold">
@@ -417,13 +417,13 @@
             const baseMultiplier = multipleVersions ? 2 : 1;
             sunoCost = `~${5 * baseMultiplier} credits`;
             geminiCost = `~$${(0.01 * baseMultiplier).toFixed(2)}`;
-            stabilityCost = document.getElementById('generateCover').checked ? `~$${(0.04 * baseMultiplier).toFixed(2)}` : '~$0.00';
+            stabilityCost = document.getElementById('generateCover').checked ? `~$${(0.039 * baseMultiplier).toFixed(2)}` : '~$0.00';
             
             const totalValue = (0.20 * baseMultiplier).toFixed(2);
             totalCost = `~$${totalValue}`;
         } else if (mode === 'hybrid') {
             geminiCost = '~$0.01';
-            stabilityCost = document.getElementById('generateCover').checked ? '~$0.04' : '~$0.00';
+            stabilityCost = document.getElementById('generateCover').checked ? '~$0.039' : '~$0.00';
             totalCost = '~$0.05';
         }
         

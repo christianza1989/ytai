@@ -12,8 +12,8 @@
             <p><span class="status-indicator {% if config.gemini_api %}status-ok{% else %}status-error{% endif %}"></span>
                Gemini AI: {% if config.gemini_api %}Sukonfigūruota{% else %}Nesukonfigūruota{% endif %}</p>
             
-            <p><span class="status-indicator {% if config.stability_api %}status-ok{% else %}status-error{% endif %}"></span>
-               Stability AI: {% if config.stability_api %}Sukonfigūruota{% else %}Nesukonfigūruota{% endif %}</p>
+            <p><span class="status-indicator status-ok"></span>
+               🍌 Nano-Banana: Naudoja Gemini API raktą</p>
         </div>
         
         {% if not (config.suno_api and config.gemini_api) %}
@@ -130,7 +130,7 @@
         <ul>
             <li><strong>SUNO_API_KEY</strong> - Gauti iš <a href="https://api.sunoapi.org" target="_blank">api.sunoapi.org</a></li>
             <li><strong>GEMINI_API_KEY</strong> - Gauti iš <a href="https://makersuite.google.com/app/apikey" target="_blank">Google AI Studio</a></li>
-            <li><strong>STABLE_DIFFUSION_API_KEY</strong> - Gauti iš <a href="https://api.stability.ai" target="_blank">Stability AI</a></li>
+            <li><strong>🍌 Nano-Banana Image Generation</strong> - Naudoja jūsų GEMINI_API_KEY</li>
         </ul>
         {% endif %}
         
