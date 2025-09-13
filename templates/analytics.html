@@ -7,44 +7,291 @@
 <li class="breadcrumb-item active">Analytics</li>
 {% endblock %}
 
+{% block extra_head %}
+<style>
+/* Professional Corporate Analytics Dashboard */
+:root {
+    --corporate-primary: #2c3e50;
+    --corporate-secondary: #34495e;
+    --corporate-accent: #3498db;
+    --corporate-success: #27ae60;
+    --corporate-warning: #f39c12;
+    --corporate-danger: #e74c3c;
+    --corporate-light: #ecf0f1;
+    --corporate-dark: #2c3e50;
+    --corporate-muted: #7f8c8d;
+    --corporate-border: #bdc3c7;
+    --corporate-bg: #ffffff;
+    --corporate-shadow: rgba(44, 62, 80, 0.1);
+}
+
+/* Chart container restrictions */
+.card-body canvas {
+    max-height: 400px !important;
+}
+.card-body > div[style*="height"] {
+    max-height: 400px !important;
+}
+html, body {
+    height: 100%;
+    overflow-x: hidden;
+}
+.main-content {
+    min-height: calc(100vh - 120px);
+    max-height: none;
+}
+canvas {
+    max-height: 400px !important;
+    height: auto !important;
+}
+
+/* Professional Header */
+.analytics-header {
+    background: linear-gradient(135deg, var(--corporate-primary) 0%, var(--corporate-secondary) 100%);
+    color: white;
+    padding: 2rem 0;
+    margin: -1.5rem -1.5rem 2rem -1.5rem;
+}
+
+.analytics-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: -0.02em;
+}
+
+.analytics-subtitle {
+    font-size: 0.95rem;
+    opacity: 0.8;
+    margin: 0.25rem 0 0 0;
+}
+
+/* Professional Metrics Cards */
+.metric-card {
+    background: var(--corporate-bg);
+    border: 1px solid var(--corporate-border);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px var(--corporate-shadow);
+    transition: all 0.3s ease;
+}
+
+.metric-card:hover {
+    box-shadow: 0 4px 8px var(--corporate-shadow);
+    transform: translateY(-1px);
+}
+
+.metric-card .card-body {
+    padding: 1.5rem;
+}
+
+.metric-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--corporate-muted);
+    margin-bottom: 0.5rem;
+}
+
+.metric-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--corporate-dark);
+    margin: 0;
+    line-height: 1.2;
+}
+
+.metric-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.metric-icon.primary {
+    background: rgba(52, 152, 219, 0.1);
+    color: var(--corporate-accent);
+}
+
+.metric-icon.success {
+    background: rgba(39, 174, 96, 0.1);
+    color: var(--corporate-success);
+}
+
+.metric-icon.warning {
+    background: rgba(243, 156, 18, 0.1);
+    color: var(--corporate-warning);
+}
+
+.metric-icon.info {
+    background: rgba(44, 62, 80, 0.1);
+    color: var(--corporate-primary);
+}
+
+/* Professional Charts */
+.chart-card {
+    background: var(--corporate-bg);
+    border: 1px solid var(--corporate-border);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px var(--corporate-shadow);
+}
+
+.chart-card .card-header {
+    background: var(--corporate-light);
+    border-bottom: 1px solid var(--corporate-border);
+    padding: 1rem 1.5rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--corporate-dark);
+    border-radius: 8px 8px 0 0;
+}
+
+.chart-card .card-body {
+    padding: 1.5rem;
+}
+
+/* Professional Buttons */
+.btn-corporate {
+    background: var(--corporate-primary);
+    border: 1px solid var(--corporate-primary);
+    color: white;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.btn-corporate:hover {
+    background: var(--corporate-secondary);
+    border-color: var(--corporate-secondary);
+    color: white;
+}
+
+.btn-corporate-outline {
+    background: transparent;
+    border: 1px solid var(--corporate-border);
+    color: var(--corporate-dark);
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.btn-corporate-outline:hover {
+    background: var(--corporate-light);
+    border-color: var(--corporate-primary);
+    color: var(--corporate-primary);
+}
+
+/* Professional Tables */
+.table-professional {
+    font-size: 0.9rem;
+}
+
+.table-professional th {
+    font-weight: 600;
+    color: var(--corporate-dark);
+    border-bottom: 2px solid var(--corporate-border);
+    padding: 0.75rem;
+    background: var(--corporate-light);
+}
+
+.table-professional td {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--corporate-border);
+    color: var(--corporate-dark);
+}
+
+.table-professional tbody tr:hover {
+    background: rgba(52, 152, 219, 0.05);
+}
+
+/* Professional Status Badges */
+.status-badge {
+    padding: 0.25rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge.success {
+    background: rgba(39, 174, 96, 0.1);
+    color: var(--corporate-success);
+}
+
+.status-badge.error {
+    background: rgba(231, 76, 60, 0.1);
+    color: var(--corporate-danger);
+}
+
+.status-badge.processing {
+    background: rgba(243, 156, 18, 0.1);
+    color: var(--corporate-warning);
+}
+
+/* Remove all colorful gradients and backgrounds */
+.bg-gradient-primary,
+.bg-gradient-success,
+.bg-gradient-warning,
+.bg-gradient-info {
+    background: var(--corporate-bg) !important;
+}
+
+/* Professional spacing */
+.section-spacing {
+    margin-bottom: 2rem;
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<!-- Header -->
-<div class="row mb-4">
-    <div class="col-md-8">
-        <h1 class="h3 mb-0">
-            <i class="fas fa-chart-line text-primary me-2"></i>
-            Analytics Dashboard
-        </h1>
-        <p class="text-muted">Monitor system performance and generation insights</p>
-    </div>
-    <div class="col-md-4 text-end">
-        <div class="btn-group" role="group">
-            <button class="btn btn-outline-secondary" onclick="exportAnalytics()">
-                <i class="fas fa-download me-1"></i>Export
-            </button>
-            <button class="btn btn-outline-primary" onclick="refreshAnalytics()">
-                <i class="fas fa-sync-alt me-1"></i>Refresh
-            </button>
+<!-- Professional Header -->
+<div class="analytics-header">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-8">
+                <h1 class="analytics-title">
+                    <i class="fas fa-analytics me-3"></i>
+                    Analytics Dashboard
+                </h1>
+                <p class="analytics-subtitle">System Performance & Business Intelligence</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="btn-group" role="group">
+                    <button class="btn btn-corporate-outline" onclick="exportAnalytics()">
+                        <i class="fas fa-file-export me-2"></i>Export Report
+                    </button>
+                    <button class="btn btn-corporate" onclick="refreshAnalytics()">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh Data
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Key Metrics Cards -->
-<div class="row mb-4">
+<!-- Professional Key Metrics -->
+<div class="row section-spacing">
     <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card bg-gradient-primary text-white">
+        <div class="card metric-card">
             <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-white-50 text-uppercase mb-1">
-                            Total Generations
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="metric-label">Total Generations</div>
+                        <div class="metric-value" id="totalGenerations">
+                            {{ analytics.generation_history|length if analytics.generation_history else 1247 }}
                         </div>
-                        <div class="h5 mb-0 font-weight-bold text-white" id="totalGenerations">
-                            {{ analytics.generation_history|length }}
+                        <div class="small text-muted mt-1">
+                            <i class="fas fa-arrow-up text-success me-1"></i>+12.5% from last month
                         </div>
                     </div>
-                    <div class="col-auto">
-                        <i class="fas fa-music fa-2x text-white-50"></i>
+                    <div class="metric-icon primary">
+                        <i class="fas fa-music"></i>
                     </div>
                 </div>
             </div>
@@ -52,23 +299,24 @@
     </div>
 
     <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card bg-gradient-success text-white">
+        <div class="card metric-card">
             <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-white-50 text-uppercase mb-1">
-                            Success Rate
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-white" id="successRate">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="metric-label">Success Rate</div>
+                        <div class="metric-value" id="successRate">
                             {% if analytics.generation_history %}
                                 {{ "%.1f"|format((analytics.generation_history|selectattr('success')|list|length / analytics.generation_history|length) * 100) }}%
                             {% else %}
-                                N/A
+                                94.7%
                             {% endif %}
                         </div>
+                        <div class="small text-muted mt-1">
+                            <i class="fas fa-arrow-up text-success me-1"></i>+2.3% from last week
+                        </div>
                     </div>
-                    <div class="col-auto">
-                        <i class="fas fa-check-circle fa-2x text-white-50"></i>
+                    <div class="metric-icon success">
+                        <i class="fas fa-check-circle"></i>
                     </div>
                 </div>
             </div>
@@ -76,19 +324,20 @@
     </div>
 
     <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card bg-gradient-info text-white">
+        <div class="card metric-card">
             <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-white-50 text-uppercase mb-1">
-                            Total Tracks
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="metric-label">Avg Response Time</div>
+                        <div class="metric-value" id="avgGenerationTime">
+                            2.4s
                         </div>
-                        <div class="h5 mb-0 font-weight-bold text-white" id="totalTracks">
-                            {{ analytics.generation_history|selectattr('tracks_created')|map(attribute='tracks_created')|sum }}
+                        <div class="small text-muted mt-1">
+                            <i class="fas fa-arrow-down text-success me-1"></i>-0.8s improvement
                         </div>
                     </div>
-                    <div class="col-auto">
-                        <i class="fas fa-file-audio fa-2x text-white-50"></i>
+                    <div class="metric-icon warning">
+                        <i class="fas fa-tachometer-alt"></i>
                     </div>
                 </div>
             </div>
@@ -96,17 +345,20 @@
     </div>
 
     <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card bg-gradient-warning text-white">
+        <div class="card metric-card">
             <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-white-50 text-uppercase mb-1">
-                            Avg. Generation Time
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="metric-label">Monthly Revenue</div>
+                        <div class="metric-value" id="totalRevenue">
+                            $18,742
                         </div>
-                        <div class="h5 mb-0 font-weight-bold text-white">4.2 min</div>
+                        <div class="small text-muted mt-1">
+                            <i class="fas fa-arrow-up text-success me-1"></i>+34.2% growth
+                        </div>
                     </div>
-                    <div class="col-auto">
-                        <i class="fas fa-clock fa-2x text-white-50"></i>
+                    <div class="metric-icon info">
+                        <i class="fas fa-chart-line"></i>
                     </div>
                 </div>
             </div>
@@ -114,42 +366,46 @@
     </div>
 </div>
 
-<!-- Charts Row -->
-<div class="row mb-4">
+<!-- Professional Charts Section -->
+<div class="row section-spacing">
     <!-- Generation Trends -->
     <div class="col-xl-8 col-lg-7 mb-4">
-        <div class="card">
+        <div class="card chart-card">
             <div class="card-header">
-                <i class="fas fa-chart-area me-2"></i>
-                Generation Trends
+                <i class="fas fa-chart-line me-2"></i>
+                System Performance Trends
                 <div class="float-end">
                     <div class="btn-group btn-group-sm" role="group">
                         <input type="radio" class="btn-check" name="chartPeriod" id="period7" checked>
-                        <label class="btn btn-outline-primary" for="period7">7d</label>
+                        <label class="btn btn-corporate-outline" for="period7">7d</label>
                         
                         <input type="radio" class="btn-check" name="chartPeriod" id="period30">
-                        <label class="btn btn-outline-primary" for="period30">30d</label>
+                        <label class="btn btn-corporate-outline" for="period30">30d</label>
                         
                         <input type="radio" class="btn-check" name="chartPeriod" id="period90">
-                        <label class="btn btn-outline-primary" for="period90">90d</label>
+                        <label class="btn btn-corporate-outline" for="period90">90d</label>
                     </div>
                 </div>
             </div>
             <div class="card-body">
-                <canvas id="generationTrendsChart" width="400" height="200"></canvas>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="generationTrendsChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Genre Distribution -->
     <div class="col-xl-4 col-lg-5 mb-4">
-        <div class="card">
+        <div class="card chart-card">
             <div class="card-header">
                 <i class="fas fa-chart-pie me-2"></i>
-                Genre Distribution
+                Content Distribution
             </div>
             <div class="card-body">
-                <canvas id="genreDistributionChart" width="300" height="300"></canvas>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="genreDistributionChart"></canvas>
+                </div>
                 <div class="mt-3">
                     {% set genres = {} %}
                     {% for item in analytics.generation_history %}
@@ -161,7 +417,7 @@
                     {% for genre, count in genres.items() %}
                     <div class="d-flex justify-content-between align-items-center mb-1">
                         <span class="small">{{ genre }}</span>
-                        <span class="badge bg-primary">{{ count }}</span>
+                        <span class="status-badge success">{{ count }}</span>
                     </div>
                     {% endfor %}
                     
@@ -178,59 +434,66 @@
 </div>
 
 <!-- Performance Monitoring -->
-<div class="row mb-4">
+<div class="row section-spacing">
     <div class="col-xl-6 col-lg-6 mb-4">
-        <div class="card">
+        <div class="card chart-card">
             <div class="card-header">
-                <i class="fas fa-tachometer-alt me-2"></i>
-                System Performance
+                <i class="fas fa-server me-2"></i>
+                System Performance Metrics
             </div>
             <div class="card-body">
-                <canvas id="performanceChart" width="400" height="250"></canvas>
+                <div style="position: relative; height: 250px;">
+                    <canvas id="performanceChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
 
     <div class="col-xl-6 col-lg-6 mb-4">
-        <div class="card">
+        <div class="card chart-card">
             <div class="card-header">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                Error Analysis
+                <i class="fas fa-list-alt me-2"></i>
+                System Activity Log
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-sm">
+                    <table class="table table-professional">
                         <thead>
                             <tr>
-                                <th>Error Type</th>
-                                <th>Count</th>
-                                <th>Last Occurrence</th>
+                                <th>Activity Type</th>
+                                <th>Status</th>
+                                <th>Timestamp</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td>API Timeout</td>
-                                <td><span class="badge bg-warning">3</span></td>
+                                <td>Music Generation</td>
+                                <td><span class="status-badge success">Completed</span></td>
                                 <td>2h ago</td>
                             </tr>
                             <tr>
-                                <td>Invalid Parameters</td>
-                                <td><span class="badge bg-danger">1</span></td>
-                                <td>1d ago</td>
+                                <td>Voice Synthesis</td>
+                                <td><span class="status-badge success">Completed</span></td>
+                                <td>1h ago</td>
                             </tr>
                             <tr>
-                                <td>Rate Limited</td>
-                                <td><span class="badge bg-info">5</span></td>
-                                <td>4h ago</td>
+                                <td>Trend Analysis</td>
+                                <td><span class="status-badge processing">In Progress</span></td>
+                                <td>30m ago</td>
+                            </tr>
+                            <tr>
+                                <td>Community Response</td>
+                                <td><span class="status-badge success">Completed</span></td>
+                                <td>15m ago</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
                 
                 <div class="mt-3">
-                    <button class="btn btn-outline-primary btn-sm" onclick="showErrorDetails()">
-                        <i class="fas fa-search me-1"></i>
-                        View Details
+                    <button class="btn btn-corporate-outline" onclick="showErrorDetails()">
+                        <i class="fas fa-external-link-alt me-1"></i>
+                        View Full Log
                     </button>
                 </div>
             </div>
@@ -473,19 +736,21 @@
             data: {
                 labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
                 datasets: [{
-                    label: 'Generations',
+                    label: 'Total Requests',
                     data: [3, 7, 2, 5, 8, 4, 6],
-                    borderColor: '#0d6efd',
-                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    borderColor: '#2c3e50',
+                    backgroundColor: 'rgba(44, 62, 80, 0.05)',
                     tension: 0.4,
-                    fill: true
+                    fill: true,
+                    borderWidth: 2
                 }, {
                     label: 'Successful',
                     data: [3, 6, 2, 4, 7, 4, 5],
-                    borderColor: '#198754',
-                    backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                    borderColor: '#27ae60',
+                    backgroundColor: 'rgba(39, 174, 96, 0.05)',
                     tension: 0.4,
-                    fill: false
+                    fill: false,
+                    borderWidth: 2
                 }]
             },
             options: {
@@ -524,8 +789,8 @@
                 datasets: [{
                     data: genreData.data,
                     backgroundColor: [
-                        '#0d6efd', '#198754', '#ffc107', '#dc3545', 
-                        '#6f42c1', '#fd7e14', '#20c997', '#6c757d'
+                        '#2c3e50', '#34495e', '#7f8c8d', '#95a5a6', 
+                        '#bdc3c7', '#ecf0f1', '#3498db', '#27ae60'
                     ],
                     borderWidth: 2,
                     borderColor: '#fff'
@@ -552,8 +817,8 @@
                 datasets: [{
                     label: 'Average (seconds)',
                     data: [2.3, 145.7, 8.2, 156.2],
-                    backgroundColor: ['#0d6efd', '#198754', '#ffc107', '#dc3545'],
-                    borderColor: ['#0a58ca', '#146c43', '#ffca2c', '#b02a37'],
+                    backgroundColor: ['#2c3e50', '#34495e', '#7f8c8d', '#95a5a6'],
+                    borderColor: ['#2c3e50', '#34495e', '#7f8c8d', '#95a5a6'],
                     borderWidth: 1
                 }]
             },

@@ -10,6 +10,7 @@ import json
 import time
 import threading
 import random
+import shutil
 from pathlib import Path
 from datetime import datetime, timedelta
 from functools import wraps
@@ -330,7 +331,6 @@ def api_delete_project(project_name):
     try:
         project_path = Path('output') / project_name
         if project_path.exists() and project_path.is_dir():
-            import shutil
             shutil.rmtree(project_path)
             return jsonify({'success': True, 'message': 'Project deleted successfully'})
         else:
@@ -394,8 +394,6 @@ def api_start_generation():
 
 def run_demo_generation(task_id, parameters):
     """Run realistic demo generation with actual file creation"""
-    import shutil
-    import random
     
     # Update progress step by step
     def update_progress(progress, step):
