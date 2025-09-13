@@ -1033,6 +1033,97 @@ def api_trending_analysis():
         'generated_at': datetime.now().isoformat()
     })
 
+# Smart Thumbnail Generator API Endpoints
+@app.route('/api/thumbnails/generate', methods=['POST'])
+@require_auth
+def api_generate_thumbnails():
+    """Generate smart thumbnails with A/B testing"""
+    data = request.get_json() or {}
+    
+    from smart_thumbnail_generator import SmartThumbnailGenerator
+    
+    generator = SmartThumbnailGenerator()
+    
+    style = data.get('style', 'lofi')
+    title = data.get('title', 'Demo Music Video')
+    mood = data.get('mood', 'chill')
+    variant_count = data.get('variant_count', 3)
+    
+    try:
+        # Generate comprehensive thumbnail package
+        package = generator.generate_comprehensive_thumbnail_package(style, title, mood)
+        
+        return jsonify({
+            'success': True,
+            'thumbnail_package': package,
+            'roi_analysis': package['roi_analysis'],
+            'winner': package['ab_test_results']['winner']
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/thumbnails/batch-generate', methods=['POST'])
+@require_auth
+def api_batch_generate_thumbnails():
+    """Generate thumbnails for multiple videos"""
+    data = request.get_json() or {}
+    
+    from smart_thumbnail_generator import SmartThumbnailGenerator
+    from youtube_empire_manager import YouTubeEmpireManager
+    
+    thumbnail_gen = SmartThumbnailGenerator()
+    empire_manager = YouTubeEmpireManager()
+    
+    batch_size = data.get('batch_size', 5)
+    results = []
+    total_roi = 0
+    
+    try:
+        # Generate thumbnails for different channels/styles
+        for channel_id, channel in list(empire_manager.channels.items())[:batch_size]:
+            # Create sample video metadata
+            video_metadata = empire_manager.create_optimized_metadata(
+                channel, 
+                empire_manager.content_templates[channel.style],
+                'epic',
+                len(results)
+            )
+            
+            # Generate thumbnail package
+            package = thumbnail_gen.generate_comprehensive_thumbnail_package(
+                style=channel.style,
+                title=video_metadata['title'],
+                mood=video_metadata['mood']
+            )
+            
+            results.append({
+                'channel_id': channel_id,
+                'channel_name': channel.name,
+                'video_title': video_metadata['title'],
+                'thumbnail_package': package,
+                'roi_analysis': package['roi_analysis']
+            })
+            
+            total_roi += package['roi_analysis']['additional_monthly_revenue']
+        
+        return jsonify({
+            'success': True,
+            'batch_results': results,
+            'total_thumbnails_generated': len(results) * 3,  # 3 variants each
+            'total_monthly_roi': round(total_roi, 2),
+            'total_annual_roi': round(total_roi * 12, 2)
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/favicon.ico')
 def favicon():
     """Serve favicon"""
