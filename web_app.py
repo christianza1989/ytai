@@ -57,7 +57,9 @@ def check_api_configuration():
     config = {}
     config['suno_api'] = bool(os.getenv('SUNO_API_KEY') and os.getenv('SUNO_API_KEY') != 'your_suno_api_key_here')
     config['gemini_api'] = bool(os.getenv('GEMINI_API_KEY') and os.getenv('GEMINI_API_KEY') != 'your_gemini_api_key_here')
-    config['stability_api'] = bool(os.getenv('STABLE_DIFFUSION_API_KEY') and os.getenv('STABLE_DIFFUSION_API_KEY') != 'your_stable_diffusion_key_here')
+    # Updated: Now using Gemini nano-banana instead of Stability AI
+    config['nano_banana_api'] = config['gemini_api']  # Same API key for nano-banana
+    config['stability_api'] = False  # Deprecated in favor of nano-banana
     return config
 
 def run_generation_pipeline(mode='mock', genre='Lo-Fi Hip Hop', theme='rainy night'):
@@ -213,15 +215,28 @@ def run_generation_pipeline(mode='mock', genre='Lo-Fi Hip Hop', theme='rainy nig
         cover_created = False
         if mode == 'real' and image_client:
             try:
-                # Real image generation
-                WebLogger.log("🖼️ Generating album cover...")
-                # TODO: Implement real cover generation
-                WebLogger.log("✅ Cover art generated")
-                cover_created = True
+                # Real nano-banana image generation
+                WebLogger.log("🍌 Generating album cover with Gemini nano-banana...")
+                cover_prompt = f"{brief['title']} album cover, {genre} style, {theme} mood"
+                cover_filename = f"cover_{timestamp}.png"
+                
+                success = image_client.generate_album_cover(
+                    song_title=brief['title'],
+                    genre=genre, 
+                    mood=theme,
+                    save_path=song_dir,
+                    filename=cover_filename
+                )
+                
+                if success:
+                    WebLogger.log("✅ Nano-banana cover art generated successfully!")
+                    cover_created = True
+                else:
+                    WebLogger.log("❌ Nano-banana cover art generation failed")
             except Exception as e:
-                WebLogger.log(f"❌ Cover art generation failed: {e}")
+                WebLogger.log(f"❌ Nano-banana cover art generation error: {e}")
         else:
-            WebLogger.log("⚠️ [MOCK] Cover art generation not available")
+            WebLogger.log("🍌 [MOCK] Nano-banana cover art generation (mock mode)")
         
         # Save metadata
         metadata = {

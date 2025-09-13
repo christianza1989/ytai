@@ -112,19 +112,22 @@ def run_creation_pipeline(use_real_apis: bool = False, use_hybrid: bool = False)
 
     if use_real_apis:
         print("🔑 Naudojami REALŪS API raktai")
+        print("🍌 Gemini 2.5 Flash Image (nano-banana) aktyvuotas!")
         suno = SunoClient()
         gemini = GeminiClient()
-        image_client = ImageClient()
+        image_client = ImageClient()  # Now uses nano-banana!
     elif use_hybrid:
-        print("🔄 HIBRIDINIS REŽIMAS: Realus vaizdas + Mock garsas")
+        print("🔄 HIBRIDINIS REŽIMAS: Nano-banana vaizdas + Mock garsas")
+        print("🍌 Gemini 2.5 Flash Image (nano-banana) aktyvuotas!")
         suno = None
         gemini = GeminiClient()  # Real Gemini for prompts
-        image_client = ImageClient()  # Real image generation
+        image_client = ImageClient()  # Real nano-banana image generation
     else:
         print("🧪 Naudojami MOCK duomenys (testavimui)")
+        print("🍌 Nano-banana MOCK režimas aktyvus")
         suno = None
         gemini = None
-        image_client = None
+        image_client = ImageClient()  # Mock nano-banana generation
 
     file_manager = FileManager()
     video_creator = VideoCreator()
