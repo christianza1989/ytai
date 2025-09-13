@@ -339,6 +339,12 @@ def enhanced_channel_creation():
     """Advanced Channel Creation with Genre Intelligence"""
     return render_template('enhanced_channel_creation.html')
 
+@app.route('/channel-generator')
+@require_auth
+def channel_generator():
+    """AI Channel Generator with Interactive Genre Tree"""
+    return render_template('channel_generator.html')
+
 @app.route('/templates/genre_tree_selector.html')
 def serve_genre_tree_selector():
     """Serve the genre tree selector template as component"""

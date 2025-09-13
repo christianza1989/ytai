@@ -495,7 +495,7 @@
                             Content Creation
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'enhanced_channel_creation' %}active{% endif %}" href="{{ url_for('enhanced_channel_creation') }}">
+                            <a class="nav-link {% if request.endpoint == 'channel_generator' %}active{% endif %}" href="{{ url_for('channel_generator') }}">
                                 <i class="fas fa-plus-circle text-success"></i>
                                 Channel Generator
                                 <span class="badge bg-success ms-1">🎯 AI</span>
@@ -545,13 +545,7 @@
                                 <span class="badge bg-danger ms-1">💎+$6K</span>
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'unlimited_empire' %}active{% endif %}" href="/unlimited-empire">
-                                <i class="fas fa-infinity text-success"></i>
-                                Unlimited Empire
-                                <span class="badge bg-info ms-1">🚀 Mass Gen</span>
-                            </a>
-                        </li>
+
 
                         <!-- DIVIDER: ANALYTICS & MONITORING -->
                         <li class="nav-section-divider">
