@@ -338,6 +338,12 @@ def serve_genre_tree_selector():
     """Serve the genre tree selector template as component"""
     return send_from_directory('templates', 'genre_tree_selector.html')
 
+@app.route('/advanced-genre-demo')
+@require_auth
+def advanced_genre_demo():
+    """Advanced Genre System Demo Page"""
+    return render_template('advanced_genre_demo.html')
+
 @app.route('/automation-control')
 @require_auth
 def automation_control():
