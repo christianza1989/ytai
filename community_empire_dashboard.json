@@ -1,0 +1,41 @@
+{
+  "management_status": "active",
+  "automation_level": "90%",
+  "community_stats": [],
+  "post_performance": [],
+  "interaction_analytics": [
+    {
+      "platform": "discord",
+      "total_interactions": 1,
+      "successful_interactions": 1,
+      "avg_engagement_increase": 0.27209432609951084,
+      "avg_sentiment": 0.6984981687596445
+    },
+    {
+      "platform": "youtube",
+      "total_interactions": 1,
+      "successful_interactions": 0,
+      "avg_engagement_increase": 0.29900540431129374,
+      "avg_sentiment": 0.7737544905663584
+    }
+  ],
+  "revenue_projections": {
+    "daily_revenue": 0.0,
+    "monthly_revenue": 0.0,
+    "annual_projection": 0.0,
+    "community_size_multiplier": 1.0,
+    "engagement_bonus": 0
+  },
+  "platform_performance": {
+    "top_performing_platform": "none",
+    "total_platforms_managed": 6,
+    "total_community_size": 0
+  },
+  "ai_metrics": {
+    "response_success_rate": 85.7,
+    "personalization_score": 92.3,
+    "sentiment_improvement": 15.6,
+    "automation_efficiency": 90.2
+  },
+  "generated_at": "2025-09-13T14:55:45.943995"
+}

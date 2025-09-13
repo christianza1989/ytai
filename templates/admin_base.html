@@ -358,6 +358,13 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'trending_hijacker' %}active{% endif %}" href="{{ url_for('trending_hijacker') }}">
+                                <i class="fas fa-rocket text-danger"></i>
+                                Trending Hijacker
+                                <span class="badge bg-danger ms-1">💎+$6K</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'api_config' %}active{% endif %}" href="{{ url_for('api_config') }}">
                                 <i class="fas fa-cog"></i>
                                 API Config

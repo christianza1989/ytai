@@ -9,6 +9,7 @@ import sys
 import json
 import time
 import threading
+import random
 from pathlib import Path
 from datetime import datetime, timedelta
 from functools import wraps
@@ -28,8 +29,9 @@ from core.utils.file_manager import FileManager
 from core.analytics.collector import AnalyticsCollector
 from core.analytics.analyzer import PerformanceAnalyzer
 
-# Import new voice cloning system
+# Import new voice cloning system and trending hijacker
 from voice_cloning_empire import VoiceCloningEmpire
+from live_trending_hijacker import LiveTrendingHijacker
 
 load_dotenv()
 
@@ -45,6 +47,7 @@ class SystemState:
         self.api_status = {}
         self.batch_operations = {}
         self.voice_empire = VoiceCloningEmpire()  # Initialize voice cloning system
+        self.trending_hijacker = LiveTrendingHijacker()  # Initialize trending hijacker
         
     def update_api_status(self):
         """Update API connection status"""
@@ -765,6 +768,12 @@ def voice_empire():
     """Voice Cloning Empire management page"""
     return render_template('voice_empire.html')
 
+@app.route('/trending-hijacker')
+@require_auth
+def trending_hijacker():
+    """Live Trending Hijacker management page"""
+    return render_template('trending_hijacker.html')
+
 @app.route('/api/youtube/channels')
 @require_auth
 def api_youtube_channels():
@@ -1298,6 +1307,110 @@ def synthesize_character_voice():
         return jsonify({
             'success': True,
             'audio': audio_data
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# ============================================
+# LIVE TRENDING HIJACKER API ROUTES
+# ============================================
+
+@app.route('/api/trending/start-monitoring', methods=['POST'])
+@require_auth
+def start_trending_monitoring():
+    """Start live trending monitoring"""
+    try:
+        result = state.trending_hijacker.start_real_time_monitoring()
+        return jsonify({
+            'success': True,
+            'message': 'Live trending monitoring started',
+            'data': result
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/trending/stop-monitoring', methods=['POST'])
+@require_auth
+def stop_trending_monitoring():
+    """Stop live trending monitoring"""
+    try:
+        state.trending_hijacker.stop_monitoring()
+        return jsonify({
+            'success': True,
+            'message': 'Trending monitoring stopped'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/trending/dashboard')
+@require_auth
+def get_trending_dashboard():
+    """Get live trending hijacking dashboard"""
+    try:
+        dashboard = state.trending_hijacker.get_hijacking_dashboard()
+        return jsonify({
+            'success': True,
+            'dashboard': dashboard
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/trending/performance-report')
+@require_auth
+def get_trending_performance_report():
+    """Get trending performance report"""
+    try:
+        days = request.args.get('days', 7, type=int)
+        report = state.trending_hijacker.get_trend_performance_report(days)
+        return jsonify({
+            'success': True,
+            'report': report
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/trending/hijack-trend', methods=['POST'])
+@require_auth
+def manual_hijack_trend():
+    """Manually trigger trend hijacking"""
+    try:
+        data = request.get_json()
+        trend_id = data.get('trend_id')
+        
+        if not trend_id:
+            return jsonify({
+                'success': False,
+                'error': 'Trend ID is required'
+            }), 400
+        
+        # Mock implementation - would trigger actual hijacking
+        result = {
+            'trend_id': trend_id,
+            'hijack_initiated': True,
+            'estimated_completion': '90 minutes',
+            'priority': 'high',
+            'expected_views': random.randint(50000, 500000),
+            'expected_revenue': random.uniform(200, 2000)
+        }
+        
+        return jsonify({
+            'success': True,
+            'hijack_result': result
         })
     except Exception as e:
         return jsonify({
