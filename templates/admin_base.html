@@ -385,6 +385,13 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'automation_control' %}active{% endif %}" href="{{ url_for('automation_control') }}">
+                                <i class="fas fa-play-circle text-warning"></i>
+                                24/7 Automation
+                                <span class="badge bg-primary ms-1">🤖</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'settings' %}active{% endif %}" href="{{ url_for('settings') }}">
                                 <i class="fas fa-sliders-h"></i>
                                 Settings
