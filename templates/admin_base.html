@@ -365,6 +365,13 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'unlimited_empire' %}active{% endif %}" href="{{ url_for('unlimited_empire') }}">
+                                <i class="fas fa-infinity text-success"></i>
+                                Unlimited Empire
+                                <span class="badge bg-info ms-1">🚀 AI UNLIMITED</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'api_config' %}active{% endif %}" href="{{ url_for('api_config') }}">
                                 <i class="fas fa-cog"></i>
                                 API Config

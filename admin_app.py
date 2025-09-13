@@ -34,6 +34,9 @@ from core.analytics.analyzer import PerformanceAnalyzer
 from voice_cloning_empire import VoiceCloningEmpire
 from live_trending_hijacker import LiveTrendingHijacker
 
+# Import unlimited empire system
+from ai_channel_generator import AIChannelGenerator
+
 load_dotenv()
 
 app = Flask(__name__)
@@ -49,6 +52,7 @@ class SystemState:
         self.batch_operations = {}
         self.voice_empire = VoiceCloningEmpire()  # Initialize voice cloning system
         self.trending_hijacker = LiveTrendingHijacker()  # Initialize trending hijacker
+        self.ai_channel_generator = AIChannelGenerator()  # Initialize unlimited empire system
         
     def update_api_status(self):
         """Update API connection status"""
@@ -1409,6 +1413,159 @@ def manual_hijack_trend():
         return jsonify({
             'success': True,
             'hijack_result': result
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# =============================================================================
+# UNLIMITED EMPIRE - AI CHANNEL GENERATOR ROUTES
+# =============================================================================
+
+@app.route('/unlimited-empire')
+@require_auth
+def unlimited_empire():
+    """Unlimited Empire main dashboard"""
+    try:
+        stats = system_state.ai_channel_generator.get_empire_statistics()
+        return render_template('unlimited_empire.html', stats=stats)
+    except Exception as e:
+        flash(f'Error loading unlimited empire: {str(e)}', 'error')
+        return redirect(url_for('dashboard'))
+
+@app.route('/unlimited_empire/generate_concept', methods=['POST'])
+@require_auth
+def generate_concept():
+    """Generate a single AI channel concept"""
+    try:
+        data = request.get_json() or {}
+        category = data.get('category')
+        
+        concept = system_state.ai_channel_generator.generate_channel_concept(category)
+        
+        return jsonify({
+            'success': True,
+            'concept': concept
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/unlimited_empire/generate_batch', methods=['POST'])
+@require_auth
+def generate_batch_concepts():
+    """Generate batch AI channel concepts"""
+    try:
+        data = request.get_json() or {}
+        count = data.get('count', 5)
+        category = data.get('category')
+        
+        concepts = system_state.ai_channel_generator.generate_batch_concepts(count, category)
+        
+        return jsonify({
+            'success': True,
+            'concepts': concepts
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/unlimited_empire/concepts')
+@require_auth
+def get_concepts():
+    """Get channel concepts by status"""
+    try:
+        status = request.args.get('status', 'all')
+        concepts = system_state.ai_channel_generator.get_concepts(status)
+        
+        return jsonify({
+            'success': True,
+            'concepts': concepts
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/unlimited_empire/approve_concept/<concept_id>', methods=['POST'])
+@require_auth
+def approve_concept(concept_id):
+    """Approve a channel concept"""
+    try:
+        success = system_state.ai_channel_generator.approve_concept(concept_id)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': 'Concept approved successfully'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to approve concept'
+            }), 400
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/unlimited_empire/stats')
+@require_auth
+def get_empire_stats():
+    """Get empire statistics"""
+    try:
+        stats = system_state.ai_channel_generator.get_empire_statistics()
+        return jsonify({
+            'success': True,
+            'stats': stats
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/unlimited_empire/activity')
+@require_auth
+def get_empire_activity():
+    """Get recent empire activity"""
+    try:
+        activity = system_state.ai_channel_generator.get_recent_activity()
+        return jsonify({
+            'success': True,
+            'activity': activity
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/unlimited_empire/expansion_plan', methods=['POST'])
+@require_auth
+def create_expansion_plan():
+    """Create expansion plan with AI optimization"""
+    try:
+        data = request.get_json() or {}
+        target_channels = data.get('target_channels', 50)
+        timeframe_days = data.get('timeframe_days', 30)
+        focus_categories = data.get('focus_categories', [])
+        
+        expansion_plan = system_state.ai_channel_generator.create_expansion_plan(
+            target_channels, timeframe_days, focus_categories
+        )
+        
+        return jsonify({
+            'success': True,
+            'expansion_plan': expansion_plan
         })
     except Exception as e:
         return jsonify({
