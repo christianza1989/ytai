@@ -65,7 +65,17 @@
         <div class="card bg-info text-white">
             <div class="card-body stat-card">
                 <div class="stat-number text-white" id="sunoCredits">
-                    {{ api_status.suno.credits if api_status.suno.status == 'connected' else 'N/A' }}
+                    {% if api_status.suno.status == 'connected' %}
+                        {{ api_status.suno.credits }}
+                    {% elif api_status.suno.status == 'authentication_error' %}
+                        Invalid Key
+                    {% elif api_status.suno.status == 'connection_error' %}
+                        No Connection
+                    {% elif api_status.suno.status == 'not_configured' %}
+                        Not Setup
+                    {% else %}
+                        N/A
+                    {% endif %}
                 </div>
                 <div class="stat-label text-white-50">
                     <i class="fas fa-coins me-1"></i>
@@ -99,15 +109,21 @@
                         {% set suno_status = api_status.suno %}
                         <span class="status-badge 
                             {% if suno_status.status == 'connected' %}status-connected
-                            {% elif suno_status.status == 'error' %}status-error
+                            {% elif suno_status.status in ['error', 'authentication_error', 'connection_error'] %}status-error
                             {% else %}status-warning{% endif %}">
-                            <i class="fas fa-{{ 'check' if suno_status.status == 'connected' else 'times' if suno_status.status == 'error' else 'exclamation' }} me-1"></i>
-                            {{ suno_status.status.title() }}
+                            <i class="fas fa-{{ 'check' if suno_status.status == 'connected' else 'times' if suno_status.status in ['error', 'authentication_error', 'connection_error'] else 'exclamation' }} me-1"></i>
+                            {% if suno_status.status == 'authentication_error' %}Auth Error
+                            {% elif suno_status.status == 'connection_error' %}Connection Error  
+                            {% elif suno_status.status == 'api_error' %}API Error
+                            {% elif suno_status.status == 'not_configured' %}Not Configured
+                            {% else %}{{ suno_status.status.title() }}{% endif %}
                         </span>
                         {% if suno_status.status == 'connected' %}
                             <div class="small text-success mt-1">{{ suno_status.credits }} credits</div>
                         {% elif suno_status.error %}
                             <div class="small text-danger mt-1">{{ suno_status.error }}</div>
+                        {% elif suno_status.message %}
+                            <div class="small text-warning mt-1">{{ suno_status.message }}</div>
                         {% endif %}
                     </div>
                 </div>

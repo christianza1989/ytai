@@ -133,12 +133,12 @@ class SystemState:
         try:
             if os.getenv('SUNO_API_KEY') and os.getenv('SUNO_API_KEY') != 'your_suno_api_key_here':
                 suno = SunoClient()
-                credits = suno.get_credits()
-                status['suno'] = {'status': 'connected', 'credits': credits, 'error': None}
+                credit_status = suno.get_credits_with_status()
+                status['suno'] = credit_status
             else:
-                status['suno'] = {'status': 'not_configured', 'credits': 0, 'error': 'API key not configured'}
+                status['suno'] = {'status': 'not_configured', 'credits': 0, 'error': 'API key not configured', 'message': 'Please configure your Suno API key'}
         except Exception as e:
-            status['suno'] = {'status': 'error', 'credits': 0, 'error': str(e)}
+            status['suno'] = {'status': 'error', 'credits': 0, 'error': str(e), 'message': 'Connection failed'}
         
         # Gemini API
         try:

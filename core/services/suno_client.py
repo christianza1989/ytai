@@ -42,6 +42,46 @@ class SunoClient:
             print(f"❌ Failed to connect to Suno API: {e}")
             return 0
 
+    def get_credits_with_status(self) -> dict:
+        """Get remaining credits with detailed status information"""
+        try:
+            url = f"{self.base_url}/generate/credit"
+            response = requests.get(url, headers=self.headers)
+            response.raise_for_status()
+
+            data = response.json()
+            if data.get('code') == 200:
+                credits = data.get('data', 0)
+                return {
+                    'status': 'connected',
+                    'credits': credits,
+                    'error': None,
+                    'message': f"{credits} credits available"
+                }
+            elif data.get('code') == 401:
+                error_msg = data.get('msg', 'Authentication failed')
+                return {
+                    'status': 'authentication_error',
+                    'credits': 0,
+                    'error': f"Authentication Error: {error_msg}",
+                    'message': "API key expired or invalid. Please renew your API key."
+                }
+            else:
+                error_msg = data.get('msg', 'Unknown API error')
+                return {
+                    'status': 'api_error',
+                    'credits': 0,
+                    'error': f"API Error ({data.get('code')}): {error_msg}",
+                    'message': "Service temporarily unavailable"
+                }
+        except Exception as e:
+            return {
+                'status': 'connection_error',
+                'credits': 0,
+                'error': f"Connection failed: {str(e)}",
+                'message': "Unable to connect to Suno API"
+            }
+
     def generate_music_simple(self, prompt: str, **kwargs) -> Optional[Dict[str, Any]]:
         """Generate music with simple parameters"""
         try:
