@@ -28,11 +28,18 @@ class SunoClient:
             data = response.json()
             if data.get('code') == 200:
                 return data.get('data', 0)
+            elif data.get('code') == 401:
+                print(f"🔑 Suno API Authentication Error: {data.get('msg')}")
+                print("💡 This usually means:")
+                print("   - API key has expired or been revoked")
+                print("   - Account access has been suspended")
+                print("   - API key needs to be renewed")
+                return 0
             else:
-                print(f"Error getting credits: {data.get('msg')}")
+                print(f"⚠️ Suno API Error ({data.get('code')}): {data.get('msg')}")
                 return 0
         except Exception as e:
-            print(f"Failed to get credits: {e}")
+            print(f"❌ Failed to connect to Suno API: {e}")
             return 0
 
     def generate_music_simple(self, prompt: str, **kwargs) -> Optional[Dict[str, Any]]:
