@@ -462,6 +462,7 @@
             testData.api_key = apiKey;
             testData.model = model;
             
+
         } else if (service === 'nano_banana') {
             // Nano-banana uses Gemini API key
             const geminiKey = document.getElementById('geminiApiKey').value.trim();
@@ -537,6 +538,7 @@
         saveConfiguration('gemini');
     });
     
+
     // Nano-banana uses Gemini API key - no separate form needed
     
     document.getElementById('advancedConfigForm').addEventListener('submit', function(e) {
@@ -583,6 +585,7 @@
                 gemini_model: geminiModel
             };
             
+
         } else if (service === 'advanced') {
             // Handle advanced settings
             hideLoading(button, originalText);
@@ -626,6 +629,31 @@
             hideLoading(button, originalText);
             console.error('Save error:', error);
             showToast('Failed to save configuration. Please try again.', 'error');
+        });
+    }
+    
+    // Setup OAuth guide function
+    function setupOAuth() {
+        Swal.fire({
+            title: 'YouTube OAuth Setup Guide',
+            html: `
+                <div class="text-start">
+                    <h6>Follow these steps:</h6>
+                    <ol>
+                        <li>Go to <a href="https://console.developers.google.com/" target="_blank">Google Console</a></li>
+                        <li>Create a new project or select existing</li>
+                        <li>Enable YouTube Data API v3</li>
+                        <li>Create credentials (OAuth 2.0 Client ID)</li>
+                        <li>Add authorized redirect URIs</li>
+                        <li>Copy Client ID and Client Secret</li>
+                    </ol>
+                    <div class="alert alert-info mt-3">
+                        <strong>Redirect URI:</strong> ${window.location.origin}/oauth/youtube/callback
+                    </div>
+                </div>
+            `,
+            width: 600,
+            confirmButtonText: 'Got it!'
         });
     }
     

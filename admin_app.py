@@ -314,11 +314,12 @@ def api_config():
     
     # Get current env values (masked for display in read-only mode)
     env_config = {}
-    for key in ['SUNO_API_KEY', 'SUNO_MODEL', 'GEMINI_API_KEY', 'GEMINI_MODEL']:
+    for key in ['SUNO_API_KEY', 'SUNO_MODEL', 'GEMINI_API_KEY', 'GEMINI_MODEL', 
+                'YOUTUBE_API_KEY', 'YOUTUBE_CLIENT_ID', 'YOUTUBE_CLIENT_SECRET']:
         value = os.getenv(key, '')
         if value and value != f'your_{key.lower()}_here':
             # For display purposes, mask the key but store full value in data attribute
-            if key in ['SUNO_API_KEY', 'GEMINI_API_KEY'] and len(value) > 12:
+            if key in ['SUNO_API_KEY', 'GEMINI_API_KEY', 'YOUTUBE_API_KEY', 'YOUTUBE_CLIENT_SECRET'] and len(value) > 12:
                 env_config[key] = value[:8] + '...' + value[-4:]
             else:
                 env_config[key] = value  # Models and short keys shown fully
@@ -958,30 +959,55 @@ def api_youtube_channels():
 def api_youtube_channels_list():
     """Get YouTube channels list for management"""
     try:
-        from core.database.database_manager import DatabaseManager
+        import sqlite3
         
-        db_manager = DatabaseManager()
-        channels = db_manager.get_all_youtube_channels()
+        # Use direct SQLite connection to get all fields from youtube_channels table  
+        import os
+        db_path = os.path.join(os.path.dirname(__file__), "data/youtube_channels.db")
         
-        channels_data = []
-        for channel in channels:
-            # channel is already a dictionary from database_manager
-            channel_dict = channel.copy() if isinstance(channel, dict) else channel.to_dict()
-            # Format last_upload for display
-            if channel_dict.get('last_upload'):
-                try:
-                    if isinstance(channel_dict['last_upload'], str):
-                        # Already formatted
-                        pass
-                    else:
-                        channel_dict['last_upload'] = channel_dict['last_upload'].strftime('%Y-%m-%d')
-                except:
-                    channel_dict['last_upload'] = None
-            else:
-                channel_dict['last_upload'] = None
-            channels_data.append(channel_dict)
+        channels = []
         
-        return jsonify({'channels': channels_data})
+        with sqlite3.connect(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id, channel_name, channel_url, youtube_channel_id, description,
+                       selected_genres, primary_genre, target_audience, upload_schedule,
+                       daily_upload_count, vocal_probability, auto_upload, auto_thumbnails,
+                       auto_seo, enable_analytics, enable_monetization, privacy_settings,
+                       status, total_subscribers, monthly_revenue, last_upload_date, created_at, updated_at
+                FROM youtube_channels
+                ORDER BY id DESC
+            ''')
+            
+            rows = cursor.fetchall()
+            
+            for row in rows:
+                channels.append({
+                    'id': row[0],
+                    'channel_name': row[1],
+                    'channel_url': row[2],
+                    'youtube_channel_id': row[3],
+                    'description': row[4],
+                    'selected_genres': row[5],
+                    'primary_genre': row[6],
+                    'target_audience': row[7],
+                    'upload_schedule': row[8],
+                    'daily_upload_count': row[9],
+                    'vocal_probability': row[10],
+                    'auto_upload': row[11],
+                    'auto_thumbnails': row[12],
+                    'auto_seo': row[13],
+                    'enable_analytics': row[14],
+                    'enable_monetization': row[15],
+                    'privacy_settings': row[16],
+                    'status': row[17] or 'active',
+                    'subscribers': row[18] or 0,
+                    'monthly_revenue': row[19] or 0,
+                    'last_upload': row[20],
+                    'created_at': row[21],
+                    'updated_at': row[22]
+                })
+        return jsonify({'channels': channels})
         
     except Exception as e:
         print(f"Error loading channels: {e}")
@@ -3511,6 +3537,14 @@ def api_save_settings():
             'error': f'Failed to save settings: {str(e)}'
         }), 500
 
+# Old test-connection endpoint removed - using new per-channel credentials version below
+
+# Old refresh-channel-stats route removed to prevent duplicate route error
+# Now using the new per-channel credentials implementation below
+
+# Old channel-details route removed to prevent duplicate route error
+# Now using the new per-channel credentials implementation below
+
 @app.route('/api/config/save', methods=['POST'])
 @require_auth
 def api_save_config():
@@ -3535,6 +3569,18 @@ def api_save_config():
         if 'gemini_model' in data and data['gemini_model']:
             os.environ['GEMINI_MODEL'] = data['gemini_model']
             print(f"✅ Updated GEMINI_MODEL in memory: {data['gemini_model']}")
+            
+        if 'youtube_api_key' in data and data['youtube_api_key']:
+            os.environ['YOUTUBE_API_KEY'] = data['youtube_api_key']
+            print(f"✅ Updated YOUTUBE_API_KEY in memory: {data['youtube_api_key'][:8]}...")
+            
+        if 'youtube_client_id' in data and data['youtube_client_id']:
+            os.environ['YOUTUBE_CLIENT_ID'] = data['youtube_client_id']
+            print(f"✅ Updated YOUTUBE_CLIENT_ID in memory: {data['youtube_client_id'][:8]}...")
+            
+        if 'youtube_client_secret' in data and data['youtube_client_secret']:
+            os.environ['YOUTUBE_CLIENT_SECRET'] = data['youtube_client_secret']
+            print(f"✅ Updated YOUTUBE_CLIENT_SECRET in memory: {data['youtube_client_secret'][:8]}...")
         
         # Update .env file for persistence
         env_file_path = '.env'
@@ -3550,7 +3596,10 @@ def api_save_config():
             'SUNO_API_KEY': data.get('suno_api_key'),
             'SUNO_MODEL': data.get('suno_model'),
             'GEMINI_API_KEY': data.get('gemini_api_key'),
-            'GEMINI_MODEL': data.get('gemini_model')
+            'GEMINI_MODEL': data.get('gemini_model'),
+            'YOUTUBE_API_KEY': data.get('youtube_api_key'),
+            'YOUTUBE_CLIENT_ID': data.get('youtube_client_id'),
+            'YOUTUBE_CLIENT_SECRET': data.get('youtube_client_secret')
         }
         
         # Create a dict of existing env vars
@@ -4165,6 +4214,172 @@ def api_enable_channel_automation(channel_id):
             'success': False,
             'error': str(e),
             'message': 'Failed to enable automation'
+        }), 500
+
+# YouTube API Integration Endpoints - Using Per-Channel Credentials
+@app.route('/api/youtube/test-connection', methods=['POST'])
+@require_auth
+def api_youtube_test_connection():
+    """Test YouTube API connection with provided API key"""
+    try:
+        from core.youtube_api_client import youtube_client
+        
+        data = request.get_json() or {}
+        api_key = data.get('api_key')
+        
+        print(f"🔌 Test connection called with data: {data}")
+        print(f"🔌 API Key length: {len(api_key) if api_key else 0}")
+        
+        # API key can be empty - will use environment variable as fallback
+        print(f"🔌 API Key from request: {'***provided***' if api_key else 'using env fallback'}")
+        
+        # Test connection using per-channel API key
+        result = youtube_client.test_connection(api_key)
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"❌ Error testing YouTube API connection: {e}")
+        import traceback
+        print(f"❌ Full traceback: {traceback.format_exc()}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# Debug endpoint removed - YouTube API client working correctly
+
+@app.route('/api/youtube/refresh-channel-stats', methods=['POST'])
+@require_auth
+def api_refresh_channel_stats_v2():
+    """Refresh channel statistics from YouTube API"""
+    try:
+        from core.database.youtube_channels_db import YouTubeChannelsDB
+        from core.youtube_api_client import youtube_client
+        
+        data = request.get_json() or {}
+        channel_id = data.get('channel_id')  # Internal DB channel ID
+        
+        print(f"🔄 Refresh channel stats called with data: {data}")
+        print(f"🔄 Channel ID: {channel_id}")
+        
+        if not channel_id:
+            print(f"❌ No channel ID provided in request")
+            return jsonify({
+                'success': False,
+                'error': 'Channel ID is required'
+            }), 400
+        
+        db = YouTubeChannelsDB()
+        channel = db.get_channel(channel_id)
+        
+        if not channel:
+            return jsonify({
+                'success': False,
+                'error': 'Channel not found'
+            }), 404
+        
+        # Get YouTube channel ID and API key from database
+        youtube_channel_id = channel.get('youtube_channel_id')
+        api_key = channel.get('api_key')
+        
+        if not youtube_channel_id:
+            return jsonify({
+                'success': False,
+                'error': 'No YouTube channel ID configured for this channel'
+            }), 400
+            
+        if not api_key:
+            return jsonify({
+                'success': False,
+                'error': 'No API key configured for this channel'
+            }), 400
+        
+        # Fetch statistics from YouTube API
+        stats_result = youtube_client.get_channel_statistics(youtube_channel_id, api_key)
+        
+        if stats_result.get('success'):
+            # Update channel stats in database
+            update_data = {
+                'subscribers': stats_result.get('subscriber_count', 0),
+                'total_views': stats_result.get('view_count', 0),
+                'video_count': stats_result.get('video_count', 0),
+                'channel_title': stats_result.get('channel_title', channel.get('channel_name')),
+                'last_sync': datetime.now().isoformat()
+            }
+            
+            db.update_channel(channel_id, update_data)
+            
+            return jsonify({
+                'success': True,
+                'stats': stats_result,
+                'updated': update_data
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': stats_result.get('error', 'Failed to fetch channel statistics')
+            }), 400
+            
+    except Exception as e:
+        print(f"Error refreshing channel stats: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/youtube/channel-details/<youtube_channel_id>')
+@require_auth
+def api_get_youtube_channel_details_v2(youtube_channel_id):
+    """Get detailed YouTube channel information using channel's API key"""
+    try:
+        from core.database.youtube_channels_db import YouTubeChannelsDB
+        from core.youtube_api_client import youtube_client
+        
+        # Find channel in database by YouTube channel ID
+        db = YouTubeChannelsDB()
+        channels = db.list_channels()
+        
+        # Find the channel with matching youtube_channel_id
+        target_channel = None
+        for channel in channels:
+            if channel.get('youtube_channel_id') == youtube_channel_id:
+                target_channel = channel
+                break
+        
+        if not target_channel:
+            return jsonify({
+                'success': False,
+                'error': f'Channel with YouTube ID {youtube_channel_id} not found in database'
+            }), 404
+            
+        api_key = target_channel.get('api_key')
+        if not api_key:
+            return jsonify({
+                'success': False,
+                'error': 'No API key configured for this channel'
+            }), 400
+        
+        # Fetch detailed information from YouTube API
+        details_result = youtube_client.get_channel_statistics(youtube_channel_id, api_key)
+        
+        if details_result.get('success'):
+            return jsonify({
+                'success': True,
+                'channel_details': details_result,
+                'database_info': target_channel
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': details_result.get('error', 'Failed to fetch channel details')
+            }), 400
+            
+    except Exception as e:
+        print(f"Error getting YouTube channel details: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
         }), 500
 
 @app.route('/api/youtube/automation/status')

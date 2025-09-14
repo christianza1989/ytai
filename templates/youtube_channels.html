@@ -18,6 +18,10 @@
         <p class="text-muted">Valdyti kelis YouTube kanalus, jų credentials ir muzikos stilius</p>
     </div>
     <div class="col-md-4 text-end">
+        <button class="btn btn-success me-2" onclick="refreshYouTubeData()" title="Refresh YouTube Statistics">
+            <i class="fas fa-sync me-1"></i>
+            🔄 YouTube Data
+        </button>
         <button class="btn btn-danger me-2" onclick="addNewChannel()">
             <i class="fas fa-plus me-1"></i>
             Pridėti Kanalą
@@ -625,6 +629,59 @@ let selectedChannels = [];
 document.addEventListener('DOMContentLoaded', function() {
     loadChannels();
     updateStatistics();
+    
+    // Add event delegation for dynamically generated buttons
+    document.addEventListener('click', function(e) {
+        // Check if clicked element is a delete button
+        if (e.target.closest('.btn-outline-danger')) {
+            const button = e.target.closest('.btn-outline-danger');
+            const channelId = button.getAttribute('data-channel-id');
+            if (channelId && button.getAttribute('title') === 'Delete Channel') {
+                e.preventDefault();
+                deleteChannel(channelId);
+            }
+        }
+        
+        // Check if clicked element is an edit button  
+        if (e.target.closest('.btn-outline-primary')) {
+            const button = e.target.closest('.btn-outline-primary');
+            const channelId = button.getAttribute('data-channel-id');
+            if (channelId && button.getAttribute('title') === 'Edit Channel') {
+                e.preventDefault();
+                editChannel(channelId);
+            }
+        }
+        
+        // Check if clicked element is a refresh button
+        if (e.target.closest('.btn-outline-warning')) {
+            const button = e.target.closest('.btn-outline-warning');
+            const channelId = button.getAttribute('data-channel-id');
+            if (channelId && button.getAttribute('title') === 'Refresh YouTube Data') {
+                e.preventDefault();
+                refreshSingleChannelData(channelId);
+            }
+        }
+        
+        // Check if clicked element is a generate content button
+        if (e.target.closest('.btn-outline-success')) {
+            const button = e.target.closest('.btn-outline-success');
+            const channelId = button.getAttribute('data-channel-id');
+            if (channelId && button.getAttribute('title') === 'Generate Content') {
+                e.preventDefault();
+                generateContent(channelId);
+            }
+        }
+        
+        // Check if clicked element is a view analytics button
+        if (e.target.closest('.btn-outline-info')) {
+            const button = e.target.closest('.btn-outline-info');
+            const channelId = button.getAttribute('data-channel-id');
+            if (channelId && button.getAttribute('title') === 'View Analytics') {
+                e.preventDefault();
+                viewAnalytics(channelId);
+            }
+        }
+    });
 });
 
 // Load channels from backend
@@ -632,12 +689,14 @@ function loadChannels() {
     fetch('/api/youtube/channels/list')
         .then(response => response.json())
         .then(data => {
-            if (data.success !== false) {
-                channels = data.channels || [];
+            console.log('API Response:', data); // Debug log
+            if (data && data.channels) {
+                channels = data.channels;
+                console.log('Loaded channels:', channels); // Debug log
                 renderChannelsTable();
                 updateStatistics();
             } else {
-                console.error('Failed to load channels:', data.message);
+                console.error('Failed to load channels:', data);
                 loadDemoChannels();
             }
         })
@@ -721,13 +780,54 @@ function renderChannelsTable() {
     }
     
     tbody.innerHTML = channels.map(channel => {
-        const statusBadge = getStatusBadge(channel.status);
-        const lastUploadFormatted = formatDate(channel.last_upload);
+        // Map database fields to frontend expected fields
+        const channelName = channel.channel_name || channel.name || 'Unknown Channel';
+        const channelUrl = channel.channel_url || channel.url || 'URL not set';
+        
+        // Safely parse selected_genres with error handling
+        let primaryGenre = 'Not set';
+        try {
+            if (channel.selected_genres) {
+                if (typeof channel.selected_genres === 'string') {
+                    // Try to parse as JSON first
+                    try {
+                        const genres = JSON.parse(channel.selected_genres);
+                        primaryGenre = Array.isArray(genres) && genres.length > 0 ? genres[0] : channel.selected_genres;
+                    } catch (e) {
+                        // If not valid JSON, use as plain text
+                        primaryGenre = channel.selected_genres;
+                    }
+                } else if (Array.isArray(channel.selected_genres)) {
+                    primaryGenre = channel.selected_genres[0] || 'Not set';
+                }
+            } else if (channel.primary_genre) {
+                primaryGenre = channel.primary_genre;
+            }
+        } catch (e) {
+            console.error('Error parsing genres:', e);
+            primaryGenre = 'Not set';
+        }
+        const status = channel.status || 'active';
+        const subscribers = channel.subscribers || 0;
+        const monthlyRevenue = channel.monthly_revenue || 0;
+        const lastUpload = channel.last_upload;
+        const uploadSchedule = channel.upload_schedule || 'Not set';
+        const channelId = channel.id || 0;
+        
+        const statusBadge = getStatusBadge(status);
+        const lastUploadFormatted = formatDate(lastUpload);
+        
+        console.log('Rendering channel:', { 
+            channelId, 
+            channelName, 
+            channelUrl, 
+            fullChannel: channel 
+        }); // Debug log
         
         return `
             <tr>
                 <td>
-                    <input type="checkbox" class="channel-select" value="${channel.id}" 
+                    <input type="checkbox" class="channel-select" value="${channelId}" 
                            onchange="updateSelectedChannels()">
                 </td>
                 <td>
@@ -739,22 +839,22 @@ function renderChannelsTable() {
                             </div>
                         </div>
                         <div>
-                            <div class="fw-bold">${channel.name}</div>
-                            <div class="small text-muted">${channel.url || 'URL not set'}</div>
+                            <div class="fw-bold">${channelName}</div>
+                            <div class="small text-muted">${channelUrl}</div>
                         </div>
                     </div>
                 </td>
                 <td>
-                    <span class="badge bg-primary">${formatGenre(channel.primary_genre)}</span>
-                    <div class="small text-muted mt-1">${channel.upload_schedule || 'Not set'}</div>
+                    <span class="badge bg-primary">${formatGenre(primaryGenre)}</span>
+                    <div class="small text-muted mt-1">${uploadSchedule}</div>
                 </td>
                 <td>${statusBadge}</td>
                 <td>
-                    <div class="fw-bold">${formatNumber(channel.subscribers)}</div>
+                    <div class="fw-bold">${formatNumber(subscribers)}</div>
                     <div class="small text-muted">subscribers</div>
                 </td>
                 <td>
-                    <div class="fw-bold text-success">$${formatNumber(channel.monthly_revenue)}</div>
+                    <div class="fw-bold text-success">$${formatNumber(monthlyRevenue)}</div>
                     <div class="small text-muted">monthly</div>
                 </td>
                 <td>
@@ -762,20 +862,24 @@ function renderChannelsTable() {
                 </td>
                 <td>
                     <div class="btn-group" role="group">
-                        <button class="btn btn-sm btn-outline-primary" onclick="editChannel(${channel.id})" 
-                                title="Edit Channel">
+                        <button class="btn btn-sm btn-outline-primary" 
+                                title="Edit Channel" data-channel-id="${channelId}">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-info" onclick="viewAnalytics(${channel.id})" 
-                                title="View Analytics">
+                        <button class="btn btn-sm btn-outline-warning" 
+                                title="Refresh YouTube Data" data-channel-id="${channelId}">
+                            <i class="fas fa-sync"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-info" 
+                                title="View Analytics" data-channel-id="${channelId}">
                             <i class="fas fa-chart-line"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-success" onclick="generateContent(${channel.id})" 
-                                title="Generate Content">
+                        <button class="btn btn-sm btn-outline-success" 
+                                title="Generate Content" data-channel-id="${channelId}">
                             <i class="fas fa-magic"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteChannel(${channel.id})" 
-                                title="Delete Channel">
+                        <button class="btn btn-sm btn-outline-danger" 
+                                title="Delete Channel" data-channel-id="${channelId}">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -899,11 +1003,29 @@ function addNewChannel() {
 }
 
 function editChannel(channelId) {
-    const channel = channels.find(c => c.id === channelId);
-    if (!channel) return;
+    console.log('Edit channel called with ID:', channelId, 'type:', typeof channelId); // Debug log
+    console.log('Available channels:', channels); // Debug log
+    
+    // Try to find channel with different ID comparisons
+    let channel = channels.find(c => c.id === channelId);
+    if (!channel) {
+        channel = channels.find(c => c.id === parseInt(channelId));
+    }
+    if (!channel) {
+        channel = channels.find(c => String(c.id) === String(channelId));
+    }
+    
+    if (!channel) {
+        console.error('Channel not found for ID:', channelId);
+        console.error('Available channel IDs:', channels.map(c => c.id));
+        showToast('Channel not found', 'error');
+        return;
+    }
+    
+    const channelName = channel.channel_name || channel.name || 'Unknown Channel';
     
     document.getElementById('channelModalTitle').innerHTML = `
-        <i class="fab fa-youtube text-danger me-2"></i>Edit Channel: ${channel.channel_name || channel.name}
+        <i class="fab fa-youtube text-danger me-2"></i>Edit Channel: ${channelName}
     `;
     
     // Populate basic form data
@@ -913,9 +1035,29 @@ function editChannel(channelId) {
     document.getElementById('channelIdInput').value = channel.youtube_channel_id || channel.channel_id || '';
     document.getElementById('channelDescription').value = channel.description || '';
     
+    // Populate API credentials - FIXED: Now loading saved credentials!
+    document.getElementById('apiKey').value = channel.api_key || '';
+    document.getElementById('clientId').value = channel.client_id || '';
+    document.getElementById('clientSecret').value = channel.client_secret || '';
+    
     // Populate genre selection
     document.querySelectorAll('.genre-checkbox').forEach(cb => cb.checked = false);
-    const selectedGenres = channel.selected_genres || [];
+    
+    // Safely parse selected_genres JSON
+    let selectedGenres = [];
+    try {
+        if (channel.selected_genres) {
+            if (typeof channel.selected_genres === 'string') {
+                selectedGenres = JSON.parse(channel.selected_genres);
+            } else if (Array.isArray(channel.selected_genres)) {
+                selectedGenres = channel.selected_genres;
+            }
+        }
+    } catch (e) {
+        console.error('Error parsing selected_genres:', e);
+        selectedGenres = [];
+    }
+    
     selectedGenres.forEach(genre => {
         const checkbox = document.querySelector(`.genre-checkbox[value="${genre}"]`);
         if (checkbox) checkbox.checked = true;
@@ -1055,6 +1197,14 @@ function saveChannel() {
     const originalText = saveBtn.innerHTML;
     showLoading(saveBtn);
     
+    // Debug: Log channel data being sent
+    console.log('💾 Saving channel data:', channelData);
+    console.log('🔑 API credentials in data:', {
+        api_key: channelData.api_key ? '***set***' : 'empty',
+        client_id: channelData.client_id ? '***set***' : 'empty',
+        client_secret: channelData.client_secret ? '***set***' : 'empty'
+    });
+    
     // Send to API
     fetch('/api/youtube/channels/save', {
         method: 'POST',
@@ -1116,39 +1266,50 @@ function saveChannel() {
 }
 
 function deleteChannel(channelId) {
-    const channel = channels.find(c => c.id === channelId);
-    if (!channel) return;
+    console.log('Delete channel called with ID:', channelId, 'type:', typeof channelId); // Debug log
+    console.log('Available channels:', channels); // Debug log
     
-    Swal.fire({
-        title: 'Delete Channel?',
-        text: `Are you sure you want to delete "${channel.name}"? This action cannot be undone.`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        confirmButtonText: 'Yes, delete it!'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Call API to delete
-            fetch(`/api/youtube/channels/${channelId}/delete`, {
-                method: 'DELETE'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    channels = channels.filter(c => c.id !== channelId);
-                    renderChannelsTable();
-                    updateStatistics();
-                    showToast('Channel deleted successfully', 'success');
-                } else {
-                    showToast(data.message || 'Failed to delete channel', 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error deleting channel:', error);
-                showToast('Error deleting channel. Please try again.', 'error');
-            });
-        }
-    });
+    // Try to find channel with different ID comparisons
+    let channel = channels.find(c => c.id === channelId);
+    if (!channel) {
+        channel = channels.find(c => c.id === parseInt(channelId));
+    }
+    if (!channel) {
+        channel = channels.find(c => String(c.id) === String(channelId));
+    }
+    
+    if (!channel) {
+        console.error('Channel not found for ID:', channelId);
+        console.error('Available channel IDs:', channels.map(c => c.id));
+        showToast('Channel not found', 'error');
+        return;
+    }
+    
+    const channelName = channel.channel_name || channel.name || 'Unknown Channel';
+    
+    // Use simple confirm instead of SweetAlert for testing
+    if (confirm(`Are you sure you want to delete "${channelName}"? This action cannot be undone.`)) {
+        console.log('Deleting channel ID:', channelId); // Debug log
+        // Call API to delete
+        fetch(`/api/youtube/channels/${channelId}/delete`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                channels = channels.filter(c => c.id !== parseInt(channelId));
+                renderChannelsTable();
+                updateStatistics();
+                showToast('Channel deleted successfully', 'success');
+            } else {
+                showToast(data.message || 'Failed to delete channel', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting channel:', error);
+            showToast('Error deleting channel. Please try again.', 'error');
+        });
+    }
 }
 
 // Utility functions
@@ -1167,22 +1328,39 @@ function togglePasswordVisibility(fieldId) {
 
 function testConnection() {
     const apiKey = document.getElementById('apiKey').value;
-    const channelId = document.getElementById('channelIdInput').value;
     
+    // Allow empty API key - will use environment variables as fallback
     if (!apiKey) {
-        showToast('Please enter API key first', 'warning');
-        return;
+        console.log('No API key provided - will use environment variables');
     }
     
     const btn = event.target;
     const originalText = btn.innerHTML;
     showLoading(btn);
     
-    // Simulate API test
-    setTimeout(() => {
+    // Test connection using per-channel API key or env fallback
+    fetch('/api/youtube/test-connection', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ api_key: apiKey || '' })
+    })
+    .then(response => response.json())
+    .then(data => {
         hideLoading(btn, originalText);
-        showToast('Connection successful! ✅', 'success');
-    }, 2000);
+        
+        if (data.success) {
+            showToast(`✅ Connection successful! API Version: ${data.api_version}`, 'success');
+        } else {
+            showToast(`❌ Connection failed: ${data.error}`, 'error');
+        }
+    })
+    .catch(error => {
+        hideLoading(btn, originalText);
+        console.error('Error testing connection:', error);
+        showToast('❌ Connection test failed. Please try again.', 'error');
+    });
 }
 
 function setupOAuth() {
@@ -1356,8 +1534,84 @@ function filterChannels() {
 }
 
 function refreshChannels() {
-    showToast('Refreshing channels...', 'info');
+    showToast('Refreshing local data...', 'info');
     loadChannels();
+}
+
+// New function to refresh YouTube data via API
+function refreshYouTubeData() {
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    
+    // Show loading state
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Refreshing...';
+    
+    showToast('🔄 Fetching fresh data from YouTube API...', 'info');
+    
+    fetch('/api/youtube/refresh-channel-stats', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({}) // Empty body = refresh all channels
+    })
+    .then(response => response.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        
+        if (data.success) {
+            showToast(`✅ Successfully updated ${data.updated_channels} channels! Used ${data.quota_used} API quota.`, 'success');
+            
+            // Reload channels to show updated data
+            setTimeout(() => {
+                loadChannels();
+                updateStatistics();
+            }, 1000);
+            
+            // Show detailed results if there were errors
+            if (data.errors && data.errors.length > 0) {
+                setTimeout(() => {
+                    showToast(`⚠️ Some channels had issues: ${data.errors.slice(0, 2).join(', ')}`, 'warning');
+                }, 3000);
+            }
+        } else {
+            showToast(`❌ Failed to refresh YouTube data: ${data.error}`, 'error');
+        }
+    })
+    .catch(error => {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        console.error('Error refreshing YouTube data:', error);
+        showToast('❌ Failed to refresh YouTube data. Please check your API configuration.', 'error');
+    });
+}
+
+// Function to refresh individual channel YouTube data
+function refreshSingleChannelData(channelId) {
+    console.log('Refreshing YouTube data for channel ID:', channelId);
+    
+    fetch('/api/youtube/refresh-channel-stats', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ channel_id: channelId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('✅ Channel data refreshed successfully!', 'success');
+            loadChannels(); // Reload to show updated data
+        } else {
+            showToast(`❌ Failed to refresh channel: ${data.error}`, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error refreshing channel:', error);
+        showToast('❌ Failed to refresh channel data.', 'error');
+    });
 }
 
 function bulkOperations() {
