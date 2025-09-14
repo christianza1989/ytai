@@ -1,5 +1,5 @@
 {
-  "theme": "neon",
+  "theme": "ai",
   "language": "lt",
   "autosave": "60",
   "notifications": true,
@@ -8,7 +8,7 @@
   "maxTasks": "3",
   "cache": true,
   "debugMode": false,
-  "saved_at": "2025-09-14T00:16:09.643673",
+  "saved_at": "2025-09-14T06:43:31.273098",
   "version": "1.0",
-  "theme_updated": "2025-09-14T00:24:49.608397"
+  "theme_updated": "2025-09-14T07:07:56.771541"
 }

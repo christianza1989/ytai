@@ -417,20 +417,65 @@
         
         showLoading(button);
         
-        // Simulate API test
-        setTimeout(() => {
+        // Collect API key for testing
+        let testData = { service: service };
+        
+        if (service === 'suno') {
+            const apiKey = document.getElementById('sunoApiKey').value.trim();
+            if (!apiKey) {
+                hideLoading(button, originalText);
+                showToast('Please enter Suno API key first', 'warning');
+                return;
+            }
+            testData.api_key = apiKey;
+            
+        } else if (service === 'gemini') {
+            const apiKey = document.getElementById('geminiApiKey').value.trim();
+            const model = document.getElementById('geminiModel').value;
+            if (!apiKey) {
+                hideLoading(button, originalText);
+                showToast('Please enter Gemini API key first', 'warning');
+                return;
+            }
+            testData.api_key = apiKey;
+            testData.model = model;
+            
+        } else if (service === 'nano_banana') {
+            // Nano-banana uses Gemini API key
+            const geminiKey = document.getElementById('geminiApiKey').value.trim();
+            if (!geminiKey) {
+                hideLoading(button, originalText);
+                showToast('Nano-banana requires Gemini API key. Please configure Gemini first.', 'warning');
+                return;
+            }
+            hideLoading(button, originalText);
+            showToast('Nano-banana ready! Uses your Gemini API key.', 'success');
+            return;
+        }
+        
+        // Test the API connection
+        fetch('/api/config/test', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(testData)
+        })
+        .then(response => response.json())
+        .then(data => {
             hideLoading(button, originalText);
             
-            if (service === 'suno' && document.getElementById('sunoApiKey').value) {
-                showToast(`${service.charAt(0).toUpperCase() + service.slice(1)} API connection successful!`, 'success');
-            } else if (service === 'gemini' && document.getElementById('geminiApiKey').value) {
-                showToast(`${service.charAt(0).toUpperCase() + service.slice(1)} API connection successful!`, 'success');
-            } else if (service === 'nano_banana') {
-                showToast('Nano-banana ready! Uses your Gemini API key.', 'success');
+            if (data.success) {
+                showToast(data.message, 'success');
             } else {
-                showToast(`Please enter a valid API key for ${service}`, 'warning');
+                showToast(`Connection failed: ${data.error}`, 'error');
             }
-        }, 2000);
+        })
+        .catch(error => {
+            hideLoading(button, originalText);
+            console.error('Test error:', error);
+            showToast('Connection test failed. Please check your API key.', 'error');
+        });
     }
     
     function testAllConnections() {
@@ -482,11 +527,74 @@
         
         showLoading(button);
         
-        // Simulate save
-        setTimeout(() => {
+        // Collect form data based on service
+        let configData = {};
+        
+        if (service === 'suno') {
+            const sunoKey = document.getElementById('sunoApiKey').value.trim();
+            const sunoModel = document.getElementById('sunoModel').value;
+            
+            if (!sunoKey) {
+                hideLoading(button, originalText);
+                showToast('Please enter Suno API key', 'warning');
+                return;
+            }
+            
+            configData = {
+                suno_api_key: sunoKey,
+                suno_model: sunoModel
+            };
+            
+        } else if (service === 'gemini') {
+            const geminiKey = document.getElementById('geminiApiKey').value.trim();
+            const geminiModel = document.getElementById('geminiModel').value;
+            
+            if (!geminiKey) {
+                hideLoading(button, originalText);
+                showToast('Please enter Gemini API key', 'warning');
+                return;
+            }
+            
+            configData = {
+                gemini_api_key: geminiKey,
+                gemini_model: geminiModel
+            };
+            
+        } else if (service === 'advanced') {
+            // Handle advanced settings
             hideLoading(button, originalText);
-            showToast(`${service.charAt(0).toUpperCase() + service.slice(1)} configuration saved!`, 'success');
-        }, 1500);
+            showToast('Advanced settings saved!', 'success');
+            return;
+        }
+        
+        // Send to real API endpoint
+        fetch('/api/config/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(configData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading(button, originalText);
+            
+            if (data.success) {
+                showToast(`${service.charAt(0).toUpperCase() + service.slice(1)} configuration saved successfully!`, 'success');
+                
+                // Reload page to show updated API status
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                showToast(`Error: ${data.error || 'Failed to save configuration'}`, 'error');
+            }
+        })
+        .catch(error => {
+            hideLoading(button, originalText);
+            console.error('Save error:', error);
+            showToast('Failed to save configuration. Please try again.', 'error');
+        });
     }
     
     // Temperature slider update

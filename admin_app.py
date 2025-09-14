@@ -3063,6 +3063,158 @@ def api_save_settings():
     except Exception as e:
         return jsonify({
             'success': False,
+            'error': f'Failed to save settings: {str(e)}'
+        }), 500
+
+@app.route('/api/config/save', methods=['POST'])
+@require_auth
+def api_save_config():
+    """Save API configuration (API keys, models, etc.)"""
+    try:
+        data = request.get_json() or {}
+        
+        # Update environment variables for current session
+        if 'suno_api_key' in data and data['suno_api_key']:
+            os.environ['SUNO_API_KEY'] = data['suno_api_key']
+        
+        if 'gemini_api_key' in data and data['gemini_api_key']:
+            os.environ['GEMINI_API_KEY'] = data['gemini_api_key']
+            
+        if 'gemini_model' in data and data['gemini_model']:
+            os.environ['GEMINI_MODEL'] = data['gemini_model']
+        
+        # Update .env file for persistence
+        env_file_path = '.env'
+        env_lines = []
+        
+        # Read existing .env file
+        if os.path.exists(env_file_path):
+            with open(env_file_path, 'r') as f:
+                env_lines = f.readlines()
+        
+        # Update or add API keys
+        keys_to_update = {
+            'SUNO_API_KEY': data.get('suno_api_key'),
+            'GEMINI_API_KEY': data.get('gemini_api_key'),
+            'GEMINI_MODEL': data.get('gemini_model')
+        }
+        
+        # Create a dict of existing env vars
+        existing_vars = {}
+        for line in env_lines:
+            if '=' in line and not line.strip().startswith('#'):
+                key, value = line.split('=', 1)
+                existing_vars[key.strip()] = value.strip()
+        
+        # Update with new values
+        for key, value in keys_to_update.items():
+            if value:  # Only update if value is provided
+                existing_vars[key] = value
+        
+        # Write back to .env file
+        with open(env_file_path, 'w') as f:
+            for key, value in existing_vars.items():
+                f.write(f"{key}={value}\n")
+        
+        # Update API status after saving
+        system_state.update_api_status()
+        
+        return jsonify({
+            'success': True,
+            'message': 'API configuration saved successfully',
+            'api_status': system_state.api_status
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Failed to save configuration: {str(e)}'
+        }), 500
+
+@app.route('/api/config/test', methods=['POST'])
+@require_auth
+def api_test_config():
+    """Test API configuration with provided keys"""
+    try:
+        data = request.get_json() or {}
+        service = data.get('service')
+        
+        if service == 'suno':
+            api_key = data.get('api_key')
+            if not api_key:
+                return jsonify({'success': False, 'error': 'API key required'}), 400
+                
+            # Temporarily set the API key for testing
+            original_key = os.getenv('SUNO_API_KEY')
+            os.environ['SUNO_API_KEY'] = api_key
+            
+            try:
+                suno = SunoClient()
+                credits = suno.get_credits()
+                
+                return jsonify({
+                    'success': True,
+                    'message': f'Suno API connection successful! {credits} credits available',
+                    'credits': credits
+                })
+            except Exception as e:
+                return jsonify({
+                    'success': False,
+                    'error': f'Suno API test failed: {str(e)}'
+                })
+            finally:
+                # Restore original key
+                if original_key:
+                    os.environ['SUNO_API_KEY'] = original_key
+                    
+        elif service == 'gemini':
+            api_key = data.get('api_key')
+            model = data.get('model', 'gemini-2.5-flash')
+            
+            if not api_key:
+                return jsonify({'success': False, 'error': 'API key required'}), 400
+                
+            # Temporarily set the API key for testing
+            original_key = os.getenv('GEMINI_API_KEY')
+            original_model = os.getenv('GEMINI_MODEL')
+            os.environ['GEMINI_API_KEY'] = api_key
+            os.environ['GEMINI_MODEL'] = model
+            
+            try:
+                gemini = GeminiClient()
+                # Simple test to verify API key works
+                test_response = gemini.generate_content("Test message - respond with 'OK'")
+                
+                return jsonify({
+                    'success': True,
+                    'message': f'Gemini AI connection successful! Model: {model}',
+                    'model': model,
+                    'test_response': test_response
+                })
+            except Exception as e:
+                return jsonify({
+                    'success': False,
+                    'error': f'Gemini API test failed: {str(e)}'
+                })
+            finally:
+                # Restore original keys
+                if original_key:
+                    os.environ['GEMINI_API_KEY'] = original_key
+                if original_model:
+                    os.environ['GEMINI_MODEL'] = original_model
+        
+        else:
+            return jsonify({'success': False, 'error': 'Invalid service'}), 400
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Test failed: {str(e)}'
+        }), 500
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
             'error': str(e)
         }), 500
 
