@@ -30,19 +30,81 @@ from core.utils.file_manager import FileManager
 from core.analytics.collector import AnalyticsCollector
 from core.analytics.analyzer import PerformanceAnalyzer
 
-# Import new voice cloning system and trending hijacker
-from voice_cloning_empire import VoiceCloningEmpire
-from live_trending_hijacker import LiveTrendingHijacker
-
-# Import unlimited empire system
-from ai_channel_generator import AIChannelGenerator
-
-# Import advanced genre system
-from advanced_genre_system import advanced_genre_system, recommendation_engine, VocalIntelligenceEngine
-from gemini_vocal_intelligence import gemini_vocal_engine
-from music_industry_analytics import music_analytics
+# Import core functionality only
+# Note: Advanced modules removed during cleanup - using core functionality
 
 load_dotenv()
+
+# Mock classes for removed modules to prevent import errors
+class MockVoiceEmpire:
+    def generate_empire_report(self):
+        return {"status": "disabled", "message": "Voice empire functionality removed during cleanup"}
+    def initialize_all_characters(self):
+        return {"success": False, "message": "Module not available"}
+    def generate_voice_content_batch(self, count):
+        return {"success": False, "message": "Module not available"}
+    def get_character_performance(self, character_name, days):
+        return {"performance": {}, "message": "Module not available"}
+    def generate_character_script(self, character_name, scenario, params):
+        return {"success": False, "message": "Module not available"}
+    def synthesize_voice(self, character_name, script):
+        return {"success": False, "message": "Module not available"}
+
+class MockTrendingHijacker:
+    def start_real_time_monitoring(self):
+        return {"success": False, "message": "Module not available"}
+    def stop_monitoring(self):
+        return {"success": False, "message": "Module not available"}
+    def get_hijacking_dashboard(self):
+        return {"data": {}, "message": "Module not available"}
+    def get_trend_performance_report(self, days):
+        return {"report": {}, "message": "Module not available"}
+
+class MockChannelGenerator:
+    def get_empire_statistics(self):
+        return {"stats": {}, "message": "Module not available"}
+    def generate_channel_concept(self, category):
+        return {"success": False, "message": "Module not available"}
+    def generate_batch_concepts(self, count, category):
+        return {"success": False, "message": "Module not available"}
+    def get_concepts(self, status):
+        return {"concepts": [], "message": "Module not available"}
+    def approve_concept(self, concept_id):
+        return {"success": False, "message": "Module not available"}
+    def get_recent_activity(self):
+        return {"activity": [], "message": "Module not available"}
+    def create_expansion_plan(self, *args):
+        return {"success": False, "message": "Module not available"}
+
+class MockVocalAI:
+    def decide_vocal_configuration(self, genre_info, vocal_context):
+        return {"vocal_type": "instrumental", "confidence": 0.5, "reasoning": "Mock response"}
+
+class MockGeminiVocalAI:
+    def get_comprehensive_vocal_strategy(self, context):
+        return {"vocal_configuration": {"vocal_type": "instrumental"}, "strategy": {}}
+    def _get_trending_factor(self, vocal_type):
+        return 0.5
+    def _get_audience_compatibility(self, vocal_type, target_audience):
+        return 0.5
+    def _get_revenue_optimization(self, vocal_type, context):
+        return 0.5
+    def _get_competitive_landscape(self, vocal_type, genre_info):
+        return 0.5
+
+class MockMusicAnalytics:
+    def __init__(self):
+        self.industry_benchmarks = {}
+    def generate_daily_report(self):
+        return {"report": {}, "message": "Module not available"}
+    def analyze_genre_performance(self, genre_path, days):
+        return {"performance": {}, "message": "Module not available"}
+    def get_market_opportunities(self):
+        return {"opportunities": [], "message": "Module not available"}
+    def collect_real_time_data(self):
+        return {"data": {}, "message": "Module not available"}
+    def save_performance_snapshot(self, data):
+        return {"success": False, "message": "Module not available"}
 
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', secrets.token_hex(32))
@@ -55,12 +117,13 @@ class SystemState:
         self.active_sessions = {}
         self.api_status = {}
         self.batch_operations = {}
-        self.voice_empire = VoiceCloningEmpire()  # Initialize voice cloning system
-        self.trending_hijacker = LiveTrendingHijacker()  # Initialize trending hijacker
-        self.ai_channel_generator = AIChannelGenerator()  # Initialize unlimited empire system
-        self.vocal_ai = VocalIntelligenceEngine()  # Initialize AI vocal decision engine
-        self.gemini_vocal_ai = gemini_vocal_engine  # Initialize Gemini AI vocal intelligence
-        self.music_analytics = music_analytics  # Initialize music industry analytics engine
+        # Mock objects for removed modules to prevent errors
+        self.voice_empire = MockVoiceEmpire()
+        self.trending_hijacker = MockTrendingHijacker()
+        self.ai_channel_generator = MockChannelGenerator()
+        self.vocal_ai = MockVocalAI()
+        self.gemini_vocal_ai = MockGeminiVocalAI()
+        self.music_analytics = MockMusicAnalytics()
         
     def update_api_status(self):
         """Update API connection status"""
