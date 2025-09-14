@@ -174,12 +174,17 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function loadOperations() {
-    fetch('/api/batch/operations')
+    fetch('/api/background-tasks')
         .then(response => response.json())
         .then(data => {
-            operations = data.operations || [];
-            updateStatistics();
-            renderOperations();
+            if (data.success) {
+                operations = data.tasks || [];
+                updateStatisticsFromAPI(data.statistics);
+                renderOperations();
+            } else {
+                console.error('API Error:', data.message);
+                showErrorInList('Failed to load operations: ' + data.message);
+            }
         })
         .catch(error => {
             console.error('Error loading operations:', error);
@@ -199,6 +204,13 @@ function updateStatistics() {
     document.getElementById('runningOperations').textContent = stats.running;
     document.getElementById('completedOperations').textContent = stats.completed;
     document.getElementById('failedOperations').textContent = stats.failed;
+}
+
+function updateStatisticsFromAPI(apiStats) {
+    document.getElementById('totalOperations').textContent = apiStats.total || 0;
+    document.getElementById('runningOperations').textContent = apiStats.running || 0;
+    document.getElementById('completedOperations').textContent = apiStats.completed || 0;
+    document.getElementById('failedOperations').textContent = apiStats.failed || 0;
 }
 
 function renderOperations() {
@@ -221,13 +233,22 @@ function renderOperations() {
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <h6 class="card-title mb-0">
-                            <i class="fas fa-${getOperationIcon(operation.type)} me-2"></i>
-                            ${operation.title || operation.type}
+                            <i class="fas fa-${getOperationIcon(operation.task_type)} me-2"></i>
+                            ${operation.title || operation.task_type}
                         </h6>
                         <span class="operation-status status-${operation.status}">
                             ${operation.status.charAt(0).toUpperCase() + operation.status.slice(1)}
                         </span>
                     </div>
+                    
+                    ${operation.channel_name ? `
+                        <div class="mb-2">
+                            <small class="text-muted">
+                                <i class="fab fa-youtube me-1"></i>
+                                ${operation.channel_name}
+                            </small>
+                        </div>
+                    ` : ''}
                     
                     <p class="card-text text-muted small mb-2">
                         ${operation.description || 'No description available'}
@@ -236,7 +257,7 @@ function renderOperations() {
                     ${operation.progress !== undefined ? `
                         <div class="mb-2">
                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                <small class="text-muted">Progress</small>
+                                <small class="text-muted">${operation.current_step || 'Progress'}</small>
                                 <small class="text-muted">${operation.progress}%</small>
                             </div>
                             <div class="progress progress-mini">
@@ -245,6 +266,11 @@ function renderOperations() {
                                      style="width: ${operation.progress}%">
                                 </div>
                             </div>
+                            ${operation.current_step_detail ? `
+                                <div class="mt-1">
+                                    <small class="text-muted">${operation.current_step_detail}</small>
+                                </div>
+                            ` : ''}
                         </div>
                     ` : ''}
                     
@@ -254,16 +280,16 @@ function renderOperations() {
                             ${formatTime(operation.started_at)}
                         </small>
                         <div class="operation-actions">
-                            <button class="btn btn-sm btn-outline-info" onclick="viewOperationDetails('${operation.id}')">
+                            <button class="btn btn-sm btn-outline-info" onclick="viewOperationDetails('${operation.task_id}')">
                                 <i class="fas fa-eye"></i>
                             </button>
                             ${operation.status === 'running' ? `
-                                <button class="btn btn-sm btn-outline-warning" onclick="pauseOperation('${operation.id}')">
+                                <button class="btn btn-sm btn-outline-warning" onclick="pauseOperation('${operation.task_id}')">
                                     <i class="fas fa-pause"></i>
                                 </button>
                             ` : ''}
                             ${operation.status === 'failed' ? `
-                                <button class="btn btn-sm btn-outline-success" onclick="retryOperation('${operation.id}')">
+                                <button class="btn btn-sm btn-outline-success" onclick="retryOperation('${operation.task_id}')">
                                     <i class="fas fa-redo"></i>
                                 </button>
                             ` : ''}
@@ -280,8 +306,11 @@ function renderOperations() {
 function getOperationIcon(type) {
     const icons = {
         'batch_generation': 'music',
-        'audio_merge': 'link',
-        'video_creation': 'video'
+        'audio_merge': 'link', 
+        'video_creation': 'video',
+        'full_video': 'video',
+        'music_only': 'music',
+        'thumbnail_only': 'image'
     };
     return icons[type] || 'tasks';
 }
@@ -330,9 +359,26 @@ function refreshOperations() {
     loadOperations();
 }
 
-function viewOperationDetails(operationId) {
-    const operation = operations.find(op => op.id === operationId);
-    if (!operation) return;
+function viewOperationDetails(taskId) {
+    // Fetch fresh task details from API
+    fetch(`/api/background-tasks/${taskId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                alert('Failed to load task details');
+                return;
+            }
+            
+            const operation = data.task;
+            showOperationDetailsModal(operation);
+        })
+        .catch(error => {
+            console.error('Error loading task details:', error);
+            alert('Failed to load task details');
+        });
+}
+
+function showOperationDetailsModal(operation) {
     
     const modal = new bootstrap.Modal(document.getElementById('operationDetailModal'));
     const content = document.getElementById('operationDetailContent');
@@ -342,16 +388,24 @@ function viewOperationDetails(operationId) {
             <div class="col-md-6">
                 <h6>Operation Information</h6>
                 <table class="table table-sm">
-                    <tr><td><strong>ID:</strong></td><td>${operation.id}</td></tr>
-                    <tr><td><strong>Type:</strong></td><td>${operation.type}</td></tr>
+                    <tr><td><strong>Task ID:</strong></td><td>${operation.task_id || operation.id}</td></tr>
+                    <tr><td><strong>Type:</strong></td><td>${operation.task_type || operation.type || 'Unknown'}</td></tr>
                     <tr><td><strong>Status:</strong></td><td><span class="operation-status status-${operation.status}">${operation.status}</span></td></tr>
-                    <tr><td><strong>Started:</strong></td><td>${formatTime(operation.started_at)}</td></tr>
+                    <tr><td><strong>Channel:</strong></td><td>${operation.channel_name || 'Unknown'}</td></tr>
+                    <tr><td><strong>Started:</strong></td><td>${formatTime(operation.started_at || operation.created_at)}</td></tr>
                     ${operation.completed_at ? `<tr><td><strong>Completed:</strong></td><td>${formatTime(operation.completed_at)}</td></tr>` : ''}
                 </table>
             </div>
             <div class="col-md-6">
                 <h6>Progress Details</h6>
-                <p>${operation.current_step || 'No progress information'}</p>
+                <div class="mb-2">
+                    <strong>Current Step:</strong> ${operation.current_step || 'No progress information'}
+                </div>
+                ${operation.current_step_detail ? `
+                    <div class="mb-2">
+                        <strong>Detail:</strong> ${operation.current_step_detail}
+                    </div>
+                ` : ''}
                 ${operation.progress !== undefined ? `
                     <div class="progress mb-3">
                         <div class="progress-bar ${getProgressBarClass(operation.status)}" 
@@ -361,9 +415,19 @@ function viewOperationDetails(operationId) {
                         </div>
                     </div>
                 ` : ''}
-                ${operation.error ? `
+                ${operation.genre ? `
+                    <div class="mb-2">
+                        <strong>Genre:</strong> ${operation.genre}
+                    </div>
+                ` : ''}
+                ${operation.vocal_type ? `
+                    <div class="mb-2">
+                        <strong>Type:</strong> ${operation.vocal_type}
+                    </div>
+                ` : ''}
+                ${operation.error_message ? `
                     <div class="alert alert-danger">
-                        <strong>Error:</strong> ${operation.error}
+                        <strong>Error:</strong> ${operation.error_message}
                     </div>
                 ` : ''}
             </div>

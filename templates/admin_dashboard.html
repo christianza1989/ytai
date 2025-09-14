@@ -266,6 +266,34 @@
                         </a>
                     </div>
                 </div>
+                
+                <!-- Second row for additional actions -->
+                <div class="row">
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <a href="{{ url_for('music_queue_admin') }}" class="btn btn-secondary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4">
+                            <i class="fas fa-queue fa-2x mb-2"></i>
+                            <span>Music Queue</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <a href="{{ url_for('youtube_channels') }}" class="btn btn-danger w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4">
+                            <i class="fab fa-youtube fa-2x mb-2"></i>
+                            <span>YouTube Channels</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <a href="{{ url_for('api_config') }}" class="btn btn-dark w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4">
+                            <i class="fas fa-cog fa-2x mb-2"></i>
+                            <span>API Config</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <a href="{{ url_for('music_gallery') }}" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4">
+                            <i class="fas fa-music fa-2x mb-2"></i>
+                            <span>Music Gallery</span>
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

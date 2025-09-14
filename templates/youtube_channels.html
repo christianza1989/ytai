@@ -666,6 +666,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.target.closest('.btn-outline-success')) {
             const button = e.target.closest('.btn-outline-success');
             const channelId = button.getAttribute('data-channel-id');
+            console.log('🎬 Generate Content button clicked:', {
+                channelId: channelId,
+                title: button.getAttribute('title'),
+                hasTitle: button.getAttribute('title') === 'Generate Content'
+            });
             if (channelId && button.getAttribute('title') === 'Generate Content') {
                 e.preventDefault();
                 generateContent(channelId);
@@ -813,6 +818,9 @@ function renderChannelsTable() {
         const lastUpload = channel.last_upload;
         const uploadSchedule = channel.upload_schedule || 'Not set';
         const channelId = channel.id || 0;
+        
+        // Debug: Log channel ID for template
+        console.log('🎬 Rendering channel ID in template:', channelId, 'from channel.id:', channel.id);
         
         const statusBadge = getStatusBadge(status);
         const lastUploadFormatted = formatDate(lastUpload);
@@ -1036,9 +1044,21 @@ function editChannel(channelId) {
     document.getElementById('channelDescription').value = channel.description || '';
     
     // Populate API credentials - FIXED: Now loading saved credentials!
+    console.log('📥 Frontend editChannel - API credentials from channel data:', {
+        api_key: channel.api_key ? '***set***' : 'empty/missing',
+        client_id: channel.client_id ? '***set***' : 'empty/missing',
+        client_secret: channel.client_secret ? '***set***' : 'empty/missing'
+    });
+    
     document.getElementById('apiKey').value = channel.api_key || '';
     document.getElementById('clientId').value = channel.client_id || '';
     document.getElementById('clientSecret').value = channel.client_secret || '';
+    
+    console.log('📝 Frontend editChannel - Form fields after population:', {
+        apiKey: document.getElementById('apiKey').value ? '***set***' : 'empty',
+        clientId: document.getElementById('clientId').value ? '***set***' : 'empty',
+        clientSecret: document.getElementById('clientSecret').value ? '***set***' : 'empty'
+    });
     
     // Populate genre selection
     document.querySelectorAll('.genre-checkbox').forEach(cb => cb.checked = false);
@@ -1388,8 +1408,26 @@ function setupOAuth() {
 }
 
 function generateContent(channelId) {
-    const channel = channels.find(c => c.id === channelId);
-    if (!channel) return;
+    console.log('🎬 generateContent called with channelId:', channelId, 'type:', typeof channelId);
+    console.log('🎬 Available channels:', channels.map(c => ({id: c.id, name: c.channel_name || c.name, type: typeof c.id})));
+    
+    // Try to find channel with different ID comparisons (same as editChannel function)
+    let channel = channels.find(c => c.id === channelId);
+    if (!channel) {
+        channel = channels.find(c => c.id === parseInt(channelId));
+    }
+    if (!channel) {
+        channel = channels.find(c => String(c.id) === String(channelId));
+    }
+    
+    if (!channel) {
+        console.error('🎬 Channel not found for ID:', channelId);
+        console.error('🎬 Available channel IDs:', channels.map(c => c.id));
+        showToast('Channel not found', 'error');
+        return;
+    }
+    
+    console.log('🎬 Found channel:', channel.channel_name || channel.name);
     
     Swal.fire({
         title: `Generate Content for ${channel.name}`,
@@ -1427,11 +1465,11 @@ function generateMusic(channelId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showToast('🎵 Music generation started for channel!', 'info');
+            showToast('🎵 Music generation started! Redirecting to Batch Operations...', 'info');
             // Optionally redirect to task monitor
             if (data.task_id) {
                 setTimeout(() => {
-                    window.location.href = `/generator?task=${data.task_id}`;
+                    window.location.href = `/batch`;
                 }, 2000);
             }
         } else {
@@ -1460,7 +1498,7 @@ function generateThumbnail(channelId) {
             showToast('🖼️ Thumbnail generation started with Nano-Banana!', 'info');
             if (data.task_id) {
                 setTimeout(() => {
-                    window.location.href = `/generator?task=${data.task_id}`;
+                    window.location.href = `/batch`;
                 }, 2000);
             }
         } else {
@@ -1486,10 +1524,10 @@ function generateFullVideo(channelId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showToast('🎬 Full video generation pipeline started!', 'info');
+            showToast('🎬 Full video generation started! Redirecting to Batch Operations...', 'info');
             if (data.task_id) {
                 setTimeout(() => {
-                    window.location.href = `/generator?task=${data.task_id}`;
+                    window.location.href = `/batch`;
                 }, 2000);
             }
         } else {

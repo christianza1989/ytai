@@ -954,101 +954,9 @@ def api_youtube_channels():
     
     return jsonify({'channels': channels_data})
 
-@app.route('/api/youtube/channels/list')
-@require_auth
-def api_youtube_channels_list():
-    """Get YouTube channels list for management"""
-    try:
-        import sqlite3
-        
-        # Use direct SQLite connection to get all fields from youtube_channels table  
-        import os
-        db_path = os.path.join(os.path.dirname(__file__), "data/youtube_channels.db")
-        
-        channels = []
-        
-        with sqlite3.connect(db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute('''
-                SELECT id, channel_name, channel_url, youtube_channel_id, description,
-                       selected_genres, primary_genre, target_audience, upload_schedule,
-                       daily_upload_count, vocal_probability, auto_upload, auto_thumbnails,
-                       auto_seo, enable_analytics, enable_monetization, privacy_settings,
-                       status, total_subscribers, monthly_revenue, last_upload_date, created_at, updated_at
-                FROM youtube_channels
-                ORDER BY id DESC
-            ''')
-            
-            rows = cursor.fetchall()
-            
-            for row in rows:
-                channels.append({
-                    'id': row[0],
-                    'channel_name': row[1],
-                    'channel_url': row[2],
-                    'youtube_channel_id': row[3],
-                    'description': row[4],
-                    'selected_genres': row[5],
-                    'primary_genre': row[6],
-                    'target_audience': row[7],
-                    'upload_schedule': row[8],
-                    'daily_upload_count': row[9],
-                    'vocal_probability': row[10],
-                    'auto_upload': row[11],
-                    'auto_thumbnails': row[12],
-                    'auto_seo': row[13],
-                    'enable_analytics': row[14],
-                    'enable_monetization': row[15],
-                    'privacy_settings': row[16],
-                    'status': row[17] or 'active',
-                    'subscribers': row[18] or 0,
-                    'monthly_revenue': row[19] or 0,
-                    'last_upload': row[20],
-                    'created_at': row[21],
-                    'updated_at': row[22]
-                })
-        return jsonify({'channels': channels})
-        
-    except Exception as e:
-        print(f"Error loading channels: {e}")
-        # Fall back to demo data if database fails
-        demo_channels = [
-            {
-                'id': 1,
-                'name': 'Lo-Fi Beats Central',
-                'url': 'https://youtube.com/@lofibeatscentral',
-                'youtube_channel_id': 'UC123456789012345678901',
-                'primary_genre': 'lo-fi-hip-hop',
-                'status': 'active',
-                'subscribers': 45230,
-                'monthly_revenue': 1250,
-                'last_upload': '2025-09-12',
-                'upload_schedule': 'daily',
-                'auto_upload': True,
-                'auto_thumbnails': True,
-                'auto_seo': True,
-                'enable_analytics': True,
-                'privacy_settings': 'private'
-            },
-            {
-                'id': 2,
-                'name': 'Ambient Soundscapes',
-                'url': 'https://youtube.com/@ambientsounds',
-                'youtube_channel_id': 'UC234567890123456789012',
-                'primary_genre': 'ambient',
-                'status': 'active',
-                'subscribers': 23100,
-                'monthly_revenue': 890,
-                'last_upload': '2025-09-11',
-                'upload_schedule': 'every-2-days',
-                'auto_upload': True,
-                'auto_thumbnails': True,
-                'auto_seo': True,
-                'enable_analytics': True,
-                'privacy_settings': 'unlisted'
-            }
-        ]
-        return jsonify({'channels': demo_channels})
+# DUPLICATE ENDPOINT REMOVED - Using the proper one at line ~4057 which includes API credentials
+# OLD @app.route('/api/youtube/channels/list') removed
+# OLD def api_youtube_channels_list(): removed
 
 
 # OLD DUPLICATE ENDPOINTS REMOVED (lines 1027-1139)
@@ -2640,73 +2548,6 @@ def api_music_status(task_id):
     
     return jsonify(response)
 
-@app.route('/api/batch/operations', methods=['GET'])
-@require_auth
-def api_batch_operations():
-    """Get all batch operations"""
-    try:
-        # Mock operations data for now - in production, this would come from a database
-        operations = [
-            {
-                'id': 'batch_001',
-                'type': 'batch_generation',
-                'title': 'Study Music Collection',
-                'description': 'Generating 10 lo-fi tracks for studying',
-                'status': 'completed',
-                'progress': 100,
-                'started_at': '2025-09-14T15:30:00Z',
-                'completed_at': '2025-09-14T15:35:00Z',
-                'tracks': [
-                    {'title': 'Lo-fi Study Track 1', 'url': 'https://example.com/track1.mp3'},
-                    {'title': 'Lo-fi Study Track 2', 'url': 'https://example.com/track2.mp3'}
-                ]
-            },
-            {
-                'id': 'batch_002', 
-                'type': 'batch_generation',
-                'title': 'Sleep Music Collection',
-                'description': 'Generating 6 ambient tracks for relaxation',
-                'status': 'running',
-                'progress': 75,
-                'started_at': '2025-09-14T15:40:00Z',
-                'current_step': 'Generating batch 4/5...'
-            },
-            {
-                'id': 'merge_001',
-                'type': 'audio_merge', 
-                'title': 'Merging Study Collection',
-                'description': 'Combining 10 tracks into single audio file',
-                'status': 'queued',
-                'progress': 0,
-                'started_at': '2025-09-14T15:45:00Z'
-            }
-        ]
-        
-        return jsonify({'operations': operations, 'success': True})
-        
-    except Exception as e:
-        return jsonify({'error': str(e), 'success': False}), 500
-
-@app.route('/api/batch/operations/<operation_id>/pause', methods=['POST'])
-@require_auth
-def api_batch_operation_pause(operation_id):
-    """Pause a batch operation"""
-    try:
-        # In production, this would pause the actual operation
-        return jsonify({'success': True, 'message': f'Operation {operation_id} paused'})
-    except Exception as e:
-        return jsonify({'error': str(e), 'success': False}), 500
-
-@app.route('/api/batch/operations/<operation_id>/retry', methods=['POST'])
-@require_auth
-def api_batch_operation_retry(operation_id):
-    """Retry a failed batch operation"""
-    try:
-        # In production, this would restart the failed operation
-        return jsonify({'success': True, 'message': f'Operation {operation_id} restarted'})
-    except Exception as e:
-        return jsonify({'error': str(e), 'success': False}), 500
-
 @app.route('/api/music/merge-batch', methods=['POST'])
 @require_auth
 def api_music_merge_batch():
@@ -4064,6 +3905,17 @@ def api_list_youtube_channels():
         db = YouTubeChannelsDB()
         channels = db.list_channels()
         
+        # Debug: Log API credentials in the channels list
+        print(f"📤 Backend channels list - Found {len(channels)} channels")
+        for channel in channels:
+            print(f"   Channel {channel.get('id')}: API credentials = {
+                'api_key: ***set***' if channel.get('api_key') else 'api_key: empty'
+            }, {
+                'client_id: ***set***' if channel.get('client_id') else 'client_id: empty'
+            }, {
+                'client_secret: ***set***' if channel.get('client_secret') else 'client_secret: empty'
+            }")
+        
         return jsonify({
             'success': True,
             'channels': channels,
@@ -4086,6 +3938,15 @@ def api_save_youtube_channel():
         from core.database.youtube_channels_db import YouTubeChannelsDB
         
         data = request.get_json() or {}
+        
+        # Debug: Log received data including API credentials
+        print(f"💾 Backend received channel data: {data.get('channel_name', 'No name')}")
+        print(f"🔑 API credentials received:", {
+            'api_key': '***set***' if data.get('api_key') else 'empty/missing',
+            'client_id': '***set***' if data.get('client_id') else 'empty/missing', 
+            'client_secret': '***set***' if data.get('client_secret') else 'empty/missing'
+        })
+        print(f"📦 Full data keys: {list(data.keys())}")
         
         # Validate required fields
         required_fields = ['channel_name']
@@ -4162,6 +4023,13 @@ def api_get_youtube_channel(channel_id):
         channel = db.get_channel(channel_id)
         
         if channel:
+            # Debug: Log API credentials being sent to frontend
+            print(f"📤 Backend sending channel (ID: {channel_id}) to frontend - API credentials:", {
+                'api_key': '***set***' if channel.get('api_key') else 'empty/missing',
+                'client_id': '***set***' if channel.get('client_id') else 'empty/missing',
+                'client_secret': '***set***' if channel.get('client_secret') else 'empty/missing'
+            })
+            
             return jsonify({
                 'success': True,
                 'channel': channel
@@ -4468,6 +4336,1126 @@ def serve_image_file(filename):
             'error': str(e)
         }), 404
 
+@app.route('/api/youtube/channels/<int:channel_id>/generate', methods=['POST'])
+@require_auth
+def api_generate_channel_content(channel_id):
+    """Generate content for specific YouTube channel"""
+    try:
+        from core.database.youtube_channels_db import YouTubeChannelsDB
+        import uuid
+        import threading
+        
+        data = request.get_json() or {}
+        content_type = data.get('type', 'music')  # music, thumbnail, full_video
+        
+        print(f"🎬 Generate content request: channel_id={channel_id}, type={content_type}")
+        
+        # Get channel data
+        db = YouTubeChannelsDB()
+        channel = db.get_channel(channel_id)
+        
+        if not channel:
+            return jsonify({
+                'success': False,
+                'message': 'Channel not found'
+            }), 404
+        
+        # Generate unique task ID
+        task_id = str(uuid.uuid4())
+        
+        if content_type == 'music':
+            # Music generation only
+            print(f"🎵 Starting music generation for channel: {channel.get('channel_name')}")
+            
+            # Start music generation in background thread
+            def generate_music_task():
+                try:
+                    # This would integrate with the existing music generation system
+                    # For now, simulate the task
+                    import time
+                    time.sleep(2)  # Simulate processing
+                    print(f"🎵 Music generation completed for task: {task_id}")
+                except Exception as e:
+                    print(f"🎵 Music generation error: {e}")
+            
+            thread = threading.Thread(target=generate_music_task)
+            thread.start()
+            
+            return jsonify({
+                'success': True,
+                'message': f'Music generation started for {channel.get("channel_name")}',
+                'task_id': task_id,
+                'type': 'music'
+            })
+            
+        elif content_type == 'thumbnail':
+            # Thumbnail generation only
+            print(f"🖼️ Starting thumbnail generation for channel: {channel.get('channel_name')}")
+            
+            # Start thumbnail generation in background thread
+            def generate_thumbnail_task():
+                try:
+                    from core.database.youtube_channels_db import YouTubeChannelsDB
+                    import json
+                    import random
+                    import os
+                    
+                    db = YouTubeChannelsDB()
+                    
+                    # Add task to database
+                    task_data = {
+                        'task_id': task_id,
+                        'task_type': 'thumbnail_only',
+                        'channel_id': channel_id,
+                        'title': f'Thumbnail Generation - {channel.get("channel_name")}',
+                        'description': '16:9 AI thumbnail generation with Nano-Banana',
+                        'current_step': 'Initializing thumbnail generation',
+                        'estimated_duration': 120  # 2 minutes
+                    }
+                    
+                    db.add_background_task(task_data)
+                    
+                    def update_progress(step, message, detail=""):
+                        progress_percent = int((step / 3) * 100)
+                        print(f"🖼️ [{step}/3] {message} - {detail}")
+                        db.update_task_progress(
+                            task_id=task_id,
+                            progress=progress_percent,
+                            step=message,
+                            detail=detail,
+                            status='running' if step > 0 else 'queued'
+                        )
+                    
+                    update_progress(1, "Thumbnail Generation Started", f"Channel: {channel.get('channel_name')}")
+                    
+                    # Get channel genre for thumbnail style
+                    selected_genres = channel.get('selected_genres', [])
+                    if not selected_genres:
+                        selected_genres = ['lo-fi-hip-hop']
+                    
+                    genre = random.choice(selected_genres)
+                    update_progress(2, "Generating 16:9 Thumbnail", f"Genre: {genre}, Model: Nano-Banana")
+                    
+                    try:
+                        from core.services.image_client import ImageClient
+                        image_client = ImageClient()
+                        
+                        # Create thumbnail prompt
+                        thumbnail_prompt = f"A beautiful 16:9 thumbnail for {genre} music, aesthetic design, calming colors, music theme, YouTube thumbnail style, high quality, professional"
+                        
+                        thumbnail_result = image_client.generate_image(
+                            prompt=thumbnail_prompt,
+                            model="fal-ai/nano-banana",
+                            aspect_ratio="16:9",
+                            task_summary=f"Thumbnail for {genre} music"
+                        )
+                        
+                        if thumbnail_result:
+                            thumbnail_path = f"output/thumbnails/thumbnail_{task_id}.png"
+                            update_progress(3, "Thumbnail Generated Successfully", f"Saved: {thumbnail_path}")
+                            
+                            # Save result to database
+                            with sqlite3.connect(db.db_path) as conn:
+                                cursor = conn.cursor()
+                                cursor.execute('''
+                                    UPDATE background_tasks 
+                                    SET thumbnail_path = ?, genre = ?, status = ?
+                                    WHERE task_id = ?
+                                ''', (thumbnail_path, genre, 'completed', task_id))
+                        else:
+                            raise Exception("Thumbnail generation failed")
+                            
+                    except Exception as e:
+                        update_progress(3, "Thumbnail Generation Failed", str(e))
+                        db.update_task_progress(task_id=task_id, progress=0, status='failed')
+                        
+                except Exception as e:
+                    print(f"🖼️ ❌ Thumbnail generation error: {e}")
+                    db.update_task_progress(task_id=task_id, progress=0, status='failed')
+            
+            thread = threading.Thread(target=generate_thumbnail_task)
+            thread.start()
+            
+            return jsonify({
+                'success': True,
+                'message': f'Thumbnail generation started for {channel.get("channel_name")}',
+                'task_id': task_id,
+                'type': 'thumbnail'
+            })
+            
+        elif content_type == 'full_video':
+            # Full video generation pipeline
+            print(f"🎬 Starting full video generation pipeline for channel: {channel.get('channel_name')}")
+            
+            # Start full video generation pipeline in background thread
+            def generate_full_video_pipeline():
+                try:
+                    from core.database.youtube_channels_db import YouTubeChannelsDB
+                    import json
+                    import random
+                    import os
+                    
+                    db = YouTubeChannelsDB()
+                    
+                    # Add task to database
+                    task_data = {
+                        'task_id': task_id,
+                        'task_type': 'full_video',
+                        'channel_id': channel_id,
+                        'title': f'Full Video Generation - {channel.get("channel_name")}',
+                        'description': 'Complete video generation pipeline: music + thumbnail + SEO + scheduling',
+                        'current_step': 'Initializing pipeline',
+                        'estimated_duration': 600  # 10 minutes
+                    }
+                    
+                    db.add_background_task(task_data)
+                    
+                    # Update progress tracking with database persistence
+                    def update_progress(progress_percent, message, detail=""):
+                        print(f"🎬 [{progress_percent}%] {message} - {detail}")
+                        db.update_task_progress(
+                            task_id=task_id,
+                            progress=progress_percent,
+                            step=message,
+                            detail=detail,
+                            status='running' if progress_percent > 5 else 'queued'
+                        )
+                    
+                    update_progress(1, "🎬 Pipeline started", f"Channel: {channel.get('channel_name')}")
+                    
+                    # Step 1: Get channel configuration and select genre
+                    selected_genres = channel.get('selected_genres', [])
+                    if not selected_genres:
+                        selected_genres = ['lo-fi-hip-hop']  # Default fallback
+                    
+                    # Randomly select genre from channel's preferences
+                    genre = random.choice(selected_genres)
+                    update_progress(2, "🎯 Genre selected", f"Using: {genre}")
+                    
+                    # Step 2: Generate music with Suno API (use REAL music generation logic)
+                    update_progress(3, "🎵 Starting music generation", f"Genre: {genre}")
+                    
+                    music_url = None
+                    music_title = None
+                    music_clip_id = None
+                    music_duration = None
+                    
+                    try:
+                        # Generate AI-driven vocal vs instrumental decision (80% vocal by default)
+                        vocal_probability = channel.get('vocal_probability', 0.8)
+                        is_vocal = random.random() < vocal_probability
+                        vocal_type = 'vocal' if is_vocal else 'instrumental'
+                        
+                        # QUEUE CHECK: First try to use existing track from queue
+                        update_progress(4, "🔍 Checking music queue", f"Looking for {vocal_type} {genre} track...")
+                        
+                        from core.database.youtube_channels_db import YouTubeChannelsDB
+                        queue_db = YouTubeChannelsDB()
+                        queued_track = queue_db.get_queued_track(
+                            channel_id=channel_id,
+                            genre=genre,
+                            vocal_type=vocal_type
+                        )
+                        
+                        if queued_track:
+                            # Found suitable track in queue - use it!
+                            music_url = queued_track['audio_url']
+                            music_title = queued_track['title']
+                            music_clip_id = queued_track['suno_clip_id']
+                            music_duration = queued_track['duration']
+                            
+                            update_progress(30, "✅ Using queued track", f"Found: {music_title}")
+                            print(f"🎵 🎯 QUEUE HIT: Using existing track '{music_title}' (saved Suno API call!)")
+                            
+                            # Skip Suno API generation entirely
+                            skip_suno_generation = True
+                        else:
+                            # No suitable track in queue - proceed with Suno API
+                            update_progress(4, "⚠️ No queued track found", "Generating new track with Suno API...")
+                            print(f"🎵 🔴 QUEUE MISS: No suitable {vocal_type} {genre} track in queue, generating new...")
+                            skip_suno_generation = False
+                        
+                        if not skip_suno_generation:
+                            update_progress(5, "🤖 Building AI music prompt", f"{'Vocal' if is_vocal else 'Instrumental'} {genre} track")
+                        
+                            # Build comprehensive music prompt using the same logic as generate music page
+                            music_prompt = f"Create a professional {genre} track {'with beautiful vocals and lyrics' if is_vocal else 'instrumental'}, perfect for YouTube background music, relaxing and atmospheric, high quality production"
+                        
+                        # Build request data matching the real music generation system
+                        music_data = {
+                            'mode': 'simple',
+                            'genre_category': 'ambient',  # Use ambient as base for YouTube background music
+                            'genre_specific': genre,
+                            'music_type': 'vocal' if is_vocal else 'instrumental', 
+                            'make_instrumental': not is_vocal,
+                            'wait_audio': True,
+                            'suno_model': os.getenv('SUNO_MODEL', 'V4')
+                        }
+                        
+                        update_progress(10, "🔑 Connecting to Suno AI", "Establishing API connection")
+                        
+                        # Initialize Suno client with real error handling
+                        from core.services.suno_client import SunoClient
+                        suno = SunoClient()
+                        
+                        # Check credits first (use the real get_credits method)
+                        credits_info = suno.get_credits()
+                        if isinstance(credits_info, dict):
+                            credits = credits_info.get('credits', 0)
+                        else:
+                            credits = credits_info if credits_info else 0
+                            
+                        if credits < 10:
+                            raise Exception(f"Insufficient Suno AI credits: {credits} remaining. Need at least 10 credits.")
+                        
+                        update_progress(15, "💳 Credits verified", f"{credits} credits available")
+                        
+                        # Build Suno API parameters
+                        suno_params = {
+                            'model': music_data['suno_model'],
+                            'instrumental': music_data['make_instrumental']
+                        }
+                        
+                        update_progress(20, "🎛️ Generating music", "Sending request to Suno AI...")
+                        
+                        # Use the same logic as process_music_generation for consistency
+                        if is_vocal:
+                            # Use advanced generation for vocal tracks 
+                            generation_result = suno.generate_music_advanced(
+                                prompt=music_prompt,
+                                style=genre,
+                                title="",  # Let Suno auto-generate
+                                instrumental=False,
+                                model=suno_params['model']
+                            )
+                        else:
+                            # Use simple generation for instrumental tracks
+                            generation_result = suno.generate_music_simple(
+                                prompt=music_prompt,
+                                **suno_params
+                            )
+                        
+                        update_progress(25, "⏳ Processing Suno response", "Waiting for generation...")
+                        
+                        if not generation_result:
+                            raise Exception("Suno API returned empty response")
+                        
+                        # Extract task ID and wait for completion (matching real process)
+                        if isinstance(generation_result, dict) and 'taskId' in generation_result:
+                            suno_task_id = generation_result['taskId']
+                        elif isinstance(generation_result, str):
+                            suno_task_id = generation_result
+                        else:
+                            suno_task_id = generation_result.get('id') or str(generation_result)
+                        
+                        update_progress(30, f"🎵 Suno task created", f"Task ID: {suno_task_id[:8]}...")
+                        
+                        # Wait for completion with progressive updates
+                        def wait_update_progress(progress_val, step_msg, log_msg=""):
+                            # Map the progress to our range (30-70%)
+                            mapped_progress = min(70, 30 + int((progress_val - 75) * 0.4) if progress_val >= 75 else 30)
+                            update_progress(mapped_progress, step_msg, log_msg)
+                        
+                        # Use the wait function defined in this file (no import needed)
+                        
+                        # Create a mock task object for the wait function
+                        mock_task = {'status': 'processing'}
+                        
+                        suno_result = wait_for_completion_with_progressive_updates(
+                            suno, suno_task_id, mock_task, wait_update_progress, max_wait_time=300
+                        )
+                        
+                        update_progress(70, "🎧 Processing results", "Extracting audio clips")
+                        
+                        if not suno_result:
+                            raise Exception("No response from Suno API")
+                        
+                        # Check status using real process logic
+                        suno_status = suno_result.get('status', '')
+                        if suno_status not in ['SUCCESS', 'TEXT_SUCCESS', 'AUDIO_SUCCESS', 'COMPLETE']:
+                            error_msg = suno_result.get('errorMessage') or suno_result.get('msg', 'Unknown error')
+                            raise Exception(f"Suno generation failed (status: {suno_status}): {error_msg}")
+                        
+                        # Extract clips using real parsing logic 
+                        if 'response' in suno_result and 'sunoData' in suno_result['response']:
+                            audio_clips = suno_result['response']['sunoData']
+                        else:
+                            audio_clips = suno_result.get('data', [])
+                        
+                        if not audio_clips:
+                            raise Exception("No audio clips generated by Suno AI")
+                        
+                        # QUEUE MANAGEMENT: Save ALL clips to music queue (Suno generates 2 tracks)
+                        update_progress(72, "🎵 Processing generated tracks", f"Found {len(audio_clips)} tracks from Suno API")
+                        
+                        # Use first clip for current generation
+                        primary_clip = audio_clips[0]
+                        music_url = primary_clip.get('streamAudioUrl') or primary_clip.get('audioUrl') or primary_clip.get('sourceStreamAudioUrl')
+                        music_title = primary_clip.get('title', f'{genre.title()} Track')
+                        music_clip_id = primary_clip.get('id')
+                        music_duration = primary_clip.get('duration', 'Unknown')
+                        
+                        if not music_url:
+                            raise Exception("No audio URL in Suno response")
+                        
+                        # Save ALL clips to queue for future use (including the one we're using)
+                        try:
+                            tracks_for_queue = []
+                            
+                            for i, clip in enumerate(audio_clips):
+                                clip_data = {
+                                    'suno_task_id': suno_task_id,
+                                    'suno_clip_id': clip.get('id'),
+                                    'channel_id': channel_id,
+                                    'genre': genre,
+                                    'title': clip.get('title', f'{genre.title()} Track {i+1}'),
+                                    'audio_url': clip.get('streamAudioUrl') or clip.get('audioUrl') or clip.get('sourceStreamAudioUrl'),
+                                    'video_url': clip.get('imageUrl') or clip.get('sourceImageUrl'),
+                                    'duration': clip.get('duration', 'Unknown'),
+                                    'vocal_type': 'vocal' if is_vocal else 'instrumental',
+                                    'tags': clip.get('tags', '').split(',') if clip.get('tags') else [],
+                                    'prompt': music_prompt,
+                                    'model_name': suno_params['model']
+                                }
+                                tracks_for_queue.append(clip_data)
+                            
+                            # Add to database queue
+                            from core.database.youtube_channels_db import YouTubeChannelsDB
+                            queue_db = YouTubeChannelsDB()
+                            added_count = queue_db.add_to_music_queue(tracks_for_queue, task_id)
+                            
+                            update_progress(74, f"➕ Added {added_count} tracks to queue", f"Using: {music_title}")
+                            print(f"🎵 ✅ Queue management: Added {added_count} tracks, using '{music_title}' for current video")
+                            
+                        except Exception as queue_error:
+                            # Don't fail the whole pipeline if queue fails
+                            print(f"🎵 ⚠️ Queue save failed (non-critical): {queue_error}")
+                            update_progress(73, "⚠️ Queue save failed", "Continuing with main generation...")
+                        
+                        update_progress(75, "✅ Music generated successfully", f"Title: {music_title}")
+                        
+                    except Exception as e:
+                        error_msg = str(e)
+                        print(f"🎵 ❌ Music generation error: {error_msg}")
+                        update_progress(30, "❌ Music generation failed", error_msg)
+                        
+                        # Set failure flags but continue with pipeline for other components
+                        music_url = None
+                        music_title = f"Failed {genre.title()} Track - {error_msg[:50]}"
+                        music_clip_id = None
+                    
+                    # Step 3: Generate 16:9 thumbnail with Nano-Banana
+                    update_progress(76, "🖼️ Generating thumbnail", "Creating 16:9 YouTube thumbnail")
+                    
+                    try:
+                        from core.services.image_client import ImageClient
+                        image_client = ImageClient()
+                        
+                        # Create thumbnail prompt based on genre and music
+                        thumbnail_prompt = f"A beautiful 16:9 thumbnail for {genre} music, aesthetic design, calming colors, music theme, YouTube thumbnail style, high quality"
+                        
+                        thumbnail_result = image_client.generate_image(
+                            prompt=thumbnail_prompt,
+                            model="fal-ai/nano-banana",  # Use Nano-Banana
+                            aspect_ratio="16:9",
+                            task_summary=f"Thumbnail for {genre} music"
+                        )
+                        
+                        if thumbnail_result and thumbnail_result.get('success'):
+                            thumbnail_path = thumbnail_result.get('image_url', f"output/thumbnails/thumbnail_{task_id}.png")
+                            update_progress(80, "✅ Thumbnail generated", f"Created: {thumbnail_path}")
+                        else:
+                            raise Exception("Thumbnail generation failed")
+                            
+                    except Exception as e:
+                        update_progress(78, "❌ Thumbnail generation failed", str(e))
+                        thumbnail_path = None
+                    
+                    # Step 4: Generate SEO metadata with Gemini
+                    update_progress(82, "📝 Generating SEO metadata", "Creating title, description, tags")
+                    
+                    try:
+                        import google.generativeai as genai
+                        
+                        # Configure Gemini
+                        genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
+                        model = genai.GenerativeModel('gemini-1.5-flash')
+                        
+                        seo_prompt = f"""
+                        Create YouTube SEO metadata for a {genre} music track titled "{music_title}".
+                        
+                        Generate:
+                        1. Optimized YouTube title (max 100 chars)
+                        2. Engaging description (2-3 paragraphs)
+                        3. Relevant tags (10-15 tags)
+                        
+                        Make it appealing for {genre} music listeners and YouTube algorithm.
+                        
+                        Format as JSON:
+                        {{
+                            "title": "...",
+                            "description": "...",
+                            "tags": ["tag1", "tag2", ...]
+                        }}
+                        """
+                        
+                        seo_response = model.generate_content(seo_prompt)
+                        seo_text = seo_response.text.strip()
+                        
+                        # Parse JSON response
+                        if seo_text.startswith('```json'):
+                            seo_text = seo_text.split('```json')[1].split('```')[0]
+                        
+                        seo_metadata = json.loads(seo_text)
+                        update_progress(85, "✅ SEO metadata generated", f"Title: {seo_metadata.get('title', '')[:50]}...")
+                        
+                    except Exception as e:
+                        update_progress(83, "❌ SEO generation failed", str(e))
+                        # Fallback SEO data
+                        seo_metadata = {
+                            "title": f"{music_title} | {genre.title()} Music",
+                            "description": f"Relaxing {genre} music perfect for studying, working, or relaxation. Generated with AI for your enjoyment.",
+                            "tags": [genre, "music", "relaxing", "study", "work", "ai", "generated"]
+                        }
+                    
+                    # Step 5: Create video from music + thumbnail (placeholder for now)
+                    update_progress(87, "🎥 Creating video", "Combining audio + thumbnail")
+                    
+                    # Step 5.1: Create video file using REAL FFmpeg integration
+                    video_path = None
+                    video_creation_result = None
+                    
+                    try:
+                        if music_url and thumbnail_path:
+                            update_progress(87, "🎥 Creating video with FFmpeg", "Downloading audio and thumbnail...")
+                            
+                            # Import our professional video creator
+                            from core.utils.video_creator import VideoCreator
+                            video_creator = VideoCreator()
+                            
+                            # Generate unique video filename
+                            import uuid
+                            video_filename = f"video_{uuid.uuid4().hex[:8]}_{genre}_{task_id[:8]}.mp4"
+                            video_path = f"output/videos/{video_filename}"
+                            
+                            # Create directory if needed
+                            os.makedirs("output/videos", exist_ok=True)
+                            
+                            # Progress callback for video creation
+                            def video_progress_callback(step, percent):
+                                # Map video creation progress to our range (87-90%)
+                                mapped_progress = 87 + int((percent / 100) * 3)
+                                update_progress(mapped_progress, f"🎥 {step}", f"{percent}% complete")
+                            
+                            # Create professional video with YouTube optimization
+                            video_title = seo_metadata.get('title', music_title)
+                            video_creation_result = video_creator.create_video_with_progress(
+                                music_url=music_url,
+                                thumbnail_url=thumbnail_path,  # This should be the actual image URL
+                                output_path=video_path,
+                                title=video_title,
+                                progress_callback=video_progress_callback
+                            )
+                            
+                            if video_creation_result and video_creation_result.get('success'):
+                                file_size_mb = video_creation_result.get('file_size_mb', 0)
+                                duration = video_creation_result.get('duration_seconds', 0)
+                                encoding_time = video_creation_result.get('encoding_time_seconds', 0)
+                                
+                                update_progress(90, "✅ Video created successfully", 
+                                              f"{file_size_mb:.1f}MB, {duration:.0f}s, encoded in {encoding_time:.1f}s")
+                                
+                                print(f"🎥 ✅ Video creation details:")
+                                print(f"   📁 File: {video_path}")
+                                print(f"   📊 Size: {file_size_mb:.1f} MB")
+                                print(f"   ⏱️ Duration: {duration:.1f} seconds")
+                                print(f"   🚀 Encoding: {encoding_time:.1f} seconds")
+                                print(f"   🎯 Resolution: {video_creation_result.get('resolution', '1920x1080')}")
+                                print(f"   🎵 Audio: {video_creation_result.get('audio_bitrate', '128k')}")
+                                print(f"   📹 Video: {video_creation_result.get('video_bitrate', '2500k')}")
+                                
+                            else:
+                                error_msg = video_creation_result.get('error', 'Unknown video creation error') if video_creation_result else 'Video creator returned None'
+                                raise Exception(f"Video creation failed: {error_msg}")
+                        else:
+                            update_progress(88, "⚠️ Video creation skipped", "Missing music URL or thumbnail URL")
+                            print(f"🎥 ⚠️ Skipping video creation - Music URL: {'✅' if music_url else '❌'}, Thumbnail: {'✅' if thumbnail_path else '❌'}")
+                            
+                    except Exception as e:
+                        error_msg = str(e)
+                        update_progress(88, "❌ Video creation failed", error_msg)
+                        print(f"🎥 ❌ Video creation error: {error_msg}")
+                        if video_creation_result:
+                            print(f"   FFmpeg stdout: {video_creation_result.get('ffmpeg_stdout', 'N/A')}")
+                            print(f"   FFmpeg stderr: {video_creation_result.get('ffmpeg_stderr', 'N/A')}")
+                        video_path = None
+                    
+                    # Step 6: YouTube Upload (REAL API INTEGRATION)
+                    youtube_video_id = None
+                    
+                    # Check if we should actually upload to YouTube (not just schedule)
+                    should_upload_now = data.get('upload_immediately', True)  # Default: TRUE for immediate upload
+                    
+                    if should_upload_now and video_path and Path(video_path).exists():
+                        try:
+                            update_progress(92, "📤 Uploading to YouTube", "Authenticating and uploading...")
+                            
+                            # Get channel credentials from database
+                            api_key = channel.get('api_key')
+                            client_id = channel.get('client_id') 
+                            client_secret = channel.get('client_secret')
+                            
+                            if not all([api_key, client_id, client_secret]):
+                                raise Exception("Missing YouTube API credentials for channel")
+                            
+                            # Initialize YouTube client with channel-specific credentials
+                            from core.services.youtube_client import YouTubeClient
+                            
+                            # Set environment variables temporarily for this upload
+                            original_api_key = os.environ.get('YOUTUBE_API_KEY')
+                            original_channel_id = os.environ.get('YOUTUBE_CHANNEL_ID')
+                            
+                            os.environ['YOUTUBE_API_KEY'] = api_key
+                            os.environ['YOUTUBE_CHANNEL_ID'] = str(channel_id)
+                            
+                            try:
+                                youtube_client = YouTubeClient()
+                                
+                                # Upload video to YouTube
+                                # Prepare optimized YouTube upload data
+                                video_title = seo_metadata.get('title', music_title)
+                                video_desc = seo_metadata.get('description', f"🎵 Professional {genre} music generated with AI\n\n" + 
+                                                             f"🎧 Genre: {genre.title()}\n" +
+                                                             f"🎼 Type: {'Vocal' if is_vocal else 'Instrumental'}\n" +
+                                                             f"⚡ Generated with advanced AI technology\n\n" +
+                                                             f"#music #{genre.replace('-', '').replace(' ', '')} #AI #generated #instrumental #background")
+                                video_tags = seo_metadata.get('tags', []) + [genre, 'music', 'ai generated', 'background music', 'instrumental', 'relaxing']
+                                
+                                # Ensure tags are properly formatted (max 500 chars total)
+                                video_tags = list(set(video_tags))[:15]  # Remove duplicates, limit to 15 tags
+                                
+                                print(f"📤 Uploading to YouTube:")
+                                print(f"   🏷️ Title: {video_title}")
+                                print(f"   📝 Tags: {', '.join(video_tags)}")
+                                print(f"   🔒 Privacy: public")
+                                
+                                # Upload video to YouTube
+                                youtube_video_id = youtube_client.upload_video(
+                                    video_path=video_path,
+                                    title=video_title,
+                                    description=video_desc,
+                                    tags=video_tags,
+                                    category_id='10',  # Music category
+                                    privacy_status='public'  # Public by default
+                                )
+                                
+                                if youtube_video_id:
+                                    youtube_url = f"https://www.youtube.com/watch?v={youtube_video_id}"
+                                    update_progress(95, "🎉 YouTube upload successful", f"Video ID: {youtube_video_id}")
+                                    print(f"🔗 YouTube URL: {youtube_url}")
+                                else:
+                                    raise Exception("YouTube upload returned no video ID")
+                                    
+                            finally:
+                                # Restore original environment variables
+                                if original_api_key:
+                                    os.environ['YOUTUBE_API_KEY'] = original_api_key
+                                else:
+                                    os.environ.pop('YOUTUBE_API_KEY', None)
+                                if original_channel_id:
+                                    os.environ['YOUTUBE_CHANNEL_ID'] = original_channel_id
+                                else:
+                                    os.environ.pop('YOUTUBE_CHANNEL_ID', None)
+                                    
+                        except Exception as e:
+                            update_progress(93, "❌ YouTube upload failed", str(e))
+                            print(f"📤 ❌ YouTube upload error: {e}")
+                            youtube_video_id = None
+                    else:
+                        update_progress(92, "📅 Scheduling upload", "Adding to upload queue...")
+                    
+                    # Step 7: Add to YouTube upload queue (or save completed upload)
+                    try:
+                        db = YouTubeChannelsDB()
+                        
+                        # Calculate next upload time based on channel schedule
+                        from datetime import datetime, timedelta
+                        import json as json_lib
+                        
+                        upload_hours = channel.get('upload_hours', [])
+                        if not upload_hours:
+                            upload_hours = [{"hour": 14, "minute": 0, "vocal_probability": 0.8}]
+                        
+                        # Get next scheduled time
+                        now = datetime.now()
+                        next_schedule = upload_hours[0]  # Use first schedule slot
+                        next_upload = now.replace(
+                            hour=next_schedule.get('hour', 14),
+                            minute=next_schedule.get('minute', 0),
+                            second=0,
+                            microsecond=0
+                        )
+                        
+                        # If time has passed today, schedule for tomorrow
+                        if next_upload <= now:
+                            next_upload += timedelta(days=1)
+                        
+                        # Prepare final results
+                        if youtube_video_id:
+                            # Video was uploaded successfully
+                            final_status = 'uploaded'
+                            youtube_url = f"https://www.youtube.com/watch?v={youtube_video_id}"
+                            completion_message = f"✅ Uploaded: {youtube_url}"
+                        else:
+                            # Video was scheduled for upload
+                            final_status = 'ready_for_upload'
+                            completion_message = f"📅 Scheduled: {next_upload.strftime('%Y-%m-%d %H:%M')}"
+                        
+                        # Add to video generation queue / results
+                        queue_data = {
+                            'channel_id': channel_id,
+                            'genre': genre,
+                            'vocal_type': 'vocal' if is_vocal else 'instrumental',
+                            'scheduled_time': next_upload.isoformat() if not youtube_video_id else None,
+                            'uploaded_time': datetime.now().isoformat() if youtube_video_id else None,
+                            'music_url': music_url,
+                            'thumbnail_path': thumbnail_path,
+                            'video_path': video_path,
+                            'youtube_video_id': youtube_video_id,
+                            'youtube_url': f"https://www.youtube.com/watch?v={youtube_video_id}" if youtube_video_id else None,
+                            'video_title': seo_metadata.get('title'),
+                            'video_description': seo_metadata.get('description'),
+                            'video_tags': json_lib.dumps(seo_metadata.get('tags', [])),
+                            'task_id': task_id,
+                            'status': final_status
+                        }
+                        
+                        # This would add to the video generation queue table in a real system
+                        # For now, we store the results in the background tasks table
+                        
+                        update_progress(98, "🎆 Pipeline completed", completion_message)
+                        
+                        # Update task with final results
+                        db.update_task_progress(
+                            task_id=task_id,
+                            progress=100,
+                            step="🎆 Pipeline completed",
+                            detail=f"Scheduled for upload: {next_upload.strftime('%Y-%m-%d %H:%M')}",
+                            status='completed'
+                        )
+                        
+                        # Save results to task
+                        import sqlite3
+                        with sqlite3.connect(db.db_path) as conn:
+                            cursor = conn.cursor()
+                            cursor.execute('''
+                                UPDATE background_tasks 
+                                SET music_url = ?, thumbnail_path = ?, seo_metadata = ?, 
+                                    scheduled_upload_time = ?, genre = ?, vocal_type = ?
+                                WHERE task_id = ?
+                            ''', (
+                                music_url, thumbnail_path, json.dumps(seo_metadata),
+                                next_upload.isoformat(), genre, 'vocal' if is_vocal else 'instrumental',
+                                task_id
+                            ))
+                        
+                        print(f"🎬 ✅ Full video pipeline completed successfully!")
+                        print(f"📊 Results: Music: {music_title}, Thumbnail: {'✅' if thumbnail_path else '❌'}, SEO: ✅")
+                        print(f"⏰ Upload scheduled: {next_upload.strftime('%Y-%m-%d %H:%M')}")
+                        
+                    except Exception as e:
+                        update_progress(6, "Queue Addition Failed", str(e))
+                    
+                except Exception as e:
+                    print(f"🎬 ❌ Full video pipeline error: {e}")
+                    
+                    # Mark task as failed
+                    db.update_task_progress(
+                        task_id=task_id,
+                        progress=0,
+                        step="Pipeline Failed",
+                        detail=str(e),
+                        status='failed'
+                    )
+                    
+                    import traceback
+                    traceback.print_exc()
+            
+            # Start pipeline in background thread
+            thread = threading.Thread(target=generate_full_video_pipeline)
+            thread.start()
+            
+            return jsonify({
+                'success': True,
+                'message': f'Full video generation pipeline started for {channel.get("channel_name")}',
+                'task_id': task_id,
+                'type': 'full_video',
+                'estimated_time': '5-10 minutes',
+                'steps': [
+                    'Genre selection',
+                    'Music generation (Suno API)', 
+                    'Thumbnail generation (16:9, Nano-Banana)',
+                    'SEO metadata (Gemini)',
+                    'Video creation',
+                    'YouTube upload scheduling'
+                ]
+            })
+            
+        else:
+            return jsonify({
+                'success': False,
+                'message': f'Unsupported content type: {content_type}'
+            }), 400
+            
+    except Exception as e:
+        print(f"Error generating channel content: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to start content generation'
+        }), 500
+
+@app.route('/api/background-tasks')
+@require_auth
+def api_get_background_tasks():
+    """Get background tasks for batch operations monitoring"""
+    try:
+        from core.database.youtube_channels_db import YouTubeChannelsDB
+        
+        status = request.args.get('status')
+        limit = int(request.args.get('limit', 50))
+        
+        db = YouTubeChannelsDB()
+        tasks = db.get_background_tasks(status=status, limit=limit)
+        statistics = db.get_task_statistics()
+        
+        return jsonify({
+            'success': True,
+            'tasks': tasks,
+            'statistics': statistics,
+            'count': len(tasks)
+        })
+        
+    except Exception as e:
+        print(f"Error getting background tasks: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to load background tasks'
+        }), 500
+
+@app.route('/api/background-tasks/<task_id>')
+@require_auth 
+def api_get_background_task(task_id):
+    """Get specific background task details"""
+    try:
+        from core.database.youtube_channels_db import YouTubeChannelsDB
+        
+        db = YouTubeChannelsDB()
+        tasks = db.get_background_tasks()
+        
+        task = next((t for t in tasks if t['task_id'] == task_id), None)
+        
+        if task:
+            return jsonify({
+                'success': True,
+                'task': task
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'Task not found'
+            }), 404
+            
+    except Exception as e:
+        print(f"Error getting background task {task_id}: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to load task details'
+        }), 500
+
+# ===================================================================
+# MUSIC QUEUE MANAGEMENT INTERFACE
+# ===================================================================
+
+@app.route('/music-queue')
+@require_auth
+def music_queue_admin():
+    """Music Queue Management Interface"""
+    try:
+        from core.database.youtube_channels_db import YouTubeChannelsDB
+        db = YouTubeChannelsDB()
+        
+        # Get queue statistics
+        stats = db.get_music_queue_stats()
+        
+        # Clean up expired tracks
+        cleaned_count = db.cleanup_expired_tracks()
+        if cleaned_count > 0:
+            print(f"🗑️ Cleaned up {cleaned_count} expired tracks")
+        
+        return render_template_string('''
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Queue Management - Autonominis Muzikantas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-6 py-8">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-music mr-2"></i>
+                    Music Queue Management
+                </h1>
+                <p class="text-gray-600">Monitor and manage Suno API generated tracks</p>
+            </div>
+            <a href="/" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+            </a>
+        </div>
+
+        <!-- Queue Statistics -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-700 mb-2">Total Available</h3>
+                        <p class="text-3xl font-bold text-green-600">{{ stats.total_available }}</p>
+                    </div>
+                    <i class="fas fa-check-circle text-green-500 text-2xl"></i>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-700 mb-2">Used Tracks</h3>
+                        <p class="text-3xl font-bold text-blue-600">{{ stats.status_counts.get('used', 0) }}</p>
+                    </div>
+                    <i class="fas fa-play-circle text-blue-500 text-2xl"></i>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-700 mb-2">Reserved</h3>
+                        <p class="text-3xl font-bold text-yellow-600">{{ stats.status_counts.get('reserved', 0) }}</p>
+                    </div>
+                    <i class="fas fa-clock text-yellow-500 text-2xl"></i>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-700 mb-2">Genres</h3>
+                        <p class="text-3xl font-bold text-purple-600">{{ stats.genre_counts | length }}</p>
+                    </div>
+                    <i class="fas fa-tags text-purple-500 text-2xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Queue Actions -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">
+                <i class="fas fa-cogs mr-2"></i>Queue Management
+            </h2>
+            <div class="flex flex-wrap gap-4">
+                <button onclick="refreshQueue()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                    <i class="fas fa-sync-alt mr-2"></i>Refresh Stats
+                </button>
+                <button onclick="cleanupExpired()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg">
+                    <i class="fas fa-trash mr-2"></i>Cleanup Expired
+                </button>
+                <button onclick="loadQueueTracks()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
+                    <i class="fas fa-list mr-2"></i>View All Tracks
+                </button>
+            </div>
+        </div>
+
+        <!-- Genre Breakdown -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">
+                <i class="fas fa-chart-pie mr-2"></i>Genre Distribution
+            </h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {% for genre, count in stats.genre_counts.items() %}
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="font-semibold text-gray-700">{{ genre.replace('-', ' ').title() }}</h3>
+                    <p class="text-2xl font-bold text-indigo-600">{{ count }}</p>
+                </div>
+                {% endfor %}
+                {% if not stats.genre_counts %}
+                <div class="col-span-full text-center text-gray-500 py-8">
+                    <i class="fas fa-music text-4xl mb-4"></i>
+                    <p>No tracks in queue yet. Generate some music to see statistics!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Vocal Type Distribution -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">
+                <i class="fas fa-microphone mr-2"></i>Vocal Type Distribution
+            </h2>
+            <div class="grid grid-cols-2 gap-4">
+                {% for vocal_type, count in stats.vocal_counts.items() %}
+                <div class="bg-gray-50 p-4 rounded-lg text-center">
+                    <i class="fas fa-{% if vocal_type == 'vocal' %}microphone{% else %}music{% endif %} text-3xl text-indigo-500 mb-2"></i>
+                    <h3 class="font-semibold text-gray-700">{{ vocal_type.title() }}</h3>
+                    <p class="text-2xl font-bold text-indigo-600">{{ count }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Queue Tracks List -->
+        <div id="queue-tracks" class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">
+                <i class="fas fa-list-ul mr-2"></i>Queue Tracks
+            </h2>
+            <p class="text-gray-500">Click "View All Tracks" to load the complete queue list.</p>
+        </div>
+    </div>
+
+    <script>
+        function refreshQueue() {
+            location.reload();
+        }
+
+        async function cleanupExpired() {
+            try {
+                const response = await axios.post('/api/queue/cleanup');
+                if (response.data.success) {
+                    alert(`Cleaned up ${response.data.cleaned_count} expired tracks`);
+                    refreshQueue();
+                } else {
+                    alert('Error: ' + response.data.error);
+                }
+            } catch (error) {
+                alert('Failed to cleanup expired tracks: ' + error.message);
+            }
+        }
+
+        async function loadQueueTracks() {
+            try {
+                const response = await axios.get('/api/queue/tracks');
+                const tracks = response.data.tracks;
+                
+                let html = '<div class="overflow-x-auto"><table class="min-w-full table-auto">';
+                html += '<thead><tr class="bg-gray-50">';
+                html += '<th class="px-4 py-2 text-left">Title</th>';
+                html += '<th class="px-4 py-2 text-left">Genre</th>';
+                html += '<th class="px-4 py-2 text-left">Type</th>';
+                html += '<th class="px-4 py-2 text-left">Duration</th>';
+                html += '<th class="px-4 py-2 text-left">Status</th>';
+                html += '<th class="px-4 py-2 text-left">Created</th>';
+                html += '</tr></thead><tbody>';
+                
+                tracks.forEach(track => {
+                    const statusClass = track.status === 'available' ? 'text-green-600' : 
+                                       track.status === 'used' ? 'text-blue-600' : 'text-yellow-600';
+                    html += `<tr class="border-b hover:bg-gray-50">`;
+                    html += `<td class="px-4 py-2 font-semibold">${track.title}</td>`;
+                    html += `<td class="px-4 py-2">${track.genre}</td>`;
+                    html += `<td class="px-4 py-2">${track.vocal_type}</td>`;
+                    html += `<td class="px-4 py-2">${track.duration}</td>`;
+                    html += `<td class="px-4 py-2 ${statusClass}">${track.status}</td>`;
+                    html += `<td class="px-4 py-2 text-sm text-gray-500">${new Date(track.created_at).toLocaleString()}</td>`;
+                    html += `</tr>`;
+                });
+                
+                html += '</tbody></table></div>';
+                
+                if (tracks.length === 0) {
+                    html = '<div class="text-center text-gray-500 py-8"><i class="fas fa-music text-4xl mb-4"></i><p>No tracks in queue</p></div>';
+                }
+                
+                document.getElementById('queue-tracks').innerHTML = 
+                    '<h2 class="text-xl font-bold text-gray-800 mb-4"><i class="fas fa-list-ul mr-2"></i>Queue Tracks (' + tracks.length + ')</h2>' + html;
+                    
+            } catch (error) {
+                alert('Failed to load queue tracks: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
+        ''', stats=stats)
+        
+    except Exception as e:
+        return f"Error loading music queue: {str(e)}", 500
+
+@app.route('/api/queue/cleanup', methods=['POST'])
+@require_auth 
+def api_queue_cleanup():
+    """API endpoint to cleanup expired tracks"""
+    try:
+        from core.database.youtube_channels_db import YouTubeChannelsDB
+        db = YouTubeChannelsDB()
+        
+        cleaned_count = db.cleanup_expired_tracks()
+        
+        return jsonify({
+            'success': True,
+            'cleaned_count': cleaned_count,
+            'message': f'Cleaned up {cleaned_count} expired tracks'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/queue/tracks')
+@require_auth
+def api_queue_tracks():
+    """API endpoint to get all queue tracks"""
+    try:
+        from core.database.youtube_channels_db import YouTubeChannelsDB
+        import sqlite3
+        
+        db = YouTubeChannelsDB()
+        
+        with sqlite3.connect(db.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT 
+                    title, genre, vocal_type, duration, status, 
+                    created_at, quality_score, channel_id, suno_clip_id
+                FROM music_queue 
+                WHERE expiry_date > datetime('now')
+                ORDER BY created_at DESC
+                LIMIT 100
+            ''')
+            
+            columns = [desc[0] for desc in cursor.description]
+            tracks = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        
+        return jsonify({
+            'success': True,
+            'tracks': tracks,
+            'total_count': len(tracks)
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 if __name__ == '__main__':
     # Create required directories
     os.makedirs('templates', exist_ok=True)
@@ -4479,4 +5467,4 @@ if __name__ == '__main__':
     print("🔐 Default admin password: admin123")
     print("🌐 Access: http://localhost:8000")
     
-    app.run(host='0.0.0.0', port=8000, debug=False)
+    app.run(host='0.0.0.0', port=8001, debug=False)

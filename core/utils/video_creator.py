@@ -1,150 +1,297 @@
-import os
-from typing import Optional
-from pathlib import Path
+#!/usr/bin/env python3
+"""
+Video Creator - FFmpeg integration for creating videos from audio + thumbnail
+Optimized for YouTube uploads with proper encoding settings
+"""
 
-try:
-    from moviepy.editor import AudioFileClip, ImageClip, CompositeVideoClip, ColorClip, VideoFileClip
-    MOVIEPY_AVAILABLE = True
-    print("✅ MoviePy successfully loaded - video creation enabled")
-except ImportError as e:
-    print(f"⚠️  MoviePy not available: {e}. Video creation will be disabled.")
-    MOVIEPY_AVAILABLE = False
+import os
+import subprocess
+import tempfile
+import requests
+from pathlib import Path
+from typing import Optional, Dict, Any
+import json
+import time
 
 class VideoCreator:
-    """Utility class for creating videos from audio and image files"""
-
+    """Professional video creation using FFmpeg for YouTube optimization"""
+    
     def __init__(self):
-        self.moviepy_available = MOVIEPY_AVAILABLE
-        if not self.moviepy_available:
-            print("⚠️  Video creation functions are disabled due to missing MoviePy dependency.")
-
-    def create_video_from_audio_and_image(self, image_path: str, audio_path: str, output_path: str, title: str) -> bool:
-        """Create MP4 video from image and audio files"""
-        if not self.moviepy_available:
-            print("❌ Video creation is disabled - MoviePy not available")
-            print(f"📝 Would create video: {title}")
-            print(f"   Image: {image_path}")
-            print(f"   Audio: {audio_path}")
-            print(f"   Output: {output_path}")
-            return False
-            
+        self.temp_dir = Path(tempfile.gettempdir()) / "video_creation"
+        self.temp_dir.mkdir(parents=True, exist_ok=True)
+        
+        # YouTube optimized settings
+        self.youtube_settings = {
+            'video_codec': 'libx264',
+            'audio_codec': 'aac', 
+            'video_bitrate': '2500k',  # Good quality for YouTube
+            'audio_bitrate': '128k',   # Standard audio quality
+            'fps': '30',               # YouTube standard
+            'resolution': '1920x1080', # Full HD
+            'preset': 'fast',          # Encoding speed vs quality balance
+            'crf': '23'                # Constant Rate Factor (18-28 range, lower = better quality)
+        }
+    
+    def download_file(self, url: str, output_path: str, file_type: str = "audio") -> bool:
+        """Download audio or image file from URL or copy local file"""
         try:
-            print(f"🎬 Kuriamas video failas: {title}")
-
-            # Check if input files exist
-            if not Path(image_path).exists():
-                print(f"❌ Paveikslėlio failas nerastas: {image_path}")
-                return False
-
-            if not Path(audio_path).exists():
-                print(f"❌ Garso failas nerastas: {audio_path}")
-                return False
-
-            # Ensure output directory exists
-            Path(output_path).mkdir(parents=True, exist_ok=True)
-
-            # Load audio file to get duration
-            print("📏 Kraunamas garso failas...")
-            audio_clip = AudioFileClip(audio_path)
-            duration = audio_clip.duration
-
-            print(f"🎵 Garso trukmė: {duration:.1f} sekundžių")
-
-            # Load image and set duration to match audio
-            print("🖼️ Kraunamas paveikslėlis...")
-            image_clip = ImageClip(image_path, duration=duration)
-
-            # Resize image to standard video dimensions (1920x1080) while maintaining aspect ratio
-            image_clip = image_clip.resize(height=1080)
-            if image_clip.w > 1920:
-                image_clip = image_clip.resize(width=1920)
-
-            # Center the image
-            image_clip = image_clip.set_position('center')
-
-            # Create background (black)
-            background = ColorClip(size=(1920, 1080), color=(0, 0, 0), duration=duration)
-
-            # Combine background, image, and audio
-            print("🎬 Kombinuojami elementai...")
-            video = CompositeVideoClip([background, image_clip])
-            video = video.set_audio(audio_clip)
-
-            # Generate output filename
-            safe_title = "".join(c for c in title if c.isalnum() or c in (' ', '-', '_')).rstrip()
-            safe_title = safe_title.replace(' ', '_')
-            output_filename = f"{safe_title}.mp4"
-            output_file_path = Path(output_path) / output_filename
-
-            # Export video
-            print(f"💾 Eksportuojamas video: {output_file_path}")
-            video.write_videofile(
-                str(output_file_path),
-                fps=24,  # Standard frame rate
-                codec='libx264',  # H.264 codec
-                audio_codec='aac',  # AAC audio codec
-                temp_audiofile=None,
-                remove_temp=True,
-                verbose=False,
-                logger=None
-            )
-
-            # Clean up clips
-            audio_clip.close()
-            image_clip.close()
-            video.close()
-
-            # Get file size
-            file_size = output_file_path.stat().st_size
-            print(f"✅ Video sukurtas: {output_file_path} ({file_size / (1024*1024):.1f} MB)")
-
-            return True
-
+            print(f"🔄 Getting {file_type}: {url}")
+            
+            # Handle local file paths (file:// URLs or absolute paths)
+            if url.startswith('file://'):
+                local_path = url.replace('file://', '')
+                if Path(local_path).exists():
+                    # Copy local file
+                    import shutil
+                    shutil.copy2(local_path, output_path)
+                    file_size = Path(output_path).stat().st_size
+                    print(f"✅ Copied local {file_type}: {file_size / 1024 / 1024:.1f} MB")
+                    return True
+                else:
+                    print(f"❌ Local file not found: {local_path}")
+                    return False
+            elif Path(url).exists():
+                # Direct local path
+                import shutil
+                shutil.copy2(url, output_path)
+                file_size = Path(output_path).stat().st_size
+                print(f"✅ Copied local {file_type}: {file_size / 1024 / 1024:.1f} MB")
+                return True
+            else:
+                # Download from URL
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                }
+                
+                response = requests.get(url, headers=headers, stream=True, timeout=30)
+                response.raise_for_status()
+                
+                with open(output_path, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        f.write(chunk)
+                
+                file_size = Path(output_path).stat().st_size
+                print(f"✅ Downloaded {file_type}: {file_size / 1024 / 1024:.1f} MB")
+                return True
+            
         except Exception as e:
-            print(f"❌ Klaida kuriant video: {e}")
+            print(f"❌ Failed to get {file_type}: {e}")
             return False
-
-    def create_video_batch(self, image_path: str, audio_files: list, output_path: str, base_title: str) -> list:
-        """Create multiple videos from one image and multiple audio files"""
-        results = []
-
-        for i, audio_path in enumerate(audio_files, 1):
-            title = f"{base_title}_v{i}"
-            success = self.create_video_from_audio_and_image(
-                image_path=image_path,
-                audio_path=audio_path,
-                output_path=output_path,
-                title=title
-            )
-            results.append({
-                'audio_file': audio_path,
-                'title': title,
-                'success': success
-            })
-
-        return results
-
-    def get_video_info(self, video_path: str) -> Optional[dict]:
-        """Get information about a video file"""
-        if not self.moviepy_available:
-            print("❌ Video info retrieval is disabled - MoviePy not available")
-            return None
-            
+    
+    def get_audio_duration(self, audio_path: str) -> Optional[float]:
+        """Get audio duration using ffprobe"""
         try:
-            if not Path(video_path).exists():
+            cmd = [
+                'ffprobe', 
+                '-v', 'quiet', 
+                '-print_format', 'json', 
+                '-show_format', 
+                audio_path
+            ]
+            
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            
+            if result.returncode == 0:
+                data = json.loads(result.stdout)
+                duration = float(data['format']['duration'])
+                print(f"🎵 Audio duration: {duration:.1f} seconds")
+                return duration
+            else:
+                print(f"⚠️ Could not get audio duration: {result.stderr}")
                 return None
-
-            clip = VideoFileClip(video_path)
-            info = {
-                'duration': clip.duration,
-                'size': clip.size,
-                'fps': clip.fps,
-                'path': video_path
-            }
-            clip.close()
-
-            return info
-
+                
         except Exception as e:
-            print(f"❌ Klaida gaunant video informaciją: {e}")
+            print(f"❌ Error getting audio duration: {e}")
             return None
+    
+    def create_video(self, music_url: str, thumbnail_url: str, output_path: str, 
+                    title: str = "Generated Music Video") -> Dict[str, Any]:
+        """
+        Create optimized video from audio URL + thumbnail URL
+        
+        Args:
+            music_url: URL to audio file
+            thumbnail_url: URL to thumbnail image  
+            output_path: Path where to save the final video
+            title: Video title for metadata
+            
+        Returns:
+            Dict with success status, file paths, and metadata
+        """
+        try:
+            print(f"🎥 Creating video: {title}")
+            print(f"🎵 Audio: {music_url}")
+            print(f"🖼️ Thumbnail: {thumbnail_url}")
+            
+            # Create temporary files
+            temp_audio = self.temp_dir / f"audio_{int(time.time())}.mp3"
+            temp_thumbnail = self.temp_dir / f"thumb_{int(time.time())}.jpg"
+            
+            # Ensure output directory exists
+            Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+            
+            # Step 1: Download audio
+            if not self.download_file(music_url, str(temp_audio), "audio"):
+                return {'success': False, 'error': 'Failed to download audio'}
+            
+            # Step 2: Download thumbnail
+            if not self.download_file(thumbnail_url, str(temp_thumbnail), "thumbnail"):
+                return {'success': False, 'error': 'Failed to download thumbnail'}
+            
+            # Step 3: Get audio duration for video length
+            duration = self.get_audio_duration(str(temp_audio))
+            if not duration:
+                duration = 180  # Default 3 minutes if can't detect
+            
+            # Step 4: Create video with FFmpeg (YouTube optimized)
+            print(f"🔄 Creating {duration:.1f}s video with FFmpeg...")
+            
+            ffmpeg_cmd = [
+                'ffmpeg', '-y',  # Overwrite output file
+                
+                # Input files
+                '-loop', '1', '-i', str(temp_thumbnail),  # Loop static image
+                '-i', str(temp_audio),                     # Audio file
+                
+                # Video encoding settings (YouTube optimized)
+                '-c:v', self.youtube_settings['video_codec'],
+                '-preset', self.youtube_settings['preset'],
+                '-crf', self.youtube_settings['crf'],
+                '-b:v', self.youtube_settings['video_bitrate'],
+                '-maxrate', '3000k',  # Max bitrate
+                '-bufsize', '6000k',  # Buffer size
+                '-r', self.youtube_settings['fps'],
+                '-s', self.youtube_settings['resolution'],
+                '-pix_fmt', 'yuv420p',  # Compatible pixel format
+                
+                # Audio encoding settings
+                '-c:a', self.youtube_settings['audio_codec'],
+                '-b:a', self.youtube_settings['audio_bitrate'],
+                '-ar', '44100',  # Sample rate
+                
+                # Duration and sync settings
+                '-t', str(duration),  # Video length = audio length
+                '-shortest',          # End when shortest stream ends
+                
+                # YouTube metadata
+                '-metadata', f'title={title}',
+                '-metadata', 'comment=Generated by AI Music Automation',
+                
+                # Output file
+                output_path
+            ]
+            
+            # Execute FFmpeg
+            print("🔄 Running FFmpeg...")
+            start_time = time.time()
+            
+            result = subprocess.run(
+                ffmpeg_cmd, 
+                capture_output=True, 
+                text=True, 
+                timeout=600  # 10 minutes max
+            )
+            
+            encode_time = time.time() - start_time
+            
+            if result.returncode == 0:
+                # Success!
+                file_size = Path(output_path).stat().st_size
+                file_size_mb = file_size / 1024 / 1024
+                
+                print(f"✅ Video created successfully!")
+                print(f"📁 Output: {output_path}")
+                print(f"📊 Size: {file_size_mb:.1f} MB")
+                print(f"⏱️ Encoding time: {encode_time:.1f}s")
+                
+                # Cleanup temp files
+                temp_audio.unlink(missing_ok=True)
+                temp_thumbnail.unlink(missing_ok=True)
+                
+                return {
+                    'success': True,
+                    'video_path': output_path,
+                    'file_size_mb': file_size_mb,
+                    'duration_seconds': duration,
+                    'encoding_time_seconds': encode_time,
+                    'audio_url': music_url,
+                    'thumbnail_url': thumbnail_url,
+                    'resolution': self.youtube_settings['resolution'],
+                    'video_bitrate': self.youtube_settings['video_bitrate'],
+                    'audio_bitrate': self.youtube_settings['audio_bitrate']
+                }
+                
+            else:
+                error_msg = result.stderr or result.stdout or "Unknown FFmpeg error"
+                print(f"❌ FFmpeg failed: {error_msg}")
+                
+                # Cleanup temp files
+                temp_audio.unlink(missing_ok=True)
+                temp_thumbnail.unlink(missing_ok=True)
+                
+                return {
+                    'success': False, 
+                    'error': f'FFmpeg encoding failed: {error_msg}',
+                    'ffmpeg_stdout': result.stdout,
+                    'ffmpeg_stderr': result.stderr
+                }
+                
+        except subprocess.TimeoutExpired:
+            print("❌ FFmpeg timeout - video too long or system overloaded")
+            return {'success': False, 'error': 'Video creation timeout'}
+            
+        except Exception as e:
+            print(f"❌ Video creation error: {e}")
+            return {'success': False, 'error': str(e)}
+    
+    def create_video_with_progress(self, music_url: str, thumbnail_url: str, 
+                                 output_path: str, title: str = "Generated Music Video",
+                                 progress_callback=None) -> Dict[str, Any]:
+        """Create video with progress callbacks for UI updates"""
+        
+        def update_progress(step: str, percent: int):
+            if progress_callback:
+                progress_callback(step, percent)
+            else:
+                print(f"🎥 [{percent}%] {step}")
+        
+        try:
+            update_progress("Starting video creation", 5)
+            
+            # Download phase
+            update_progress("Downloading audio", 20)
+            result = self.create_video(music_url, thumbnail_url, output_path, title)
+            
+            if result['success']:
+                update_progress("Video creation completed", 100)
+            else:
+                update_progress("Video creation failed", 0)
+            
+            return result
+            
+        except Exception as e:
+            update_progress("Error in video creation", 0)
+            return {'success': False, 'error': str(e)}
+
+# Test function for standalone usage
+def test_video_creation():
+    """Test video creation with sample files"""
+    creator = VideoCreator()
+    
+    # Test with sample URLs (these would be replaced with real URLs)
+    test_audio_url = "https://example.com/sample_music.mp3"
+    test_thumbnail_url = "https://example.com/sample_thumbnail.jpg"
+    test_output = "/tmp/test_video.mp4"
+    
+    result = creator.create_video(
+        music_url=test_audio_url,
+        thumbnail_url=test_thumbnail_url,
+        output_path=test_output,
+        title="Test Music Video"
+    )
+    
+    print(f"Test result: {result}")
+    return result
+
+if __name__ == "__main__":
+    test_video_creation()

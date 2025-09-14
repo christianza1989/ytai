@@ -181,13 +181,121 @@ class YouTubeChannelsDB:
                 )
             ''')
             
+            # Background task tracking for batch operations monitoring
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS background_tasks (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    task_id TEXT UNIQUE NOT NULL,
+                    task_type TEXT NOT NULL,  -- full_video, music_only, thumbnail_only, batch_generation
+                    channel_id INTEGER,
+                    
+                    -- Task Configuration
+                    title TEXT,
+                    description TEXT,
+                    genre TEXT,
+                    vocal_type TEXT,  -- vocal, instrumental
+                    
+                    -- Progress Tracking
+                    status TEXT DEFAULT 'queued',  -- queued, running, completed, failed, cancelled
+                    progress INTEGER DEFAULT 0,  -- 0-100
+                    current_step TEXT,
+                    current_step_detail TEXT,
+                    
+                    -- Results
+                    music_url TEXT,
+                    thumbnail_path TEXT,
+                    video_path TEXT,
+                    seo_metadata TEXT,  -- JSON
+                    
+                    -- Timing
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    started_at TEXT,
+                    completed_at TEXT,
+                    estimated_duration INTEGER,  -- seconds
+                    
+                    -- Error Handling
+                    error_message TEXT,
+                    retry_count INTEGER DEFAULT 0,
+                    max_retries INTEGER DEFAULT 3,
+                    
+                    -- Upload Scheduling
+                    scheduled_upload_time TEXT,
+                    upload_status TEXT DEFAULT 'pending',  -- pending, scheduled, uploaded, failed
+                    
+                    FOREIGN KEY (channel_id) REFERENCES youtube_channels (id) ON DELETE CASCADE
+                )
+            ''')
+            
+            # Music Queue - Store unused tracks from Suno API (2 tracks per generation)
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS music_queue (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    queue_uuid TEXT UNIQUE NOT NULL,
+                    
+                    -- Source Information
+                    suno_task_id TEXT NOT NULL,
+                    suno_clip_id TEXT NOT NULL,
+                    original_task_id TEXT,  -- Background task that generated this
+                    
+                    -- Channel Association
+                    channel_id INTEGER NOT NULL,
+                    genre TEXT NOT NULL,
+                    
+                    -- Track Details
+                    title TEXT NOT NULL,
+                    audio_url TEXT NOT NULL,
+                    video_url TEXT,  -- Suno's image/video URL
+                    duration TEXT,  -- duration format like 3:45
+                    duration_seconds REAL,  -- For calculations
+                    
+                    -- Music Properties
+                    vocal_type TEXT NOT NULL,  -- 'vocal' or 'instrumental'
+                    tags TEXT,  -- Suno tags as JSON array
+                    prompt TEXT,  -- Original generation prompt
+                    model_name TEXT,  -- Suno model used (V4, etc.)
+                    
+                    -- Queue Status
+                    status TEXT DEFAULT 'available',  -- available, reserved, used, expired
+                    priority INTEGER DEFAULT 0,  -- Higher = more important
+                    reserved_for_channel INTEGER,  -- Channel ID if reserved
+                    reserved_at TEXT,  -- When reserved
+                    
+                    -- Usage Tracking
+                    used_at TEXT,
+                    used_for_task TEXT,  -- Task ID that used this track
+                    expiry_date TEXT,  -- When this track expires (30 days from creation)
+                    
+                    -- Quality Metrics
+                    quality_score REAL DEFAULT 0.0,  -- 0-1 based on tags, title quality
+                    match_score REAL DEFAULT 0.0,  -- How well it matches requested genre
+                    
+                    -- Metadata
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    
+                    FOREIGN KEY (channel_id) REFERENCES youtube_channels (id) ON DELETE CASCADE,
+                    FOREIGN KEY (reserved_for_channel) REFERENCES youtube_channels (id) ON DELETE SET NULL
+                )
+            ''')
+            
             # Create indexes for performance
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_channels_status ON youtube_channels (status)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_channels_automation ON youtube_channels (automation_enabled)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_queue_status ON video_generation_queue (status)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_queue_scheduled ON video_generation_queue (scheduled_time)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_logs_type ON automation_logs (log_type)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_tasks_status ON background_tasks (status)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_tasks_type ON background_tasks (task_type)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_tasks_channel ON background_tasks (channel_id)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_analytics_date ON channel_analytics (date)')
+            
+            # Music Queue indexes for fast searching
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_music_queue_status ON music_queue (status)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_music_queue_channel_genre ON music_queue (channel_id, genre, status)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_music_queue_vocal_type ON music_queue (vocal_type, status)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_music_queue_priority ON music_queue (priority DESC, created_at)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_music_queue_expiry ON music_queue (expiry_date)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_music_queue_suno_clip ON music_queue (suno_clip_id)')
             
             conn.commit()
             self.logger.info("YouTube Channels database initialized successfully")
@@ -195,6 +303,13 @@ class YouTubeChannelsDB:
     def add_channel(self, channel_data: Dict[str, Any]) -> Dict[str, Any]:
         """Add a new YouTube channel with comprehensive configuration"""
         try:
+            # Debug: Log API credentials being saved to database
+            print(f"🗄️ DB add_channel - API credentials being saved:", {
+                'api_key': '***set***' if channel_data.get('api_key') else 'empty/missing',
+                'client_id': '***set***' if channel_data.get('client_id') else 'empty/missing',
+                'client_secret': '***set***' if channel_data.get('client_secret') else 'empty/missing'
+            })
+            
             channel_uuid = str(uuid.uuid4())
             
             # Process genre selection
@@ -293,6 +408,13 @@ class YouTubeChannelsDB:
     def update_channel(self, channel_id: int, channel_data: Dict[str, Any]) -> Dict[str, Any]:
         """Update existing YouTube channel configuration"""
         try:
+            # Debug: Log API credentials being updated in database
+            print(f"🗄️ DB update_channel (ID: {channel_id}) - API credentials being updated:", {
+                'api_key': '***set***' if channel_data.get('api_key') else 'empty/missing',
+                'client_id': '***set***' if channel_data.get('client_id') else 'empty/missing',
+                'client_secret': '***set***' if channel_data.get('client_secret') else 'empty/missing'
+            })
+            
             # Process genre selection
             selected_genres = channel_data.get('selected_genres', [])
             if isinstance(selected_genres, list):
@@ -391,6 +513,13 @@ class YouTubeChannelsDB:
                 
                 channel = dict(row)
                 
+                # Debug: Log API credentials being retrieved from database
+                print(f"🗄️ DB get_channel (ID: {channel_id}) - API credentials retrieved:", {
+                    'api_key': '***set***' if channel.get('api_key') else 'empty/missing',
+                    'client_id': '***set***' if channel.get('client_id') else 'empty/missing',
+                    'client_secret': '***set***' if channel.get('client_secret') else 'empty/missing'
+                })
+                
                 # Parse JSON fields
                 channel['selected_genres'] = json.loads(channel['selected_genres']) if channel['selected_genres'] else []
                 channel['upload_hours'] = json.loads(channel['upload_hours']) if channel['upload_hours'] else []
@@ -421,6 +550,15 @@ class YouTubeChannelsDB:
                 for row in rows:
                     channel = dict(row)
                     
+                    # Debug: Log API credentials being retrieved for each channel
+                    print(f"🗄️ DB list_channels - Channel {channel.get('id')}: API credentials = {
+                        'api_key: ***set***' if channel.get('api_key') else 'api_key: empty'
+                    }, {
+                        'client_id: ***set***' if channel.get('client_id') else 'client_id: empty'  
+                    }, {
+                        'client_secret: ***set***' if channel.get('client_secret') else 'client_secret: empty'
+                    }")
+                    
                     # Parse JSON fields
                     channel['selected_genres'] = json.loads(channel['selected_genres']) if channel['selected_genres'] else []
                     channel['upload_hours'] = json.loads(channel['upload_hours']) if channel['upload_hours'] else []
@@ -433,6 +571,147 @@ class YouTubeChannelsDB:
         except Exception as e:
             self.logger.error(f"Error listing channels: {e}")
             return []
+    
+    def add_background_task(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Add a new background task"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                cursor.execute('''
+                    INSERT INTO background_tasks (
+                        task_id, task_type, channel_id, title, description,
+                        genre, vocal_type, current_step, estimated_duration
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    task_data.get('task_id'),
+                    task_data.get('task_type'),
+                    task_data.get('channel_id'),
+                    task_data.get('title'),
+                    task_data.get('description'),
+                    task_data.get('genre'),
+                    task_data.get('vocal_type'),
+                    task_data.get('current_step', 'Initializing'),
+                    task_data.get('estimated_duration', 600)  # 10 minutes default
+                ))
+                
+                return {'success': True, 'task_id': task_data.get('task_id')}
+                
+        except Exception as e:
+            self.logger.error(f"Error adding background task: {e}")
+            return {'success': False, 'error': str(e)}
+    
+    def update_task_progress(self, task_id: str, progress: int, step: str = None, detail: str = None, status: str = None) -> bool:
+        """Update task progress"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                updates = ['progress = ?']
+                params = [progress]
+                
+                if step:
+                    updates.append('current_step = ?')
+                    params.append(step)
+                
+                if detail:
+                    updates.append('current_step_detail = ?')
+                    params.append(detail)
+                
+                if status:
+                    updates.append('status = ?')
+                    params.append(status)
+                    if status == 'running' and not cursor.execute('SELECT started_at FROM background_tasks WHERE task_id = ?', (task_id,)).fetchone()[0]:
+                        updates.append('started_at = CURRENT_TIMESTAMP')
+                    elif status in ['completed', 'failed', 'cancelled']:
+                        updates.append('completed_at = CURRENT_TIMESTAMP')
+                
+                params.append(task_id)
+                
+                cursor.execute(f'''
+                    UPDATE background_tasks 
+                    SET {', '.join(updates)}
+                    WHERE task_id = ?
+                ''', params)
+                
+                return True
+                
+        except Exception as e:
+            self.logger.error(f"Error updating task progress: {e}")
+            return False
+    
+    def get_background_tasks(self, status: Optional[str] = None, limit: int = 50) -> List[Dict[str, Any]]:
+        """Get background tasks with optional status filter"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                
+                if status:
+                    cursor.execute('''
+                        SELECT t.*, c.channel_name 
+                        FROM background_tasks t 
+                        LEFT JOIN youtube_channels c ON t.channel_id = c.id 
+                        WHERE t.status = ? 
+                        ORDER BY t.created_at DESC 
+                        LIMIT ?
+                    ''', (status, limit))
+                else:
+                    cursor.execute('''
+                        SELECT t.*, c.channel_name 
+                        FROM background_tasks t 
+                        LEFT JOIN youtube_channels c ON t.channel_id = c.id 
+                        ORDER BY t.created_at DESC 
+                        LIMIT ?
+                    ''', (limit,))
+                
+                rows = cursor.fetchall()
+                
+                tasks = []
+                for row in rows:
+                    task = dict(row)
+                    
+                    # Parse JSON fields
+                    if task.get('seo_metadata'):
+                        try:
+                            task['seo_metadata'] = json.loads(task['seo_metadata'])
+                        except:
+                            task['seo_metadata'] = {}
+                    
+                    tasks.append(task)
+                
+                return tasks
+                
+        except Exception as e:
+            self.logger.error(f"Error getting background tasks: {e}")
+            return []
+    
+    def get_task_statistics(self) -> Dict[str, int]:
+        """Get task statistics for dashboard"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                # Get counts by status
+                cursor.execute('''
+                    SELECT status, COUNT(*) as count 
+                    FROM background_tasks 
+                    WHERE created_at >= datetime('now', '-24 hours')
+                    GROUP BY status
+                ''')
+                
+                stats = {'total': 0, 'queued': 0, 'running': 0, 'completed': 0, 'failed': 0}
+                
+                for row in cursor.fetchall():
+                    status, count = row
+                    stats[status] = count
+                    stats['total'] += count
+                
+                return stats
+                
+        except Exception as e:
+            self.logger.error(f"Error getting task statistics: {e}")
+            return {'total': 0, 'queued': 0, 'running': 0, 'completed': 0, 'failed': 0}
     
     def delete_channel(self, channel_id: int) -> Dict[str, Any]:
         """Delete channel and all related data"""
@@ -622,3 +901,236 @@ class YouTubeChannelsDB:
                 conn.commit()
         except Exception as e:
             self.logger.error(f"Error logging event: {e}")
+    
+    # === MUSIC QUEUE MANAGEMENT ===
+    
+    def add_to_music_queue(self, tracks_data: list, original_task_id: str = None) -> int:
+        """Add multiple tracks to music queue (from Suno API response)
+        
+        Args:
+            tracks_data: List of track dictionaries with Suno API data
+            original_task_id: Background task ID that generated these tracks
+            
+        Returns:
+            Number of tracks added to queue
+        """
+        try:
+            added_count = 0
+            
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                for track in tracks_data:
+                    # Generate unique queue UUID
+                    import uuid
+                    from datetime import datetime, timedelta
+                    
+                    queue_uuid = str(uuid.uuid4())
+                    
+                    # Calculate expiry date (30 days from now)
+                    expiry_date = (datetime.now() + timedelta(days=30)).isoformat()
+                    
+                    # Parse duration to seconds for calculations
+                    duration_seconds = self._parse_duration_to_seconds(track.get('duration', '0:00'))
+                    
+                    # Calculate quality score based on title and tags
+                    quality_score = self._calculate_quality_score(track)
+                    
+                    cursor.execute('''
+                        INSERT INTO music_queue (
+                            queue_uuid, suno_task_id, suno_clip_id, original_task_id,
+                            channel_id, genre, title, audio_url, video_url, 
+                            duration, duration_seconds, vocal_type, tags, prompt, model_name,
+                            quality_score, expiry_date
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (
+                        queue_uuid,
+                        track.get('suno_task_id'),
+                        track.get('suno_clip_id'),
+                        original_task_id,
+                        track.get('channel_id'),
+                        track.get('genre'),
+                        track.get('title'),
+                        track.get('audio_url'),
+                        track.get('video_url'),
+                        track.get('duration'),
+                        duration_seconds,
+                        track.get('vocal_type'),
+                        json.dumps(track.get('tags', [])),
+                        track.get('prompt'),
+                        track.get('model_name'),
+                        quality_score,
+                        expiry_date
+                    ))
+                    
+                    added_count += 1
+                    print(f"🎵 ➕ Added to queue: {track.get('title')} ({track.get('genre')})")
+                
+                conn.commit()
+                self.logger.info(f"Added {added_count} tracks to music queue")
+                return added_count
+                
+        except Exception as e:
+            self.logger.error(f"Error adding tracks to music queue: {e}")
+            return 0
+    
+    def get_queued_track(self, channel_id: int, genre: str = None, vocal_type: str = None) -> Dict[str, Any]:
+        """Get best matching track from queue for immediate use
+        
+        Args:
+            channel_id: Channel ID requesting track
+            genre: Preferred genre (optional)
+            vocal_type: 'vocal' or 'instrumental' (optional)
+            
+        Returns:
+            Track data dict or None if no suitable track found
+        """
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                # Build query with flexible matching
+                base_query = '''
+                    SELECT * FROM music_queue 
+                    WHERE status = 'available' 
+                    AND expiry_date > datetime('now')
+                '''
+                params = []
+                
+                # Add filters if specified
+                if channel_id:
+                    base_query += ' AND channel_id = ?'
+                    params.append(channel_id)
+                    
+                if genre:
+                    base_query += ' AND genre = ?'
+                    params.append(genre)
+                    
+                if vocal_type:
+                    base_query += ' AND vocal_type = ?'
+                    params.append(vocal_type)
+                
+                # Order by priority and quality
+                base_query += ' ORDER BY priority DESC, quality_score DESC, created_at ASC LIMIT 1'
+                
+                cursor.execute(base_query, params)
+                row = cursor.fetchone()
+                
+                if row:
+                    # Convert row to dict
+                    columns = [desc[0] for desc in cursor.description]
+                    track = dict(zip(columns, row))
+                    
+                    # Mark as used
+                    self._mark_track_as_used(track['queue_uuid'])
+                    
+                    print(f"🎵 🎯 Using queued track: {track['title']} ({track['genre']})")
+                    return track
+                else:
+                    print(f"🎵 ⚠️ No suitable queued track found for channel {channel_id}, genre: {genre}, vocal: {vocal_type}")
+                    return None
+                    
+        except Exception as e:
+            self.logger.error(f"Error getting queued track: {e}")
+            return None
+    
+    def _mark_track_as_used(self, queue_uuid: str, task_id: str = None):
+        """Mark track as used in database"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    UPDATE music_queue 
+                    SET status = 'used', used_at = datetime('now'), used_for_task = ?
+                    WHERE queue_uuid = ?
+                ''', (task_id, queue_uuid))
+                conn.commit()
+        except Exception as e:
+            self.logger.error(f"Error marking track as used: {e}")
+    
+    def get_music_queue_stats(self, channel_id: int = None) -> Dict[str, Any]:
+        """Get music queue statistics"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                base_where = "WHERE expiry_date > datetime('now')"
+                params = []
+                
+                if channel_id:
+                    base_where += " AND channel_id = ?"
+                    params.append(channel_id)
+                
+                # Count by status
+                cursor.execute(f"SELECT status, COUNT(*) FROM music_queue {base_where} GROUP BY status", params)
+                status_counts = dict(cursor.fetchall())
+                
+                # Count by genre
+                cursor.execute(f"SELECT genre, COUNT(*) FROM music_queue {base_where} AND status = 'available' GROUP BY genre", params)
+                genre_counts = dict(cursor.fetchall())
+                
+                # Count by vocal type
+                cursor.execute(f"SELECT vocal_type, COUNT(*) FROM music_queue {base_where} AND status = 'available' GROUP BY vocal_type", params)
+                vocal_counts = dict(cursor.fetchall())
+                
+                return {
+                    'status_counts': status_counts,
+                    'genre_counts': genre_counts,
+                    'vocal_counts': vocal_counts,
+                    'total_available': status_counts.get('available', 0)
+                }
+                
+        except Exception as e:
+            self.logger.error(f"Error getting queue stats: {e}")
+            return {}
+    
+    def cleanup_expired_tracks(self) -> int:
+        """Remove expired tracks from queue"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute("DELETE FROM music_queue WHERE expiry_date <= datetime('now')")
+                deleted_count = cursor.rowcount
+                conn.commit()
+                
+                if deleted_count > 0:
+                    print(f"🎵 🗑️ Cleaned up {deleted_count} expired tracks from queue")
+                
+                return deleted_count
+                
+        except Exception as e:
+            self.logger.error(f"Error cleaning up expired tracks: {e}")
+            return 0
+    
+    def _parse_duration_to_seconds(self, duration_str: str) -> float:
+        """Convert duration string like '3:45' to seconds"""
+        try:
+            if ':' in duration_str:
+                parts = duration_str.split(':')
+                if len(parts) == 2:
+                    minutes, seconds = parts
+                    return float(minutes) * 60 + float(seconds)
+                elif len(parts) == 3:
+                    hours, minutes, seconds = parts
+                    return float(hours) * 3600 + float(minutes) * 60 + float(seconds)
+            return float(duration_str)
+        except:
+            return 180.0  # Default 3 minutes
+    
+    def _calculate_quality_score(self, track: Dict[str, Any]) -> float:
+        """Calculate quality score based on track properties"""
+        score = 0.5  # Base score
+        
+        # Title quality
+        title = track.get('title', '')
+        if len(title) > 10:
+            score += 0.2
+        if any(word in title.lower() for word in ['music', 'song', 'track', 'beat']):
+            score += 0.1
+            
+        # Tags quality
+        tags = track.get('tags', [])
+        if isinstance(tags, list) and len(tags) > 3:
+            score += 0.2
+            
+        return min(1.0, score)  # Cap at 1.0
