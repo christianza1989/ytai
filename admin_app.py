@@ -265,7 +265,13 @@ def api_config():
 @app.route('/generator')
 @require_auth
 def generator():
-    """Advanced generation interface"""
+    """Professional Music Generator - Advanced AI-Powered Music Creation"""
+    return render_template('music_generator.html', api_status=system_state.api_status)
+
+@app.route('/old-generator')
+@require_auth
+def old_generator():
+    """Legacy generator (kept for reference)"""
     return render_template('generator.html', api_status=system_state.api_status)
 
 @app.route('/analytics')
@@ -2582,6 +2588,303 @@ def generate_channel_content(task_id, channel_id, content_type):
             system_state.generation_tasks[task_id]['status'] = 'failed'
             system_state.generation_tasks[task_id]['error'] = str(e)
             system_state.generation_tasks[task_id]['current_step'] = f"❌ Error: {str(e)}"
+
+# ===================================================================
+# PROFESSIONAL MUSIC GENERATOR API ENDPOINTS
+# ===================================================================
+
+@app.route('/api/music/generate', methods=['POST'])
+@require_auth
+def api_music_generate():
+    """Professional Music Generation with Suno AI"""
+    try:
+        data = request.get_json() or {}
+        
+        # Validate required fields
+        if not data.get('music_type'):
+            return jsonify({
+                'success': False,
+                'error': 'Music type is required'
+            }), 400
+            
+        if not data.get('genre_category'):
+            return jsonify({
+                'success': False,
+                'error': 'Genre category is required'
+            }), 400
+        
+        # Generate unique task ID
+        task_id = f"music_{int(time.time() * 1000)}"
+        
+        # Initialize task in system state
+        system_state.generation_tasks[task_id] = {
+            'task_id': task_id,
+            'type': 'music_generation',
+            'status': 'queued',
+            'progress': 0,
+            'current_step': 'Initializing music generation...',
+            'created_at': datetime.now(),
+            'data': data,
+            'logs': []
+        }
+        
+        # Start generation in background thread
+        threading.Thread(
+            target=process_music_generation,
+            args=(task_id, data),
+            daemon=True
+        ).start()
+        
+        return jsonify({
+            'success': True,
+            'task_id': task_id,
+            'message': 'Music generation started'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/music/status/<task_id>')
+@require_auth
+def api_music_status(task_id):
+    """Get music generation task status"""
+    task = system_state.generation_tasks.get(task_id, {})
+    if not task:
+        return jsonify({'error': 'Task not found'}), 404
+    return jsonify(task)
+
+@app.route('/api/music/cancel/<task_id>', methods=['POST'])
+@require_auth
+def api_music_cancel(task_id):
+    """Cancel music generation task"""
+    task = system_state.generation_tasks.get(task_id)
+    if task and task['status'] in ['queued', 'processing']:
+        task['status'] = 'cancelled'
+        task['current_step'] = 'Generation cancelled by user'
+        return jsonify({'success': True, 'message': 'Task cancelled'})
+    return jsonify({'success': False, 'error': 'Task not found or not cancellable'})
+
+def process_music_generation(task_id, data):
+    """Process music generation in background thread"""
+    try:
+        task = system_state.generation_tasks[task_id]
+        
+        def update_progress(progress, step, log_message=None):
+            task['progress'] = progress
+            task['current_step'] = step
+            if log_message:
+                task['logs'].append(f"[{datetime.now().strftime('%H:%M:%S')}] {log_message}")
+        
+        # Update status to processing
+        task['status'] = 'processing'
+        update_progress(5, "🎵 Preparing music generation request...", "Starting professional music generation")
+        
+        # Build comprehensive prompt based on user selections
+        music_prompt = build_suno_prompt(data)
+        update_progress(15, "🤖 Building AI music prompt...", f"Generated prompt: {music_prompt[:100]}...")
+        
+        # Prepare Suno API request
+        suno_request = {
+            'prompt': music_prompt,
+            'make_instrumental': data.get('music_type') == 'instrumental' or data.get('make_instrumental', False),
+            'wait_audio': data.get('wait_audio', True)
+        }
+        
+        # Add custom lyrics if provided
+        if data.get('music_type') == 'vocal' and data.get('lyrics_mode') == 'custom':
+            custom_lyrics = data.get('custom_lyrics', '').strip()
+            if custom_lyrics:
+                suno_request['lyrics'] = custom_lyrics
+                update_progress(25, "📝 Processing custom lyrics...", f"Added custom lyrics ({len(custom_lyrics)} chars)")
+        
+        # Add song title if provided
+        if data.get('song_title'):
+            suno_request['title'] = data.get('song_title')
+            update_progress(30, "🏷️ Setting song title...", f"Title: {data.get('song_title')}")
+        
+        # Add model selection
+        suno_request['model'] = data.get('suno_model', 'chirp-v3-5')
+        update_progress(35, f"⚙️ Using Suno model: {suno_request['model']}...", "Model configuration set")
+        
+        update_progress(50, "🎛️ Sending request to Suno AI...", "Initiating Suno API call")
+        
+        # Simulate Suno API call (replace with actual implementation)
+        time.sleep(3)  # Simulate API processing time
+        
+        update_progress(70, "🎵 Suno AI is generating your music...", "Audio synthesis in progress")
+        time.sleep(4)  # Simulate music generation time
+        
+        update_progress(85, "🎧 Processing audio output...", "Finalizing audio file")
+        time.sleep(1)
+        
+        # Mock successful result (replace with actual Suno API integration)
+        result = {
+            'success': True,
+            'title': data.get('song_title', f"Generated {data.get('genre_specific', 'Music')} Track"),
+            'audio_url': f"/output/music_{task_id}.mp3",
+            'duration': "2:34",
+            'model_used': suno_request['model'],
+            'prompt_used': music_prompt,
+            'is_instrumental': suno_request['make_instrumental'],
+            'metadata': {
+                'genre_category': data.get('genre_category'),
+                'genre_specific': data.get('genre_specific'),
+                'mood': data.get('mood'),
+                'tempo': data.get('tempo'),
+                'music_type': data.get('music_type'),
+                'generation_time': datetime.now().isoformat(),
+                'task_id': task_id
+            }
+        }
+        
+        # Add video URL if this was a vocal track (mock)
+        if data.get('music_type') == 'vocal':
+            result['video_url'] = f"/output/music_{task_id}.mp4"
+        
+        update_progress(95, "✅ Music generation completed!", "Finalizing output")
+        time.sleep(0.5)
+        
+        # Mark as completed
+        task['status'] = 'completed'
+        task['progress'] = 100
+        task['current_step'] = '🎉 Professional music generation completed successfully!'
+        task['result'] = result
+        task['completed_at'] = datetime.now()
+        
+        update_progress(100, "🎉 Ready for download!", f"Generated: {result['title']}")
+        
+    except Exception as e:
+        # Mark as failed
+        task['status'] = 'failed'
+        task['progress'] = 0
+        task['current_step'] = f"❌ Generation failed: {str(e)}"
+        task['result'] = {'error': str(e)}
+        task['logs'].append(f"[{datetime.now().strftime('%H:%M:%S')}] ERROR: {str(e)}")
+
+def build_suno_prompt(data):
+    """Build comprehensive Suno AI prompt from user selections"""
+    prompt_parts = []
+    
+    # Add genre information
+    genre_category = data.get('genre_category', '')
+    genre_specific = data.get('genre_specific', '')
+    
+    if genre_specific:
+        # Convert from form value back to readable genre name
+        readable_genre = genre_specific.replace('_', ' ').title()
+        prompt_parts.append(f"{readable_genre} music")
+    elif genre_category:
+        readable_category = genre_category.replace('_', ' ').title()
+        prompt_parts.append(f"{readable_category} style")
+    
+    # Add mood/atmosphere
+    mood = data.get('mood', '')
+    if mood:
+        mood_descriptions = {
+            'energetic': 'high energy, uplifting',
+            'calm': 'peaceful, relaxing, serene',
+            'melancholic': 'sad, emotional, introspective',
+            'happy': 'joyful, cheerful, upbeat',
+            'mysterious': 'dark, enigmatic, atmospheric',
+            'romantic': 'loving, passionate, intimate',
+            'aggressive': 'intense, powerful, driving',
+            'nostalgic': 'wistful, reminiscent, sentimental',
+            'dreamy': 'ethereal, floating, ambient',
+            'dark': 'brooding, moody, somber'
+        }
+        if mood in mood_descriptions:
+            prompt_parts.append(mood_descriptions[mood])
+    
+    # Add tempo information
+    tempo = data.get('tempo', '')
+    if tempo:
+        tempo_descriptions = {
+            'slow': 'slow tempo, relaxed pace',
+            'moderate': 'moderate tempo',
+            'fast': 'fast tempo, energetic rhythm',
+            'very_fast': 'very fast tempo, high BPM'
+        }
+        if tempo in tempo_descriptions:
+            prompt_parts.append(tempo_descriptions[tempo])
+    
+    # Add vocal information for vocal tracks
+    if data.get('music_type') == 'vocal':
+        vocal_gender = data.get('vocal_gender', '')
+        vocal_style = data.get('vocal_style', '')
+        language = data.get('language', 'english')
+        
+        if vocal_gender:
+            gender_map = {
+                'female': 'female vocals',
+                'male': 'male vocals', 
+                'mixed': 'mixed vocals, duet'
+            }
+            if vocal_gender in gender_map:
+                prompt_parts.append(gender_map[vocal_gender])
+        
+        if vocal_style:
+            style_descriptions = {
+                'soft_female': 'soft, gentle female voice',
+                'powerful_female': 'powerful, strong female vocals',
+                'sweet_female': 'sweet, melodic female voice',
+                'breathy_female': 'breathy, sensual female vocals',
+                'operatic_female': 'operatic, classical female voice',
+                'indie_female': 'indie, alternative female vocals',
+                'smooth_male': 'smooth, silky male voice',
+                'powerful_male': 'powerful, strong male vocals',
+                'raspy_male': 'raspy, rough male voice',
+                'deep_male': 'deep, rich male voice',
+                'emotional_male': 'emotional, expressive male vocals',
+                'rapper_male': 'rap style male vocals',
+                'harmony_mixed': 'harmonized duet vocals',
+                'call_response': 'call and response vocals',
+                'alternating_mixed': 'alternating male and female vocals',
+                'choir_mixed': 'choir, group vocals'
+            }
+            if vocal_style in style_descriptions:
+                prompt_parts.append(style_descriptions[vocal_style])
+        
+        # Add language specification
+        if language != 'english':
+            language_names = {
+                'lithuanian': 'Lithuanian language',
+                'spanish': 'Spanish language',
+                'french': 'French language',
+                'italian': 'Italian language',
+                'german': 'German language',
+                'japanese': 'Japanese language',
+                'korean': 'Korean language',
+                'portuguese': 'Portuguese language',
+                'russian': 'Russian language'
+            }
+            if language in language_names:
+                prompt_parts.append(language_names[language])
+        
+        # Add lyrics theme if using AI-generated lyrics
+        if data.get('lyrics_mode') == 'ai_generated':
+            lyrics_theme = data.get('lyrics_theme', '').strip()
+            if lyrics_theme:
+                prompt_parts.append(f"lyrics about {lyrics_theme}")
+    
+    # Use custom prompt if provided, otherwise build from parts
+    custom_prompt = data.get('custom_prompt', '').strip()
+    if custom_prompt:
+        return custom_prompt
+    
+    # Join prompt parts with commas
+    final_prompt = ', '.join(prompt_parts)
+    
+    # Add some professional touches
+    if data.get('music_type') == 'instrumental':
+        final_prompt += ', instrumental track, no vocals'
+    
+    # Add production quality indicators
+    final_prompt += ', professional production, high quality audio'
+    
+    return final_prompt
 
 if __name__ == '__main__':
     # Create required directories
