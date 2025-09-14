@@ -64,6 +64,71 @@
     display: block;
 }
 
+.specialized-section {
+    background: #f0f8ff;
+    border: 2px dashed #4a90e2;
+    border-radius: 12px;
+    padding: 25px;
+    margin-top: 20px;
+}
+
+.category-card {
+    background: white;
+    border: 2px solid #e1e8ed;
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    height: 100%;
+}
+
+.category-card:hover {
+    border-color: #4a90e2;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(74, 144, 226, 0.2);
+}
+
+.category-card.active {
+    border-color: #4a90e2;
+    background: #f0f8ff;
+    box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+}
+
+.category-card i {
+    color: #4a90e2;
+}
+
+.selected-category-details {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 20px;
+    border: 1px solid #e1e8ed;
+}
+
+.batch-results .tracks-grid {
+    /* Use Bootstrap row/col system instead of CSS Grid */
+}
+
+.batch-track-card {
+    border: 1px solid #e1e8ed;
+    transition: all 0.3s ease;
+}
+
+.batch-track-card:hover {
+    border-color: #4a90e2;
+    box-shadow: 0 4px 15px rgba(74, 144, 226, 0.2);
+}
+
+.batch-stats .badge {
+    font-size: 0.85em;
+}
+
+.audio-player audio {
+    border-radius: 8px;
+}
+
 .prompt-textarea {
     border: 2px solid #e1e5e9;
     border-radius: 12px;
@@ -197,6 +262,11 @@
             <h5>Custom</h5>
             <p class="mb-0">Full control with title, style, and lyrics</p>
         </div>
+        <div class="mode-card" data-mode="specialized" onclick="selectMode('specialized')">
+            <i class="fas fa-brain fa-2x mb-3"></i>
+            <h5>Specialized</h5>
+            <p class="mb-0">Pre-configured music for study, sleep, work & relaxation</p>
+        </div>
     </div>
 
     <!-- Simple Mode -->
@@ -230,38 +300,134 @@
 
     <!-- Custom Mode -->
     <div class="custom-section" id="customMode">
-        <h4><i class="fas fa-sliders-h me-2"></i>Custom Generation</h4>
+        <h4><i class="fas fa-sliders-h me-2"></i>Advanced Music Generation</h4>
         
+        <!-- Row 1: Title and Main Genre -->
         <div class="row">
             <div class="col-md-6 mb-3">
-                <label for="customTitle" class="form-label fw-bold">Song Title</label>
+                <label for="customTitle" class="form-label fw-bold">
+                    Song Title 
+                    <small class="text-muted">(optional)</small>
+                </label>
                 <input type="text" class="form-control" id="customTitle" 
-                       placeholder="Enter song title" maxlength="80">
+                       placeholder="Leave empty - Suno will generate title automatically" maxlength="80">
+                <small class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    If empty, Suno AI will create a title based on your style and lyrics
+                </small>
             </div>
             <div class="col-md-6 mb-3">
-                <label for="customStyle" class="form-label fw-bold">Music Style</label>
-                <input type="text" class="form-control" id="customStyle" 
-                       placeholder="e.g., Pop, Rock, Electronic, Jazz" maxlength="200">
+                <label for="genreSelect" class="form-label fw-bold">Main Genre</label>
+                <select class="form-select" id="genreSelect" onchange="updateSubgenres()">
+                    <option value="">Select Genre</option>
+                    <option value="pop">Pop</option>
+                    <option value="rock">Rock</option>
+                    <option value="electronic">Electronic/EDM</option>
+                    <option value="hiphop">Hip-Hop/Rap</option>
+                    <option value="jazz">Jazz</option>
+                    <option value="classical">Classical</option>
+                    <option value="country">Country</option>
+                    <option value="folk">Folk/Acoustic</option>
+                    <option value="blues">Blues</option>
+                    <option value="reggae">Reggae</option>
+                    <option value="latin">Latin</option>
+                    <option value="world">World Music</option>
+                    <option value="ambient">Ambient/Chillout</option>
+                    <option value="metal">Metal</option>
+                    <option value="punk">Punk</option>
+                    <option value="funk">Funk</option>
+                    <option value="soul">Soul/R&B</option>
+                </select>
             </div>
         </div>
 
+        <!-- Row 2: Subgenre and Vocal Settings -->
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="subgenreSelect" class="form-label fw-bold">Subgenre/Style</label>
+                <select class="form-select" id="subgenreSelect">
+                    <option value="">Select Subgenre</option>
+                    <!-- Will be populated by JavaScript -->
+                </select>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="vocalType" class="form-label fw-bold">Vocals</label>
+                <select class="form-select" id="vocalType" onchange="updateVocalOptions()">
+                    <option value="instrumental">Instrumental (No Vocals)</option>
+                    <option value="male">Male Vocals</option>
+                    <option value="female">Female Vocals</option>
+                    <option value="mixed">Mixed/Duet</option>
+                    <option value="choir">Choir/Group Vocals</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Row 3: Vocal Style and Additional Options -->
+        <div class="row" id="vocalStyleRow" style="display:none;">
+            <div class="col-md-6 mb-3">
+                <label for="vocalStyle" class="form-label fw-bold">Vocal Style</label>
+                <select class="form-select" id="vocalStyle">
+                    <option value="">Select Style</option>
+                    <option value="soft">Soft & Gentle</option>
+                    <option value="powerful">Powerful & Strong</option>
+                    <option value="raspy">Raspy & Raw</option>
+                    <option value="smooth">Smooth & Silky</option>
+                    <option value="operatic">Operatic</option>
+                    <option value="whispery">Whispery</option>
+                    <option value="soulful">Soulful</option>
+                    <option value="aggressive">Aggressive</option>
+                    <option value="melodic">Melodic</option>
+                    <option value="rhythmic">Rhythmic/Rap Style</option>
+                </select>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="vocalAge" class="form-label fw-bold">Voice Age/Character</label>
+                <select class="form-select" id="vocalAge">
+                    <option value="">Select Character</option>
+                    <option value="young">Young & Fresh</option>
+                    <option value="mature">Mature & Experienced</option>
+                    <option value="child">Child Voice</option>
+                    <option value="elderly">Elderly/Wise</option>
+                    <option value="teen">Teenage</option>
+                    <option value="adult">Adult</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Additional Music Style Description -->
+        <div class="mb-3">
+            <label for="additionalStyle" class="form-label fw-bold">
+                Additional Music Style Description 
+                <small class="text-muted">(optional)</small>
+            </label>
+            <input type="text" class="form-control" id="additionalStyle" 
+                   placeholder="e.g., deep, emotional, upbeat, melancholic, energetic, dreamy..." 
+                   maxlength="200">
+            <small class="text-muted">
+                <i class="fas fa-info-circle me-1"></i>
+                Add descriptive words like mood, energy level, instruments, tempo
+            </small>
+        </div>
+
+        <!-- Lyrics/Content Description -->
         <div class="mb-3">
             <label for="customPrompt" class="form-label fw-bold">Lyrics/Content Description</label>
             <textarea class="form-control prompt-textarea" id="customPrompt" rows="4"
-                      placeholder="Describe the lyrics, story, or musical elements you want..."
+                      placeholder="Describe the lyrics, story, theme, or specific musical elements you want..."
                       maxlength="3000"></textarea>
             <div class="d-flex justify-content-between mt-2">
-                <small class="text-muted">Custom mode - up to 3000 characters</small>
+                <small class="text-muted">Advanced mode - up to 3000 characters</small>
                 <small class="text-muted" id="customCharCount">0/3000</small>
             </div>
         </div>
 
-        <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="customInstrumental">
-            <label class="form-check-label" for="customInstrumental">
-                <i class="fas fa-volume-mute me-1"></i>
-                Instrumental only (no lyrics)
-            </label>
+        <!-- Generated Style Preview -->
+        <div class="mb-3">
+            <label class="form-label fw-bold">Generated Music Style Preview:</label>
+            <div class="alert alert-light" id="stylePreview">
+                <i class="fas fa-music me-2"></i>
+                <span id="previewText">Select options above to see your music style...</span>
+            </div>
         </div>
     </div>
 
@@ -285,6 +451,209 @@
         
         <div id="tracksList">
             <!-- Tracks will be inserted here -->
+        </div>
+    </div>
+
+    <!-- Video Creation Pipeline -->
+    <div class="video-creation-pipeline" id="videoCreationPipeline" style="display:none;">
+        <div class="card mt-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-video me-2"></i>Create YouTube Video</h5>
+            </div>
+            <div class="card-body">
+                <!-- Selected Track Info -->
+                <div class="alert alert-info" id="selectedTrackInfo">
+                    <i class="fas fa-music me-2"></i>
+                    <strong>Selected Track:</strong> <span id="selectedTrackTitle">Track Title</span>
+                </div>
+                
+                <!-- Step 1: Generate Album Art -->
+                <div class="step-panel mb-4" id="imageStep">
+                    <h6><i class="fas fa-image me-2"></i>Step 1: Generate Album Art</h6>
+                    <button class="btn btn-primary" id="generateImageBtn" onclick="generateAlbumArt()">
+                        <i class="fas fa-palette me-2"></i>Generate Album Art
+                    </button>
+                    <div id="imagePreview" style="display:none;" class="mt-3">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <img id="generatedImage" class="img-fluid rounded" style="max-width: 100%;">
+                            </div>
+                            <div class="col-md-8">
+                                <h6>Generated Album Art</h6>
+                                <p class="text-muted" id="imagePrompt">Prompt used: ...</p>
+                                <div class="mt-2">
+                                    <button class="btn btn-success me-2" onclick="approveImage()">
+                                        <i class="fas fa-check me-1"></i>Use This Image
+                                    </button>
+                                    <button class="btn btn-warning" onclick="regenerateImage()">
+                                        <i class="fas fa-redo me-1"></i>Regenerate
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 2: Create Video -->
+                <div class="step-panel mb-4" id="videoStep" style="display:none;">
+                    <h6><i class="fas fa-play me-2"></i>Step 2: Create Video</h6>
+                    <button class="btn btn-success" id="createVideoBtn" onclick="createVideo()">
+                        <i class="fas fa-film me-2"></i>Create Video
+                    </button>
+                    <div id="videoPreview" style="display:none;" class="mt-3">
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Video Created Successfully!</strong>
+                            <p class="mb-0 mt-2">Your video is ready for upload to YouTube.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 3: Upload to YouTube -->
+                <div class="step-panel mb-4" id="uploadStep" style="display:none;">
+                    <h6><i class="fab fa-youtube me-2"></i>Step 3: Upload to YouTube</h6>
+                    <div class="mb-3">
+                        <label class="form-label">Select YouTube Channel:</label>
+                        <select class="form-select" id="youtubeChannelSelect">
+                            <option value="">Loading channels...</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-danger" id="uploadToYouTubeBtn" onclick="uploadToYouTube()">
+                        <i class="fab fa-youtube me-2"></i>Generate Meta & Upload
+                    </button>
+                </div>
+                
+                <!-- Progress Tracking -->
+                <div class="progress-tracking" id="progressTracking" style="display:none;">
+                    <h6><i class="fas fa-tasks me-2"></i>Progress</h6>
+                    <div class="progress mb-2">
+                        <div class="progress-bar" id="videoProgressBar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <small class="text-muted" id="progressStatus">Ready to start...</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Specialized Mode -->
+    <div class="specialized-section" id="specializedMode" style="display: none;">
+        <h4><i class="fas fa-brain me-2"></i>Specialized Music Categories</h4>
+        <p class="text-muted mb-4">Choose pre-configured music optimized for specific activities and moods.</p>
+        
+        <!-- Category Selection Grid -->
+        <div class="row mb-4">
+            <div class="col-md-4 mb-3">
+                <div class="category-card" data-category="study" onclick="selectSpecializedCategory('study')">
+                    <i class="fas fa-book-open fa-2x mb-3"></i>
+                    <h6>Study & Focus</h6>
+                    <p class="mb-0">Ambient, lo-fi, instrumental tracks for concentration</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="category-card" data-category="sleep" onclick="selectSpecializedCategory('sleep')">
+                    <i class="fas fa-moon fa-2x mb-3"></i>
+                    <h6>Sleep & Rest</h6>
+                    <p class="mb-0">Soothing, calming music for relaxation and sleep</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="category-card" data-category="work" onclick="selectSpecializedCategory('work')">
+                    <i class="fas fa-briefcase fa-2x mb-3"></i>
+                    <h6>Work & Productivity</h6>
+                    <p class="mb-0">Energizing background music for work sessions</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="category-card" data-category="meditation" onclick="selectSpecializedCategory('meditation')">
+                    <i class="fas fa-om fa-2x mb-3"></i>
+                    <h6>Meditation</h6>
+                    <p class="mb-0">Peaceful, zen-like music for mindfulness</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="category-card" data-category="exercise" onclick="selectSpecializedCategory('exercise')">
+                    <i class="fas fa-running fa-2x mb-3"></i>
+                    <h6>Exercise & Fitness</h6>
+                    <p class="mb-0">Motivating beats for workouts and training</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="category-card" data-category="creative" onclick="selectSpecializedCategory('creative')">
+                    <i class="fas fa-palette fa-2x mb-3"></i>
+                    <h6>Creative Work</h6>
+                    <p class="mb-0">Inspiring music for artistic and creative tasks</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Selected Category Details -->
+        <div class="selected-category-details" id="categoryDetails" style="display: none;">
+            <div class="alert alert-info">
+                <h6 id="categoryTitle">Study & Focus Music</h6>
+                <p id="categoryDescription" class="mb-0">Creating ambient, lo-fi instrumental tracks perfect for concentration and studying.</p>
+            </div>
+            
+            <!-- Configuration Options -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <label class="form-label">Subcategory Style:</label>
+                    <select class="form-select" id="specializedSubcategory">
+                        <option value="ambient">Ambient & Atmospheric</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Number of Tracks:</label>
+                    <select class="form-select" id="specializedTrackCount">
+                        <option value="6">6 tracks (~12 minutes) - 3 API calls</option>
+                        <option value="10" selected>10 tracks (~20 minutes) - 5 API calls</option>
+                        <option value="14">14 tracks (~28 minutes) - 7 API calls</option>
+                        <option value="20">20 tracks (~40 minutes) - 10 API calls</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Final Output:</label>
+                    <select class="form-select" id="specializedOutput">
+                        <option value="merged" selected>Merged Long Audio + Video</option>
+                        <option value="separate">Separate Individual Tracks</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Advanced Options -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="specializedFadeTransitions" checked>
+                        <label class="form-check-label" for="specializedFadeTransitions">
+                            Smooth transitions between tracks
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="specializedCreateVideo" checked>
+                        <label class="form-check-label" for="specializedCreateVideo">
+                            Create long-form video
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Optional Custom Title -->
+            <div class="mb-4">
+                <label class="form-label">Custom Title (Optional):</label>
+                <input type="text" class="form-control" id="specializedTitle" placeholder="Leave empty for AI-generated title">
+                <small class="text-muted">If empty, AI will generate a suitable title for your chosen category.</small>
+            </div>
+            
+            <!-- Generate Preview -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">Preview:</label>
+                <div class="alert alert-light" id="specializedPreview">
+                    <i class="fas fa-music me-2"></i>
+                    <span id="specializedPreviewText">Select a category above to see the music style...</span>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -373,13 +742,139 @@ function selectMode(mode) {
     document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
     
     // Show/hide sections
+    // Hide all sections first
+    document.getElementById('simpleMode').style.display = 'none';
+    document.getElementById('customMode').classList.remove('active');
+    document.getElementById('specializedMode').style.display = 'none';
+    
+    // Show selected section
     if (mode === 'simple') {
         document.getElementById('simpleMode').style.display = 'block';
-        document.getElementById('customMode').classList.remove('active');
-    } else {
-        document.getElementById('simpleMode').style.display = 'block'; // Keep simple always visible
+    } else if (mode === 'custom') {
         document.getElementById('customMode').classList.add('active');
+    } else if (mode === 'specialized') {
+        document.getElementById('specializedMode').style.display = 'block';
     }
+}
+
+// Specialized Category Management
+let selectedSpecializedCategory = null;
+
+const specializedCategories = {
+    study: {
+        title: "Study & Focus Music",
+        description: "Creating ambient, lo-fi instrumental tracks perfect for concentration and studying.",
+        subcategories: [
+            { value: "lofi", text: "Lo-fi Hip Hop" },
+            { value: "ambient", text: "Ambient & Atmospheric" },
+            { value: "classical", text: "Minimal Classical" },
+            { value: "nature", text: "Nature Sounds + Music" }
+        ],
+        style: "lo-fi, ambient, instrumental, study music, concentration, peaceful, soft beats, minimal"
+    },
+    sleep: {
+        title: "Sleep & Rest Music",
+        description: "Creating soothing, calming music perfect for relaxation and peaceful sleep.",
+        subcategories: [
+            { value: "ambient", text: "Ambient Textures" },
+            { value: "nature", text: "Nature Soundscapes" },
+            { value: "meditative", text: "Meditative Drones" },
+            { value: "lullaby", text: "Modern Lullabies" }
+        ],
+        style: "ambient, peaceful, calming, sleep music, soft, meditative, slow tempo, relaxing"
+    },
+    work: {
+        title: "Work & Productivity Music",
+        description: "Creating energizing background music that enhances focus and productivity.",
+        subcategories: [
+            { value: "upbeat", text: "Upbeat Instrumental" },
+            { value: "electronic", text: "Electronic Beats" },
+            { value: "jazzy", text: "Jazz & Smooth" },
+            { value: "cinematic", text: "Cinematic Motivation" }
+        ],
+        style: "upbeat, energetic, motivational, productivity, background music, electronic, rhythmic"
+    },
+    meditation: {
+        title: "Meditation Music",
+        description: "Creating peaceful, zen-like music designed for mindfulness and deep meditation.",
+        subcategories: [
+            { value: "tibetan", text: "Tibetan Singing Bowls" },
+            { value: "zen", text: "Zen Garden" },
+            { value: "chakra", text: "Chakra Balancing" },
+            { value: "mindfulness", text: "Mindfulness Ambient" }
+        ],
+        style: "meditative, zen, peaceful, spiritual, mindfulness, ambient, healing, tranquil"
+    },
+    exercise: {
+        title: "Exercise & Fitness Music",
+        description: "Creating high-energy, motivating beats perfect for workouts and physical training.",
+        subcategories: [
+            { value: "cardio", text: "Cardio High Energy" },
+            { value: "strength", text: "Strength Training" },
+            { value: "yoga", text: "Yoga Flow" },
+            { value: "running", text: "Running Rhythm" }
+        ],
+        style: "high energy, motivational, workout music, upbeat, strong beats, energetic, fitness"
+    },
+    creative: {
+        title: "Creative Work Music",
+        description: "Creating inspiring, flow-state music perfect for artistic and creative tasks.",
+        subcategories: [
+            { value: "inspiring", text: "Inspiring Ambient" },
+            { value: "jazzy", text: "Creative Jazz" },
+            { value: "electronic", text: "Experimental Electronic" },
+            { value: "classical", text: "Neo-Classical" }
+        ],
+        style: "creative, inspiring, artistic, flow state, ambient, experimental, innovative, imaginative"
+    }
+};
+
+function selectSpecializedCategory(category) {
+    selectedSpecializedCategory = category;
+    
+    // Update visual selection
+    document.querySelectorAll('.category-card').forEach(card => {
+        card.classList.remove('active');
+    });
+    document.querySelector(`[data-category="${category}"]`).classList.add('active');
+    
+    // Show category details
+    const details = document.getElementById('categoryDetails');
+    const categoryData = specializedCategories[category];
+    
+    if (categoryData) {
+        document.getElementById('categoryTitle').textContent = categoryData.title;
+        document.getElementById('categoryDescription').textContent = categoryData.description;
+        
+        // Update subcategory options
+        const subcategorySelect = document.getElementById('specializedSubcategory');
+        subcategorySelect.innerHTML = '';
+        categoryData.subcategories.forEach(sub => {
+            const option = document.createElement('option');
+            option.value = sub.value;
+            option.textContent = sub.text;
+            subcategorySelect.appendChild(option);
+        });
+        
+        details.style.display = 'block';
+        
+        // Update preview text
+        updateSpecializedPreview();
+    }
+}
+
+function updateSpecializedPreview() {
+    if (!selectedSpecializedCategory) return;
+    
+    const categoryData = specializedCategories[selectedSpecializedCategory];
+    const subcategorySelect = document.getElementById('specializedSubcategory');
+    const subcategoryText = subcategorySelect.selectedOptions[0]?.textContent || '';
+    const trackCount = document.getElementById('specializedTrackCount').value;
+    const outputType = document.getElementById('specializedOutput').selectedOptions[0]?.textContent || '';
+    
+    const estimatedDuration = Math.round(trackCount * 2); // ~2 minutes per track
+    const previewText = `${subcategoryText} • ${trackCount} tracks (~${estimatedDuration} minutes) • ${outputType}`;
+    document.getElementById('specializedPreviewText').textContent = previewText;
 }
 
 // Character counting
@@ -391,6 +886,15 @@ document.getElementById('simplePrompt').addEventListener('input', function() {
 document.getElementById('customPrompt').addEventListener('input', function() {
     const count = this.value.length;
     document.getElementById('customCharCount').textContent = `${count}/3000`;
+});
+
+// Specialized category preview update
+document.addEventListener('change', function(e) {
+    if (e.target.id === 'specializedSubcategory' || 
+        e.target.id === 'specializedTrackCount' || 
+        e.target.id === 'specializedOutput') {
+        updateSpecializedPreview();
+    }
 });
 
 // Generation
@@ -405,11 +909,15 @@ function startGeneration() {
             alert('Please describe your song first!');
             return;
         }
-    } else {
-        const title = document.getElementById('customTitle').value.trim();
-        const style = document.getElementById('customStyle').value.trim();
-        if (!title || !style) {
-            alert('Please fill in title and style for custom mode!');
+    } else if (currentMode === 'custom') {
+        const genre = document.getElementById('genreSelect').value;
+        if (!genre) {
+            alert('Please select a genre for advanced mode!');
+            return;
+        }
+    } else if (currentMode === 'specialized') {
+        if (!selectedSpecializedCategory) {
+            alert('Please select a specialized category first!');
             return;
         }
     }
@@ -429,12 +937,94 @@ function startGeneration() {
         generationData.prompt = document.getElementById('simplePrompt').value;
         generationData.instrumental = document.getElementById('simpleInstrumental').checked;
         generationData.custom_mode = false;
-    } else {
-        generationData.title = document.getElementById('customTitle').value;
-        generationData.style = document.getElementById('customStyle').value;
+    } else if (currentMode === 'custom') {
+        // Build automatic style from dropdown selections
+        const genre = document.getElementById('genreSelect').selectedOptions[0]?.textContent || '';
+        const subgenre = document.getElementById('subgenreSelect').selectedOptions[0]?.textContent || '';
+        const vocalType = document.getElementById('vocalType').value;
+        const vocalStyle = document.getElementById('vocalStyle').selectedOptions[0]?.textContent || '';
+        const vocalAge = document.getElementById('vocalAge').selectedOptions[0]?.textContent || '';
+        const additionalStyle = document.getElementById('additionalStyle').value;
+        
+        // Build comprehensive style description
+        let styleComponents = [];
+        
+        if (genre && genre !== 'Select Genre') {
+            styleComponents.push(genre);
+        }
+        
+        if (subgenre && subgenre !== 'Select Subgenre') {
+            styleComponents.push(subgenre);
+        }
+        
+        // Handle vocal settings
+        if (vocalType === 'instrumental') {
+            styleComponents.push('instrumental');
+        } else if (vocalType && vocalType !== '') {
+            let vocalDesc = vocalType.replace('_', ' ');
+            if (vocalType === 'male') vocalDesc = 'male vocals';
+            if (vocalType === 'female') vocalDesc = 'female vocals';
+            if (vocalType === 'mixed') vocalDesc = 'mixed vocals, duet';
+            if (vocalType === 'choir') vocalDesc = 'choir, group vocals';
+            
+            if (vocalStyle && vocalStyle !== 'Select Style') {
+                vocalDesc += `, ${vocalStyle.toLowerCase()}`;
+            }
+            if (vocalAge && vocalAge !== 'Select Character') {
+                vocalDesc += `, ${vocalAge.toLowerCase()}`;
+            }
+            styleComponents.push(vocalDesc);
+        }
+        
+        if (additionalStyle.trim()) {
+            styleComponents.push(additionalStyle.trim());
+        }
+        
+        const autoGeneratedStyle = styleComponents.join(', ');
+        
+        const customTitle = document.getElementById('customTitle').value.trim();
+        generationData.title = customTitle || null; // null if empty, Suno will auto-generate
+        generationData.style = autoGeneratedStyle; // Use automatically generated style
         generationData.prompt = document.getElementById('customPrompt').value;
-        generationData.instrumental = document.getElementById('customInstrumental').checked;
+        generationData.instrumental = vocalType === 'instrumental';
         generationData.custom_mode = true;
+        
+        // Store selections for debugging
+        generationData.genre = genre;
+        generationData.subgenre = subgenre;
+        generationData.vocal_type = vocalType;
+        generationData.vocal_style = vocalStyle;
+        generationData.additional_style = additionalStyle;
+    } else if (currentMode === 'specialized') {
+        // Specialized category generation with batch support
+        const categoryData = specializedCategories[selectedSpecializedCategory];
+        const subcategory = document.getElementById('specializedSubcategory').value;
+        const customTitle = document.getElementById('specializedTitle').value.trim();
+        const trackCount = parseInt(document.getElementById('specializedTrackCount').value);
+        const outputType = document.getElementById('specializedOutput').value;
+        const fadeTransitions = document.getElementById('specializedFadeTransitions').checked;
+        const createVideo = document.getElementById('specializedCreateVideo').checked;
+        
+        // Build specialized prompt based on category and subcategory
+        const subcategoryText = categoryData.subcategories.find(sub => sub.value === subcategory)?.text || subcategory;
+        const categoryPrompt = `Create ${subcategoryText.toLowerCase()} music for ${selectedSpecializedCategory}`;
+        
+        generationData.prompt = categoryPrompt;
+        generationData.style = categoryData.style;
+        generationData.title = customTitle || null; // null if empty, Suno will auto-generate
+        generationData.instrumental = true; // Most specialized categories are instrumental
+        generationData.custom_mode = true;
+        
+        // Specialized batch settings
+        generationData.batch_mode = true;
+        generationData.track_count = trackCount;
+        generationData.output_type = outputType;
+        generationData.fade_transitions = fadeTransitions;
+        generationData.create_video = createVideo;
+        
+        // Store specialized selections for debugging
+        generationData.specialized_category = selectedSpecializedCategory;
+        generationData.specialized_subcategory = subcategory;
     }
     
     // Send request
@@ -449,6 +1039,12 @@ function startGeneration() {
     .then(data => {
         if (data.success) {
             generationTaskId = data.task_id;
+            
+            // For batch mode, immediately show placeholder tracks
+            if (generationData.batch_mode && generationData.track_count > 1) {
+                showImmediatePlaceholderTracks(generationData.track_count, generationData.specialized_category);
+            }
+            
             pollGenerationStatus();
         } else {
             showError(data.message || 'Generation failed');
@@ -457,6 +1053,111 @@ function startGeneration() {
     .catch(error => {
         console.error('Error:', error);
         showError('Network error occurred');
+    });
+}
+
+function showImmediatePlaceholderTracks(trackCount, category) {
+    const container = document.getElementById('tracksContainer');
+    container.style.display = 'block';
+    
+    // Update header
+    const headerText = document.querySelector('#tracksContainer h4');
+    if (headerText) {
+        headerText.innerHTML = `<i class="fas fa-list me-2"></i>Specialized Music Collection - Generating ${trackCount} tracks for ${category}`;
+    }
+    
+    // Create placeholder tracks immediately (2 per row)
+    const placeholderHtml = `
+        <div class="batch-results">
+            <div class="alert alert-info mb-4">
+                <h6><i class="fas fa-clock me-2"></i>Batch Generation in Progress</h6>
+                <p class="mb-2">Generating <strong>${trackCount} tracks</strong> for <strong>${category}</strong> simultaneously...</p>
+                <div class="progress mb-2">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 25%" id="batchProgressBar"></div>
+                </div>
+                <small class="text-muted">All API calls are being made in parallel. Tracks will appear as they complete.</small>
+            </div>
+            
+            <div class="row tracks-grid" id="placeholderTracksGrid">
+                ${Array.from({length: trackCount}, (_, index) => `
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 batch-track-card placeholder-track" id="placeholder-${index + 1}">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-music text-muted me-2"></i>
+                                    Track ${index + 1} <span class="badge bg-warning">Generating...</span>
+                                </h6>
+                                <p class="card-text text-muted small">
+                                    Waiting for generation to complete...
+                                </p>
+                                
+                                <div class="audio-player-placeholder mb-3">
+                                    <div class="placeholder-waveform" style="height: 40px; background: linear-gradient(90deg, #e9ecef 25%, transparent 25%, transparent 50%, #e9ecef 50%, #e9ecef 75%, transparent 75%, transparent); background-size: 20px 100%; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                            <span class="visually-hidden">Generating...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock me-1"></i>
+                                        Processing...
+                                    </small>
+                                    <button class="btn btn-sm btn-outline-secondary" disabled>
+                                        <i class="fas fa-spinner fa-spin me-1"></i>Wait
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = placeholderHtml;
+    
+    // Scroll to results
+    container.scrollIntoView({ behavior: 'smooth' });
+}
+
+function updatePlaceholderTracks(partialTracks) {
+    partialTracks.forEach((track, index) => {
+        const placeholderCard = document.getElementById(`placeholder-${index + 1}`);
+        if (placeholderCard && track.audio_url) {
+            // Replace placeholder with actual track
+            placeholderCard.innerHTML = `
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-music text-primary me-2"></i>
+                        ${track.title || `Track ${index + 1}`}
+                        <span class="badge bg-success">Ready!</span>
+                    </h6>
+                    <p class="card-text text-muted small">
+                        Part ${track.track_number || index + 1} • Duration: ${Math.floor((track.duration || 120) / 60)}:${Math.floor((track.duration || 120) % 60).toString().padStart(2, '0')}
+                    </p>
+                    
+                    <div class="audio-player mb-3">
+                        <audio src="${track.audio_url}" controls preload="metadata" style="width: 100%;">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="fas fa-download me-1"></i>
+                            <a href="${track.audio_url}" target="_blank" class="text-decoration-none">Download</a>
+                        </small>
+                        <button class="btn btn-sm btn-outline-primary" onclick="createVideoFromTrack('${track.audio_url}', '${track.title}')">
+                            <i class="fas fa-video me-1"></i>Create Video
+                        </button>
+                    </div>
+                </div>
+            `;
+            placeholderCard.classList.remove('placeholder-track');
+            placeholderCard.classList.add('track-ready');
+        }
     });
 }
 
@@ -479,8 +1180,14 @@ function pollGenerationStatus() {
             
             // Progressive loading: Show tracks as they become available
             if (data.partial_tracks && data.partial_tracks.length > lastTrackCount) {
-                showProgressiveTracks(data.partial_tracks);
+                updatePlaceholderTracks(data.partial_tracks);
                 lastTrackCount = data.partial_tracks.length;
+            }
+            
+            // Update batch progress if available
+            if (data.progress && document.getElementById('batchProgressBar')) {
+                const progressBar = document.getElementById('batchProgressBar');
+                progressBar.style.width = `${data.progress}%`;
             }
             
             if (data.status === 'completed') {
@@ -494,7 +1201,7 @@ function pollGenerationStatus() {
         .catch(error => {
             console.error('Status check error:', error);
         });
-    }, 2000); // Check every 2 seconds for faster updates
+    }, 1000); // Check every 1 second for real-time updates
 }
 
 function showResults(result) {
@@ -507,19 +1214,99 @@ function showResults(result) {
     btn.innerHTML = '<i class="fas fa-play me-2"></i>Generate Music';
     status.style.display = 'none';
     
-    // Show tracks (Suno generates multiple tracks)
-    const tracksToDisplay = result.tracks || [result]; // Use tracks array if available, fallback to single result
-    displayTracks(tracksToDisplay);
+    // Check if this is batch mode result
+    if (result.batch_mode) {
+        displayBatchResults(result);
+    } else {
+        // Regular single/multiple track result
+        const tracksToDisplay = result.tracks || [result]; // Use tracks array if available, fallback to single result
+        displayTracks(tracksToDisplay);
+    }
+    
     container.style.display = 'block';
     
     // Update header to show track count
     const headerText = document.querySelector('#tracksContainer h4');
-    if (result.total_tracks && result.total_tracks > 1) {
+    if (result.batch_mode) {
+        headerText.innerHTML = `<i class="fas fa-list me-2"></i>Specialized Music Collection (${result.track_count} tracks)`;
+    } else if (result.total_tracks && result.total_tracks > 1) {
         headerText.innerHTML = `<i class="fas fa-headphones me-2"></i>Generated Tracks (${result.total_tracks} versions)`;
     }
     
     // Scroll to results
     container.scrollIntoView({ behavior: 'smooth' });
+}
+
+function displayBatchResults(batchResult) {
+    const container = document.getElementById('tracksContainer');
+    
+    // Create specialized batch display
+    const batchHtml = `
+        <div class="batch-results">
+            <div class="alert alert-success mb-4">
+                <h6><i class="fas fa-check-circle me-2"></i>Batch Generation Complete!</h6>
+                <p class="mb-2">Successfully generated <strong>${batchResult.track_count} tracks</strong> for <strong>${batchResult.category}</strong></p>
+                <div class="batch-stats">
+                    <span class="badge bg-info me-2">
+                        <i class="fas fa-music me-1"></i>${batchResult.track_count} tracks
+                    </span>
+                    <span class="badge bg-primary me-2">
+                        <i class="fas fa-clock me-1"></i>~${batchResult.track_count * 2} minutes total
+                    </span>
+                    ${batchResult.output_type === 'merged' ? 
+                        '<span class="badge bg-success"><i class="fas fa-link me-1"></i>Auto-merge enabled</span>' :
+                        '<span class="badge bg-secondary"><i class="fas fa-list me-1"></i>Individual tracks</span>'
+                    }
+                </div>
+            </div>
+            
+            ${batchResult.output_type === 'merged' ? `
+                <div class="alert alert-warning mb-4">
+                    <h6><i class="fas fa-tools me-2"></i>Audio Merging & Video Creation</h6>
+                    <p class="mb-2">Your tracks will be automatically merged into a single long-form audio file and video.</p>
+                    <button class="btn btn-primary btn-sm" onclick="startBatchMerging('${JSON.stringify(batchResult).replace(/'/g, "\\'")}')">
+                        <i class="fas fa-magic me-2"></i>Create Merged Audio + Video
+                    </button>
+                </div>
+            ` : ''}
+            
+            <div class="row tracks-grid">
+                ${batchResult.tracks.map((track, index) => `
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 batch-track-card">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-music text-primary me-2"></i>
+                                    ${track.title || `Track ${index + 1}`}
+                                </h6>
+                                <p class="card-text text-muted small">
+                                    Part ${track.track_number} • Duration: ${Math.floor(track.duration / 60)}:${(track.duration % 60).toString().padStart(2, '0')}
+                                </p>
+                                
+                                <div class="audio-player mb-3">
+                                    <audio src="${track.url}" controls preload="metadata" style="width: 100%;">
+                                        Your browser does not support the audio element.
+                                    </audio>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <i class="fas fa-download me-1"></i>
+                                        <a href="${track.url}" target="_blank" class="text-decoration-none">Download</a>
+                                    </small>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="createVideoFromTrack('${track.url}', '${track.title}')">
+                                        <i class="fas fa-video me-1"></i>Create Video
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = batchHtml;
 }
 
 function displayTracks(tracks) {
@@ -606,6 +1393,9 @@ function displayTracks(tracks) {
         
         tracksList.appendChild(trackElement);
     });
+    
+    // Add video creation buttons after tracks are rendered
+    setTimeout(addVideoCreationButtons, 500);
 }
 
 // Show immediate placeholder tracks for progressive loading
@@ -726,8 +1516,14 @@ function showProgressiveTracks(partialTracks) {
             </div>
         `;
         
+        // Store track data in dataset for video button functionality
+        trackElement.querySelector('.track-card').dataset.trackData = JSON.stringify(track);
+        
         tracksList.appendChild(trackElement);
     });
+    
+    // Add video creation buttons after tracks are rendered
+    setTimeout(addVideoCreationButtons, 500);
     
     // Update status text to show progressive loading info
     const statusText = document.getElementById('statusText');
@@ -740,6 +1536,79 @@ function showProgressiveTracks(partialTracks) {
 }
 
 // Helper function to update track duration when audio loads
+function startBatchMerging(batchResultJson) {
+    const batchResult = JSON.parse(batchResultJson);
+    
+    // Show progress
+    const progressAlert = document.createElement('div');
+    progressAlert.className = 'alert alert-info';
+    progressAlert.innerHTML = `
+        <div class="d-flex align-items-center">
+            <div class="spinner-border spinner-border-sm me-3" role="status"></div>
+            <div>
+                <h6 class="mb-1">Merging Audio & Creating Video...</h6>
+                <p class="mb-0 small">Processing ${batchResult.track_count} tracks. This may take a few minutes.</p>
+            </div>
+        </div>
+    `;
+    
+    // Replace the merge button with progress
+    const mergeButton = event.target;
+    mergeButton.parentNode.replaceChild(progressAlert, mergeButton);
+    
+    // Call the merge API
+    fetch('/api/music/merge-batch', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            tracks: batchResult.tracks,
+            fade_transitions: batchResult.fade_transitions,
+            create_video: batchResult.create_video
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show merged results
+            progressAlert.innerHTML = `
+                <div class="alert alert-success">
+                    <h6><i class="fas fa-check-circle me-2"></i>Merge Complete!</h6>
+                    <p class="mb-2">Successfully merged ${data.track_count} tracks into a ${Math.floor(data.total_duration / 60)}-minute audio file.</p>
+                    <div class="d-flex gap-2">
+                        <a href="${data.merged_audio_url}" class="btn btn-success btn-sm" target="_blank">
+                            <i class="fas fa-download me-1"></i>Download Merged Audio
+                        </a>
+                        ${data.merged_video_url ? `
+                            <a href="${data.merged_video_url}" class="btn btn-primary btn-sm" target="_blank">
+                                <i class="fas fa-video me-1"></i>Download Video
+                            </a>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        } else {
+            throw new Error(data.error || 'Merge failed');
+        }
+    })
+    .catch(error => {
+        progressAlert.innerHTML = `
+            <div class="alert alert-danger">
+                <h6><i class="fas fa-exclamation-circle me-2"></i>Merge Failed</h6>
+                <p class="mb-0">Error: ${error.message}</p>
+                <p class="mb-0 small mt-1">Audio merging feature is coming soon! For now, you can download individual tracks.</p>
+            </div>
+        `;
+    });
+}
+
+function createVideoFromTrack(audioUrl, title) {
+    // TODO: Implement individual track video creation
+    console.log('Creating video for track:', title, audioUrl);
+    alert('Video creation functionality will be implemented next! For now, you can download the audio file.');
+}
+
 function updateTrackDuration(audioElement, trackId) {
     try {
         if (audioElement && audioElement.duration && !isNaN(audioElement.duration)) {
@@ -781,10 +1650,510 @@ function loadSunoModel() {
 
 
 
+// Video Creation Pipeline Variables
+let currentSelectedTrack = null;
+let currentGeneratedImage = null;
+let currentVideoPath = null;
+let activeTasks = new Set();
+
+// Show video creation pipeline for a track
+function showVideoCreationPipeline(track) {
+    currentSelectedTrack = track;
+    
+    // Update selected track info
+    document.getElementById('selectedTrackTitle').textContent = track.title || 'Generated Track';
+    
+    // Show the pipeline
+    document.getElementById('videoCreationPipeline').style.display = 'block';
+    
+    // Reset all steps
+    resetVideoCreationSteps();
+    
+    // Load YouTube channels
+    loadYouTubeChannels();
+    
+    // Scroll to video creation section
+    document.getElementById('videoCreationPipeline').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Reset all video creation steps
+function resetVideoCreationSteps() {
+    // Reset image step
+    document.getElementById('imagePreview').style.display = 'none';
+    document.getElementById('generateImageBtn').disabled = false;
+    document.getElementById('generateImageBtn').innerHTML = '<i class="fas fa-palette me-2"></i>Generate Album Art';
+    
+    // Hide subsequent steps
+    document.getElementById('videoStep').style.display = 'none';
+    document.getElementById('uploadStep').style.display = 'none';
+    document.getElementById('progressTracking').style.display = 'none';
+    
+    // Reset variables
+    currentGeneratedImage = null;
+    currentVideoPath = null;
+}
+
+// Step 1: Generate Album Art
+function generateAlbumArt() {
+    if (!currentSelectedTrack) {
+        alert('Please select a track first');
+        return;
+    }
+    
+    const btn = document.getElementById('generateImageBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner-border spinner-border-sm me-2"></div>Generating...';
+    
+    // Prepare track data for image generation
+    const imageData = {
+        title: currentSelectedTrack.title || 'Generated Track',
+        genre: extractGenreFromTags(currentSelectedTrack.tags || ''),
+        style: 'modern music artwork'
+    };
+    
+    fetch('/api/video/generate-image', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(imageData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            currentGeneratedImage = data.image_url;
+            
+            // Show image preview
+            document.getElementById('generatedImage').src = data.image_url;
+            document.getElementById('imagePrompt').textContent = `Prompt used: ${data.prompt_used}`;
+            document.getElementById('imagePreview').style.display = 'block';
+            
+            // Reset button
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-palette me-2"></i>Generate Another';
+            
+        } else {
+            alert('Failed to generate image: ' + data.error);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-palette me-2"></i>Generate Album Art';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Network error occurred');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-palette me-2"></i>Generate Album Art';
+    });
+}
+
+// Regenerate image with same settings
+function regenerateImage() {
+    generateAlbumArt();
+}
+
+// Approve image and move to video step
+function approveImage() {
+    if (!currentGeneratedImage) {
+        alert('No image generated yet');
+        return;
+    }
+    
+    // Show video creation step
+    document.getElementById('videoStep').style.display = 'block';
+    document.getElementById('videoStep').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Step 2: Create Video
+function createVideo() {
+    if (!currentSelectedTrack || !currentGeneratedImage) {
+        alert('Please complete previous steps first');
+        return;
+    }
+    
+    const btn = document.getElementById('createVideoBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner-border spinner-border-sm me-2"></div>Creating...';
+    
+    // Show progress tracking
+    document.getElementById('progressTracking').style.display = 'block';
+    updateProgress(0, 'Starting video creation...');
+    
+    // Prepare video creation data
+    const videoData = {
+        audio_url: currentSelectedTrack.audio_url || currentSelectedTrack.streamAudioUrl,
+        image_url: currentGeneratedImage,
+        title: currentSelectedTrack.title || 'Generated Video'
+    };
+    
+    fetch('/api/video/create', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(videoData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Start polling for progress
+            pollTaskProgress(data.task_id, 'video_creation');
+        } else {
+            alert('Failed to start video creation: ' + data.error);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-film me-2"></i>Create Video';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Network error occurred');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-film me-2"></i>Create Video';
+    });
+}
+
+// Step 3: Upload to YouTube
+function uploadToYouTube() {
+    if (!currentVideoPath) {
+        alert('Please create video first');
+        return;
+    }
+    
+    const channelSelect = document.getElementById('youtubeChannelSelect');
+    const selectedChannel = channelSelect.value;
+    
+    if (!selectedChannel) {
+        alert('Please select a YouTube channel');
+        return;
+    }
+    
+    const btn = document.getElementById('uploadToYouTubeBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner-border spinner-border-sm me-2"></div>Uploading...';
+    
+    updateProgress(0, 'Starting YouTube upload...');
+    
+    // Prepare upload data
+    const uploadData = {
+        video_path: currentVideoPath,
+        channel_id: selectedChannel,
+        track_data: currentSelectedTrack
+    };
+    
+    fetch('/api/video/upload-youtube', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(uploadData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Start polling for progress
+            pollTaskProgress(data.task_id, 'youtube_upload');
+        } else {
+            alert('Failed to start YouTube upload: ' + data.error);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fab fa-youtube me-2"></i>Generate Meta & Upload';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Network error occurred');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fab fa-youtube me-2"></i>Generate Meta & Upload';
+    });
+}
+
+// Load YouTube channels
+function loadYouTubeChannels() {
+    fetch('/api/youtube/channels/list')
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('youtubeChannelSelect');
+            select.innerHTML = '<option value="">Select a channel...</option>';
+            
+            if (data.success && data.channels) {
+                data.channels.forEach(channel => {
+                    const option = document.createElement('option');
+                    option.value = channel.id;
+                    option.textContent = `${channel.title} (${channel.subscriber_count} subscribers)`;
+                    select.appendChild(option);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error loading channels:', error);
+        });
+}
+
+// Poll task progress
+function pollTaskProgress(taskId, taskType) {
+    activeTasks.add(taskId);
+    
+    const pollInterval = setInterval(() => {
+        fetch(`/api/music/status/${taskId}`)
+            .then(response => response.json())
+            .then(data => {
+                updateProgress(data.progress || 0, data.current_step || 'Processing...');
+                
+                if (data.status === 'completed') {
+                    clearInterval(pollInterval);
+                    activeTasks.delete(taskId);
+                    
+                    if (taskType === 'video_creation') {
+                        onVideoCreationComplete(data.result);
+                    } else if (taskType === 'youtube_upload') {
+                        onYouTubeUploadComplete(data.result);
+                    }
+                } else if (data.status === 'failed') {
+                    clearInterval(pollInterval);
+                    activeTasks.delete(taskId);
+                    onTaskFailed(data.result);
+                }
+            })
+            .catch(error => {
+                console.error('Error polling task:', error);
+            });
+    }, 2000);
+}
+
+// Handle video creation completion
+function onVideoCreationComplete(result) {
+    if (result && result.success) {
+        currentVideoPath = result.video_path;
+        
+        // Show video preview
+        document.getElementById('videoPreview').style.display = 'block';
+        
+        // Reset create video button
+        const btn = document.getElementById('createVideoBtn');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-film me-2"></i>Create Another Video';
+        
+        // Show upload step
+        document.getElementById('uploadStep').style.display = 'block';
+        document.getElementById('uploadStep').scrollIntoView({ behavior: 'smooth' });
+        
+        updateProgress(100, 'Video creation completed!');
+    } else {
+        alert('Video creation failed: ' + (result ? result.error : 'Unknown error'));
+    }
+}
+
+// Handle YouTube upload completion
+function onYouTubeUploadComplete(result) {
+    if (result && result.success) {
+        // Reset upload button
+        const btn = document.getElementById('uploadToYouTubeBtn');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fab fa-youtube me-2"></i>Upload Another';
+        
+        updateProgress(100, 'YouTube upload completed!');
+        
+        // Show success message
+        alert(`Video uploaded successfully!\nVideo ID: ${result.video_id}\nURL: ${result.video_url}`);
+        
+        // Optionally reset the pipeline for another video
+        // resetVideoCreationSteps();
+    } else {
+        alert('YouTube upload failed: ' + (result ? result.error : 'Unknown error'));
+    }
+}
+
+// Handle task failure
+function onTaskFailed(result) {
+    updateProgress(-1, 'Task failed: ' + (result ? result.error : 'Unknown error'));
+    alert('Task failed: ' + (result ? result.error : 'Unknown error'));
+}
+
+// Update progress bar and status
+function updateProgress(progress, status) {
+    const progressBar = document.getElementById('videoProgressBar');
+    const progressStatus = document.getElementById('progressStatus');
+    
+    if (progress >= 0) {
+        progressBar.style.width = progress + '%';
+        progressBar.className = 'progress-bar bg-primary';
+    } else {
+        progressBar.style.width = '100%';
+        progressBar.className = 'progress-bar bg-danger';
+    }
+    
+    progressStatus.textContent = status;
+}
+
+// Helper function to extract genre from tags
+function extractGenreFromTags(tags) {
+    const commonGenres = ['lofi', 'hip-hop', 'ambient', 'electronic', 'pop', 'rock', 'jazz', 'classical'];
+    const lowerTags = tags.toLowerCase();
+    
+    for (const genre of commonGenres) {
+        if (lowerTags.includes(genre)) {
+            return genre;
+        }
+    }
+    
+    return 'music';
+}
+
+// Add "Create Video" button to tracks
+function addVideoCreationButtons() {
+    const trackCards = document.querySelectorAll('.track-card');
+    
+    trackCards.forEach(trackCard => {
+        // Check if button already exists
+        if (trackCard.querySelector('.create-video-btn')) {
+            return;
+        }
+        
+        // Get track data
+        const trackData = JSON.parse(trackCard.dataset.trackData || '{}');
+        
+        // Only add button if track has audio URL
+        if (trackData.audio_url || trackData.streamAudioUrl) {
+            const buttonContainer = trackCard.querySelector('.d-flex.justify-content-between');
+            if (buttonContainer) {
+                const videoBtn = document.createElement('button');
+                videoBtn.className = 'btn btn-success btn-sm me-2 create-video-btn';
+                videoBtn.innerHTML = '<i class="fas fa-video me-1"></i>Create Video';
+                videoBtn.onclick = () => showVideoCreationPipeline(trackData);
+                
+                // Insert before the last button (play button)
+                const lastButton = buttonContainer.querySelector('.btn:last-child');
+                buttonContainer.insertBefore(videoBtn, lastButton);
+            }
+        }
+    });
+}
+
+// Advanced Music Generator Functions
+const subgenreData = {
+    pop: ['Pop Rock', 'Synth Pop', 'Indie Pop', 'Dance Pop', 'Pop Ballad', 'Electropop', 'Teen Pop', 'Art Pop'],
+    rock: ['Classic Rock', 'Alternative Rock', 'Indie Rock', 'Hard Rock', 'Progressive Rock', 'Psychedelic Rock', 'Punk Rock', 'Soft Rock'],
+    electronic: ['House', 'Techno', 'Dubstep', 'Trance', 'Ambient', 'Drum & Bass', 'Synthwave', 'Future Bass', 'Chillstep', 'Trap'],
+    hiphop: ['Trap', 'Boom Bap', 'Lo-fi Hip Hop', 'Conscious Rap', 'Gangsta Rap', 'Alternative Hip Hop', 'Old School', 'Drill'],
+    jazz: ['Smooth Jazz', 'Bebop', 'Swing', 'Free Jazz', 'Fusion', 'Contemporary Jazz', 'Cool Jazz', 'Acid Jazz'],
+    classical: ['Baroque', 'Romantic', 'Contemporary Classical', 'Minimalist', 'Orchestral', 'Chamber Music', 'Opera', 'Film Score'],
+    country: ['Country Rock', 'Bluegrass', 'Contemporary Country', 'Country Pop', 'Outlaw Country', 'Alt Country', 'Folk Country'],
+    folk: ['Indie Folk', 'Folk Rock', 'Traditional Folk', 'Contemporary Folk', 'Acoustic', 'Singer-Songwriter', 'Celtic'],
+    blues: ['Chicago Blues', 'Delta Blues', 'Electric Blues', 'Blues Rock', 'Country Blues', 'Contemporary Blues'],
+    reggae: ['Roots Reggae', 'Dancehall', 'Dub', 'Reggae Pop', 'Ska', 'Rocksteady'],
+    latin: ['Salsa', 'Bachata', 'Reggaeton', 'Bossa Nova', 'Mariachi', 'Tango', 'Cumbia', 'Latin Pop'],
+    world: ['African', 'Asian', 'Celtic', 'Middle Eastern', 'Indian Classical', 'Flamenco', 'Gamelan'],
+    ambient: ['Dark Ambient', 'Drone', 'New Age', 'Chillout', 'Meditation', 'Nature Sounds', 'Space Ambient'],
+    metal: ['Heavy Metal', 'Death Metal', 'Black Metal', 'Progressive Metal', 'Power Metal', 'Thrash Metal', 'Doom Metal'],
+    punk: ['Pop Punk', 'Hardcore Punk', 'Post Punk', 'Ska Punk', 'Emo', 'Grunge'],
+    funk: ['Classic Funk', 'P-Funk', 'Funk Rock', 'Nu-Funk', 'Disco Funk', 'Jazz Funk'],
+    soul: ['Neo Soul', 'Classic Soul', 'Contemporary R&B', 'Motown', 'Northern Soul', 'Gospel']
+};
+
+function updateSubgenres() {
+    const genreSelect = document.getElementById('genreSelect');
+    const subgenreSelect = document.getElementById('subgenreSelect');
+    const selectedGenre = genreSelect.value;
+    
+    // Clear existing options
+    subgenreSelect.innerHTML = '<option value="">Select Subgenre</option>';
+    
+    if (selectedGenre && subgenreData[selectedGenre]) {
+        subgenreData[selectedGenre].forEach(subgenre => {
+            const option = document.createElement('option');
+            option.value = subgenre.toLowerCase().replace(/\s+/g, '-');
+            option.textContent = subgenre;
+            subgenreSelect.appendChild(option);
+        });
+    }
+    
+    updateStylePreview();
+}
+
+function updateVocalOptions() {
+    const vocalType = document.getElementById('vocalType').value;
+    const vocalStyleRow = document.getElementById('vocalStyleRow');
+    
+    if (vocalType === 'instrumental') {
+        vocalStyleRow.style.display = 'none';
+    } else {
+        vocalStyleRow.style.display = 'block';
+    }
+    
+    updateStylePreview();
+}
+
+function updateStylePreview() {
+    const genre = document.getElementById('genreSelect').selectedOptions[0]?.textContent || '';
+    const subgenre = document.getElementById('subgenreSelect').selectedOptions[0]?.textContent || '';
+    const vocalType = document.getElementById('vocalType').selectedOptions[0]?.textContent || '';
+    const vocalStyle = document.getElementById('vocalStyle').selectedOptions[0]?.textContent || '';
+    const vocalAge = document.getElementById('vocalAge').selectedOptions[0]?.textContent || '';
+    const additionalStyle = document.getElementById('additionalStyle').value;
+    
+    let styleComponents = [];
+    
+    if (genre && genre !== 'Select Genre') {
+        styleComponents.push(genre);
+    }
+    
+    if (subgenre && subgenre !== 'Select Subgenre') {
+        styleComponents.push(subgenre);
+    }
+    
+    if (vocalType && vocalType !== 'Select Vocals') {
+        if (vocalType === 'Instrumental (No Vocals)') {
+            styleComponents.push('instrumental');
+        } else {
+            let vocalDesc = vocalType.toLowerCase();
+            if (vocalStyle && vocalStyle !== 'Select Style') {
+                vocalDesc += `, ${vocalStyle.toLowerCase()}`;
+            }
+            if (vocalAge && vocalAge !== 'Select Character') {
+                vocalDesc += `, ${vocalAge.toLowerCase()}`;
+            }
+            styleComponents.push(vocalDesc);
+        }
+    }
+    
+    if (additionalStyle.trim()) {
+        styleComponents.push(additionalStyle.trim());
+    }
+    
+    const previewText = document.getElementById('previewText');
+    if (styleComponents.length > 0) {
+        previewText.textContent = styleComponents.join(', ');
+        previewText.style.color = '#333';
+        previewText.style.fontWeight = '500';
+    } else {
+        previewText.textContent = 'Select options above to see your music style...';
+        previewText.style.color = '#6c757d';
+        previewText.style.fontWeight = 'normal';
+    }
+}
+
+// Add event listeners for style preview updates
+document.addEventListener('DOMContentLoaded', function() {
+    // Add event listeners to all relevant dropdowns
+    ['genreSelect', 'subgenreSelect', 'vocalType', 'vocalStyle', 'vocalAge'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('change', updateStylePreview);
+        }
+    });
+    
+    // Add event listener to additional style input
+    const additionalStyleInput = document.getElementById('additionalStyle');
+    if (additionalStyleInput) {
+        additionalStyleInput.addEventListener('input', updateStylePreview);
+    }
+});
+
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
     loadSunoModel();
     selectMode('simple');
+    
+    // Add video creation buttons to existing tracks
+    setTimeout(addVideoCreationButtons, 1000);
 });
 </script>
 {% endblock %}

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auto Login</title>
+</head>
+<body>
+    <script>
+    // Auto-login script
+    setTimeout(() => {
+        // Navigate to login
+        window.location.href = 'https://8000-izng5m2mfjwumi1tjoh8z-6532622b.e2b.dev/login';
+        
+        setTimeout(() => {
+            // Fill password and submit
+            const passwordField = document.querySelector('input[type="password"]');
+            if (passwordField) {
+                passwordField.value = 'admin123';
+                const form = passwordField.closest('form');
+                if (form) {
+                    form.submit();
+                }
+            }
+        }, 1000);
+    }, 500);
+    </script>
+</body>
+</html>

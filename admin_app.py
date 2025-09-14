@@ -1214,10 +1214,10 @@ def api_automation_status():
 def api_youtube_channels_statistics():
     """Get comprehensive statistics for all channels"""
     try:
-        from core.database.database_manager import DatabaseManager
+        from core.database.youtube_channels_db import YouTubeChannelsDB
         
-        db_manager = DatabaseManager()
-        stats = db_manager.get_channels_statistics()
+        db = YouTubeChannelsDB()
+        stats = db.get_statistics()
         
         return jsonify({
             'success': True,
@@ -1230,14 +1230,16 @@ def api_youtube_channels_statistics():
         return jsonify({
             'success': True,
             'statistics': {
-                'total_channels': 2,
-                'active_channels': 2,
-                'total_subscribers': 68330,
-                'total_revenue': 2140.0,
-                'total_videos': 156,
-                'total_views': 1250000,
-                'status_breakdown': {'active': 2},
-                'genre_breakdown': {'lo-fi-hip-hop': 1, 'ambient': 1}
+                'total_channels': 0,
+                'active_channels': 0,
+                'automated_channels': 0,
+                'total_subscribers': 0,
+                'total_revenue': 0.0,
+                'total_videos': 0,
+                'total_views': 0,
+                'queued_videos': 0,
+                'status_breakdown': {},
+                'genre_breakdown': {}
             }
         })
 
@@ -2646,16 +2648,23 @@ def api_music_generate():
     try:
         data = request.get_json() or {}
         
-        # Validate required fields - support both advanced and simplified modes
-        # For simplified generator (from music_generator_simplified.html)
-        if data.get('mode'):  # Simplified mode
+        # Validate required fields - support both simple and custom modes
+        if data.get('mode') == 'simple':
+            # Simple mode validation
             if not data.get('prompt'):
                 return jsonify({
                     'success': False,
-                    'error': 'Prompt is required for simplified mode'
+                    'error': 'Prompt is required for simple mode'
                 }), 400
-        # For advanced generator
-        elif not data.get('music_type') or not data.get('genre_category'):
+        elif data.get('mode') == 'custom':
+            # Custom mode validation - require style (auto-generated from dropdowns)
+            if not data.get('style'):
+                return jsonify({
+                    'success': False,
+                    'error': 'Style is required for custom mode'
+                }), 400
+        # For legacy advanced generator (old interface)
+        elif not data.get('mode') and (not data.get('music_type') or not data.get('genre_category')):
             return jsonify({
                 'success': False,
                 'error': 'Music type and genre category are required for advanced mode'
@@ -2710,6 +2719,103 @@ def api_music_status(task_id):
         response['tracks_ready'] = task.get('tracks_ready', 0)
     
     return jsonify(response)
+
+@app.route('/api/batch/operations', methods=['GET'])
+@require_auth
+def api_batch_operations():
+    """Get all batch operations"""
+    try:
+        # Mock operations data for now - in production, this would come from a database
+        operations = [
+            {
+                'id': 'batch_001',
+                'type': 'batch_generation',
+                'title': 'Study Music Collection',
+                'description': 'Generating 10 lo-fi tracks for studying',
+                'status': 'completed',
+                'progress': 100,
+                'started_at': '2025-09-14T15:30:00Z',
+                'completed_at': '2025-09-14T15:35:00Z',
+                'tracks': [
+                    {'title': 'Lo-fi Study Track 1', 'url': 'https://example.com/track1.mp3'},
+                    {'title': 'Lo-fi Study Track 2', 'url': 'https://example.com/track2.mp3'}
+                ]
+            },
+            {
+                'id': 'batch_002', 
+                'type': 'batch_generation',
+                'title': 'Sleep Music Collection',
+                'description': 'Generating 6 ambient tracks for relaxation',
+                'status': 'running',
+                'progress': 75,
+                'started_at': '2025-09-14T15:40:00Z',
+                'current_step': 'Generating batch 4/5...'
+            },
+            {
+                'id': 'merge_001',
+                'type': 'audio_merge', 
+                'title': 'Merging Study Collection',
+                'description': 'Combining 10 tracks into single audio file',
+                'status': 'queued',
+                'progress': 0,
+                'started_at': '2025-09-14T15:45:00Z'
+            }
+        ]
+        
+        return jsonify({'operations': operations, 'success': True})
+        
+    except Exception as e:
+        return jsonify({'error': str(e), 'success': False}), 500
+
+@app.route('/api/batch/operations/<operation_id>/pause', methods=['POST'])
+@require_auth
+def api_batch_operation_pause(operation_id):
+    """Pause a batch operation"""
+    try:
+        # In production, this would pause the actual operation
+        return jsonify({'success': True, 'message': f'Operation {operation_id} paused'})
+    except Exception as e:
+        return jsonify({'error': str(e), 'success': False}), 500
+
+@app.route('/api/batch/operations/<operation_id>/retry', methods=['POST'])
+@require_auth
+def api_batch_operation_retry(operation_id):
+    """Retry a failed batch operation"""
+    try:
+        # In production, this would restart the failed operation
+        return jsonify({'success': True, 'message': f'Operation {operation_id} restarted'})
+    except Exception as e:
+        return jsonify({'error': str(e), 'success': False}), 500
+
+@app.route('/api/music/merge-batch', methods=['POST'])
+@require_auth
+def api_music_merge_batch():
+    """Merge multiple audio tracks into single long-form audio and create video"""
+    try:
+        data = request.get_json()
+        tracks = data.get('tracks', [])
+        fade_transitions = data.get('fade_transitions', True)
+        create_video = data.get('create_video', True)
+        
+        if len(tracks) < 2:
+            return jsonify({'error': 'At least 2 tracks required for merging'}), 400
+        
+        # TODO: Implement actual audio merging using FFmpeg or similar
+        # For now, return a placeholder response
+        
+        merged_result = {
+            'success': True,
+            'merged_audio_url': 'https://example.com/merged-audio.mp3',  # Placeholder
+            'merged_video_url': 'https://example.com/merged-video.mp4' if create_video else None,
+            'total_duration': sum(track.get('duration', 120) for track in tracks),
+            'track_count': len(tracks),
+            'fade_transitions': fade_transitions
+        }
+        
+        return jsonify(merged_result)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/music/cancel/<task_id>', methods=['POST'])
 @require_auth
@@ -2787,7 +2893,21 @@ def process_music_generation(task_id, data):
         except Exception as e:
             raise Exception(f"Suno API connection failed: {str(e)}")
         
-        # Send real generation request
+        # Check if this is batch mode (specialized with multiple tracks)
+        is_batch_mode = data.get('batch_mode', False)
+        track_count = data.get('track_count', 1)
+        
+        if is_batch_mode and track_count > 1:
+            update_progress(65, f"🎵 Preparing batch generation: {track_count} tracks...", "Starting specialized batch generation")
+            try:
+                return handle_batch_generation(task_id, data, suno, suno_request, update_progress)
+            except Exception as batch_error:
+                # If batch generation fails, log the error and fall back to single generation
+                print(f"❌ Batch generation failed: {str(batch_error)}")
+                update_progress(67, f"⚠️ Batch failed, using single generation", f"Error: {str(batch_error)[:50]}...")
+                # Continue with single track generation as fallback
+        
+        # Send real generation request (single track or fallback)
         update_progress(65, "🎵 Sending generation request to Suno AI...", "Starting real music generation")
         
         # Prepare parameters for Suno API
@@ -2815,7 +2935,7 @@ def process_music_generation(task_id, data):
                 generation_result = suno.generate_music_advanced(
                     prompt=music_prompt,
                     style=data.get('style') or data.get('genre_specific', data.get('genre_category', 'pop music')),
-                    title=suno_request.get('title', f"Generated Track"),
+                    title=suno_request.get('title') or "",  # Empty if not provided - Suno will auto-generate
                     instrumental=suno_request.get('make_instrumental', False),
                     model=suno_params['model']
                 )
@@ -2847,7 +2967,18 @@ def process_music_generation(task_id, data):
         
         update_progress(70, f"⏳ Suno task created: {suno_task_id[:8]}...", "Waiting for generation completion")
         
-        # Wait for completion with real-time updates
+        # Check if this is batch mode result
+        if isinstance(generation_result, dict) and generation_result.get('batch_mode'):
+            # This is a batch result, process it directly
+            update_progress(100, "🎉 Batch generation complete!", f"Generated {generation_result.get('track_count', 0)} tracks")
+            
+            # Mark task as completed with batch result
+            task['status'] = 'completed'
+            task['result'] = generation_result
+            task['completed_at'] = datetime.now().isoformat()
+            return jsonify({'message': 'Batch generation completed!', 'task_id': task_id})
+        
+        # Single track mode - wait for completion with real-time updates
         update_progress(75, "🎛️ Suno AI is generating your music...", "This may take 60-120 seconds")
         
         # Progressive waiting with real-time updates
@@ -2948,7 +3079,7 @@ def wait_for_completion_with_progressive_updates(suno, task_id, task, update_pro
     import time
     
     start_time = time.time()
-    check_interval = 10  # Check every 10 seconds
+    check_interval = 3  # Check every 3 seconds for faster updates
     last_track_count = 0
     
     update_progress(75, "🎵 Waiting for Suno AI generation...", "Starting generation process")
@@ -3031,12 +3162,20 @@ def build_suno_prompt(data):
     prompt_parts = []
     
     # Check if this is simplified mode (from music_generator_simplified.html)
-    if data.get('mode'):  # Simplified mode
-        # Return the prompt directly if provided
-        if data.get('prompt'):
-            return data['prompt']
-        else:
-            return "Create a beautiful musical piece"
+    if data.get('mode'):
+        # Handle different modes
+        if data.get('mode') == 'simple':
+            # Return the prompt directly if provided
+            if data.get('prompt'):
+                return data['prompt']
+            else:
+                return "Create a beautiful musical piece"
+        elif data.get('mode') == 'specialized':
+            # Use the specialized prompt directly
+            return data.get('prompt', 'Create specialized background music')
+        elif data.get('mode') == 'custom':
+            # For custom mode, use the prompt directly
+            return data.get('prompt', 'Create a beautiful musical piece')
     
     # Advanced mode - build from components
     # Add genre information
@@ -3156,6 +3295,232 @@ def build_suno_prompt(data):
     final_prompt += ', professional production, high quality audio'
     
     return final_prompt
+
+
+def handle_batch_generation(task_id, data, suno, suno_request, update_progress):
+    """Handle batch generation for specialized mode with multiple tracks"""
+    import time
+    
+    track_count = data.get('track_count', 10)
+    category = data.get('specialized_category', 'study')
+    output_type = data.get('output_type', 'merged')
+    fade_transitions = data.get('fade_transitions', True)
+    create_video = data.get('create_video', True)
+    
+    # Calculate API requests needed (Suno generates 2 tracks per request)
+    api_requests_needed = track_count // 2
+    
+    update_progress(70, f"🎯 Starting batch generation: {track_count} tracks", f"Will make {api_requests_needed} API requests for {category} (Suno generates 2 tracks per request)")
+    
+    all_tracks = []
+    task_ids = []
+    completed_tracks = 0
+    
+    # Prepare all batch requests simultaneously
+    batch_requests = []
+    for batch_num in range(api_requests_needed):
+        # Vary the prompt slightly for each batch to ensure variety
+        base_prompt = suno_request.get('prompt', 'Create background music')
+        
+        if batch_num == 0:
+            track_prompt = base_prompt  # First batch uses original prompt
+        else:
+            # Add slight variations for subsequent batches
+            variations = [
+                ", soft and peaceful",
+                ", gentle and calming", 
+                ", smooth and flowing",
+                ", tranquil and serene",
+                ", mellow and soothing",
+                ", ambient and atmospheric",
+                ", minimal and clean",
+                ", warm and cozy"
+            ]
+            variation = variations[batch_num % len(variations)]
+            track_prompt = base_prompt + variation
+        
+        # Prepare Suno parameters for this batch
+        suno_params = {
+            'model': os.getenv('SUNO_MODEL', 'V4'),
+            'instrumental': suno_request.get('make_instrumental', True),
+        }
+        
+        # Add title variation for this batch
+        base_title = suno_request.get('title')
+        if base_title:
+            suno_params['title'] = f"{base_title} - Set {batch_num+1}"
+        
+        batch_requests.append({
+            'batch_num': batch_num,
+            'prompt': track_prompt,
+            'params': suno_params
+        })
+    
+    update_progress(75, f"🚀 Starting {api_requests_needed} simultaneous API calls...", "All batches will be generated in parallel")
+    
+    # Make all API calls simultaneously
+    import threading
+    import queue
+    
+    results_queue = queue.Queue()
+    
+    def generate_single_batch(batch_info):
+        try:
+            batch_num = batch_info['batch_num']
+            print(f"🔧 DEBUG - Batch {batch_num+1}: Calling Suno API with:")
+            print(f"   Prompt: {batch_info['prompt']}")
+            print(f"   Params: {batch_info['params']}")
+            
+            # Generate this batch (will create 2 tracks)
+            generation_result = suno.generate_music_simple(
+                prompt=batch_info['prompt'],
+                **batch_info['params']
+            )
+            
+            print(f"🔧 DEBUG - Batch {batch_num+1} result: {generation_result}")
+            
+            results_queue.put({
+                'batch_num': batch_num,
+                'result': generation_result,
+                'success': bool(generation_result),
+                'error': None
+            })
+            
+        except Exception as e:
+            print(f"❌ Batch {batch_num+1} failed: {e}")
+            results_queue.put({
+                'batch_num': batch_num,
+                'result': None,
+                'success': False,
+                'error': str(e)
+            })
+    
+    # Start all threads simultaneously
+    threads = []
+    for batch_info in batch_requests:
+        thread = threading.Thread(target=generate_single_batch, args=(batch_info,))
+        thread.start()
+        threads.append(thread)
+    
+    # Collect results as they come in
+    task_ids = [None] * api_requests_needed  # Pre-allocate list
+    completed_batches = 0
+    
+    while completed_batches < api_requests_needed:
+        try:
+            result = results_queue.get(timeout=30)  # Wait up to 30 seconds for each result
+            batch_num = result['batch_num']
+            
+            if result['success']:
+                task_ids[batch_num] = result['result']
+                update_progress(
+                    75 + ((completed_batches + 1) * 15 // api_requests_needed),
+                    f"✅ Batch {batch_num+1} queued successfully",
+                    f"Task ID: {str(result['result'])[:8]}... ({completed_batches + 1}/{api_requests_needed} complete)"
+                )
+            else:
+                update_progress(
+                    75 + ((completed_batches + 1) * 15 // api_requests_needed),
+                    f"⚠️ Batch {batch_num+1} failed to queue",
+                    f"Error: {result['error'][:30]}... ({completed_batches + 1}/{api_requests_needed} complete)"
+                )
+            
+            completed_batches += 1
+            
+        except queue.Empty:
+            update_progress(
+                75 + (completed_batches * 15 // api_requests_needed),
+                f"⏳ Waiting for batch results... ({completed_batches}/{api_requests_needed})",
+                "Some API calls are taking longer than expected"
+            )
+            break
+    
+    # Wait for all threads to complete
+    for thread in threads:
+        thread.join(timeout=5)  # Give each thread 5 seconds to finish
+    
+    # Filter out None results (failed batches)
+    task_ids = [task_id for task_id in task_ids if task_id is not None]
+    
+    update_progress(90, f"🎯 All API calls complete! Queued {len(task_ids)} successful batches", f"Now waiting for generation to complete...")
+    
+    # Wait for all batches to complete
+    update_progress(90, f"⏳ Waiting for {len(task_ids)} batches to complete...", f"Each batch generates 2 tracks (total: {track_count} tracks)")
+    
+    completed_audio_urls = []
+    track_counter = 0
+    
+    for i, task_id in enumerate(task_ids):
+        try:
+            update_progress(
+                90 + (i * 8 // len(task_ids)), 
+                f"⏳ Waiting for batch {i+1}/{len(task_ids)}...", 
+                f"Task: {str(task_id)[:8]}... (expecting 2 tracks)"
+            )
+            
+            # Wait for this specific batch
+            track_result = suno.wait_for_generation_completion(str(task_id), max_wait_time=300)
+            
+            if track_result and track_result.get('status') in ['SUCCESS', 'COMPLETE']:
+                # Extract audio URLs from the completed batch (should be 2 tracks)
+                if 'response' in track_result and 'sunoData' in track_result['response']:
+                    suno_data = track_result['response']['sunoData']
+                    batch_tracks_found = 0
+                    for track in suno_data:
+                        audio_url = track.get('streamAudioUrl') or track.get('audioUrl')
+                        if audio_url:
+                            track_counter += 1
+                            batch_tracks_found += 1
+                            completed_audio_urls.append({
+                                'url': audio_url,
+                                'title': track.get('title', f'Track {track_counter}'),
+                                'duration': track.get('duration', 120),
+                                'track_number': track_counter,
+                                'batch_number': i + 1
+                            })
+                    
+                    update_progress(
+                        90 + ((i+1) * 8 // len(task_ids)), 
+                        f"✅ Batch {i+1} completed ({batch_tracks_found} tracks)", 
+                        f"Total ready: {len(completed_audio_urls)} tracks"
+                    )
+                else:
+                    update_progress(
+                        90 + ((i+1) * 8 // len(task_ids)), 
+                        f"⚠️ Batch {i+1} - No tracks found in response", 
+                        f"Total ready: {len(completed_audio_urls)} tracks"
+                    )
+            else:
+                update_progress(
+                    90 + ((i+1) * 8 // len(task_ids)), 
+                    f"❌ Batch {i+1} failed or incomplete", 
+                    f"Status: {track_result.get('status', 'Unknown') if track_result else 'No response'}"
+                )
+        except Exception as e:
+            update_progress(
+                90 + ((i+1) * 8 // len(task_ids)), 
+                f"❌ Batch {i+1} failed", 
+                f"Error: {str(e)[:30]}..."
+            )
+            continue
+    
+    if not completed_audio_urls:
+        raise Exception("No tracks were successfully generated")
+    
+    update_progress(98, f"🎉 Batch complete: {len(completed_audio_urls)} tracks ready!", "Processing final output...")
+    
+    # Return batch results
+    return {
+        'batch_mode': True,
+        'track_count': len(completed_audio_urls),
+        'tracks': completed_audio_urls,
+        'output_type': output_type,
+        'fade_transitions': fade_transitions,
+        'create_video': create_video,
+        'category': category,
+        'status': 'SUCCESS'
+    }
+
 
 # ===================================================================
 # SYSTEM THEME MANAGEMENT API ENDPOINTS
@@ -3464,6 +3829,535 @@ def api_load_settings():
             'success': False,
             'error': str(e)
         }), 500
+
+# Manual Video Creation Pipeline - New Endpoints
+
+@app.route('/api/video/generate-image', methods=['POST'])
+@require_auth
+def api_generate_album_art():
+    """Generate album art using existing ImageClient"""
+    try:
+        data = request.get_json() or {}
+        
+        # Extract track information
+        track_title = data.get('title', 'Generated Track')
+        track_genre = data.get('genre', 'music')
+        track_style = data.get('style', 'modern')
+        
+        # Use existing ImageClient
+        from core.services.image_client import ImageClient
+        image_client = ImageClient()
+        
+        # Create prompt for album art
+        prompt = f"Album cover for '{track_title}', {track_genre} {track_style} style, professional music artwork, vibrant colors, 1024x1024"
+        
+        # Generate image
+        if image_client.mock_mode:
+            # Return mock data for development
+            image_url = "https://via.placeholder.com/1024x1024/3B82F6/FFFFFF?text=Album+Art"
+            return jsonify({
+                'success': True,
+                'image_url': image_url,
+                'prompt_used': prompt,
+                'mock_mode': True
+            })
+        else:
+            # Use real Nano Banana generation
+            filename = f'album_{int(time.time())}.png'
+            result = image_client.generate_image(prompt, 'output/images', filename)
+            
+            if result:
+                # ImageClient.generate_image returns bool, so we construct the URL ourselves
+                image_url = f'/api/files/images/{filename}'
+                return jsonify({
+                    'success': True,
+                    'image_url': image_url,
+                    'prompt_used': prompt,
+                    'mock_mode': False
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'Failed to generate image'
+                }), 500
+                
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/video/create', methods=['POST'])
+@require_auth
+def api_create_video():
+    """Create video using existing VideoCreator"""
+    try:
+        data = request.get_json() or {}
+        
+        # Extract video creation data
+        audio_url = data.get('audio_url')
+        image_url = data.get('image_url') 
+        track_title = data.get('title', 'Generated Video')
+        
+        if not audio_url or not image_url:
+            return jsonify({
+                'success': False,
+                'error': 'Both audio_url and image_url are required'
+            }), 400
+        
+        # Create background task for video creation
+        task_id = f"video_creation_{int(time.time())}"
+        
+        # Store task info
+        system_state.generation_tasks[task_id] = {
+            'id': task_id,
+            'status': 'running',
+            'progress': 0,
+            'current_step': 'Starting video creation...',
+            'logs': [],
+            'parameters': data,
+            'created_at': datetime.now().isoformat(),
+            'result': None,
+            'type': 'video_creation'
+        }
+        
+        # Start video creation in background
+        def create_video_background():
+            try:
+                from core.utils.video_creator import VideoCreator
+                import requests
+                import tempfile
+                import os
+                
+                video_creator = VideoCreator()
+                
+                # Update progress
+                system_state.generation_tasks[task_id]['progress'] = 10
+                system_state.generation_tasks[task_id]['current_step'] = 'Downloading audio file...'
+                
+                # Download audio and image files to temp
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    # Download audio
+                    audio_response = requests.get(audio_url)
+                    audio_path = os.path.join(temp_dir, 'audio.mp3')
+                    with open(audio_path, 'wb') as f:
+                        f.write(audio_response.content)
+                    
+                    system_state.generation_tasks[task_id]['progress'] = 30
+                    system_state.generation_tasks[task_id]['current_step'] = 'Downloading image file...'
+                    
+                    # Download image
+                    image_response = requests.get(image_url)
+                    image_path = os.path.join(temp_dir, 'image.png')
+                    with open(image_path, 'wb') as f:
+                        f.write(image_response.content)
+                    
+                    system_state.generation_tasks[task_id]['progress'] = 50
+                    system_state.generation_tasks[task_id]['current_step'] = 'Creating video...'
+                    
+                    # Create video
+                    output_dir = 'output/videos'
+                    os.makedirs(output_dir, exist_ok=True)
+                    
+                    success = video_creator.create_video_from_audio_and_image(
+                        image_path=image_path,
+                        audio_path=audio_path, 
+                        output_path=output_dir,
+                        title=track_title
+                    )
+                    
+                    if success:
+                        # Find created video file
+                        safe_title = "".join(c for c in track_title if c.isalnum() or c in (' ', '-', '_')).rstrip()
+                        safe_title = safe_title.replace(' ', '_')
+                        video_file = f"{output_dir}/{safe_title}.mp4"
+                        
+                        system_state.generation_tasks[task_id]['progress'] = 100
+                        system_state.generation_tasks[task_id]['current_step'] = 'Video creation completed!'
+                        system_state.generation_tasks[task_id]['status'] = 'completed'
+                        system_state.generation_tasks[task_id]['result'] = {
+                            'success': True,
+                            'video_path': video_file,
+                            'video_url': f'/api/files/videos/{safe_title}.mp4'
+                        }
+                    else:
+                        raise Exception("Video creation failed")
+                        
+            except Exception as e:
+                system_state.generation_tasks[task_id]['status'] = 'failed'
+                system_state.generation_tasks[task_id]['result'] = {'success': False, 'error': str(e)}
+                system_state.generation_tasks[task_id]['progress'] = -1
+                system_state.generation_tasks[task_id]['current_step'] = f'Failed: {str(e)}'
+        
+        # Start background thread
+        import threading
+        thread = threading.Thread(target=create_video_background)
+        thread.start()
+        
+        return jsonify({
+            'success': True,
+            'task_id': task_id,
+            'message': 'Video creation started'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/video/upload-youtube', methods=['POST'])
+@require_auth
+def api_upload_to_youtube():
+    """Upload video to YouTube using existing YouTubeClient"""
+    try:
+        data = request.get_json() or {}
+        
+        video_path = data.get('video_path')
+        channel_id = data.get('channel_id')
+        track_data = data.get('track_data', {})
+        
+        if not video_path or not channel_id:
+            return jsonify({
+                'success': False,
+                'error': 'video_path and channel_id are required'
+            }), 400
+        
+        # Create background task for YouTube upload  
+        task_id = f"youtube_upload_{int(time.time())}"
+        
+        # Store task info
+        system_state.generation_tasks[task_id] = {
+            'id': task_id,
+            'status': 'running', 
+            'progress': 0,
+            'current_step': 'Starting YouTube upload...',
+            'logs': [],
+            'parameters': data,
+            'created_at': datetime.now().isoformat(),
+            'result': None,
+            'type': 'youtube_upload'
+        }
+        
+        # Start YouTube upload in background
+        def upload_youtube_background():
+            try:
+                # Generate metadata using Gemini
+                system_state.generation_tasks[task_id]['progress'] = 20
+                system_state.generation_tasks[task_id]['current_step'] = 'Generating metadata with Gemini AI...'
+                
+                from core.services.gemini_client import GeminiClient
+                gemini_client = GeminiClient()
+                
+                # Create metadata prompt
+                prompt = f"""
+                Create YouTube metadata for this music track:
+                - Title: {track_data.get('title', 'Generated Music')}
+                - Genre: {track_data.get('genre', 'Electronic')}
+                - Style: {track_data.get('style', 'Modern')}
+                
+                Generate:
+                1. Catchy YouTube title (under 100 characters)
+                2. SEO-optimized description (under 5000 characters)
+                3. 10-15 relevant tags (comma separated)
+                
+                Format as JSON:
+                {{
+                    "title": "...",
+                    "description": "...", 
+                    "tags": ["tag1", "tag2", ...]
+                }}
+                """
+                
+                metadata_response = gemini_client.generate_creative_content(prompt)
+                
+                system_state.generation_tasks[task_id]['progress'] = 50
+                system_state.generation_tasks[task_id]['current_step'] = 'Uploading to YouTube...'
+                
+                # For now, simulate upload (replace with actual YouTube client when ready)
+                import time
+                time.sleep(2)
+                
+                system_state.generation_tasks[task_id]['progress'] = 100
+                system_state.generation_tasks[task_id]['current_step'] = 'Upload completed!'
+                system_state.generation_tasks[task_id]['status'] = 'completed'
+                system_state.generation_tasks[task_id]['result'] = {
+                    'success': True,
+                    'video_id': f'mock_video_{int(time.time())}',
+                    'video_url': f'https://youtube.com/watch?v=mock_{int(time.time())}',
+                    'metadata': metadata_response
+                }
+                
+            except Exception as e:
+                system_state.generation_tasks[task_id]['status'] = 'failed'
+                system_state.generation_tasks[task_id]['result'] = {'success': False, 'error': str(e)}
+                system_state.generation_tasks[task_id]['progress'] = -1
+                system_state.generation_tasks[task_id]['current_step'] = f'Failed: {str(e)}'
+        
+        # Start background thread
+        import threading
+        thread = threading.Thread(target=upload_youtube_background)
+        thread.start()
+        
+        return jsonify({
+            'success': True,
+            'task_id': task_id,
+            'message': 'YouTube upload started'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/youtube/channels/list')
+@require_auth
+def api_list_youtube_channels():
+    """List available YouTube channels with full database integration"""
+    try:
+        from core.database.youtube_channels_db import YouTubeChannelsDB
+        
+        db = YouTubeChannelsDB()
+        channels = db.list_channels()
+        
+        return jsonify({
+            'success': True,
+            'channels': channels,
+            'count': len(channels)
+        })
+        
+    except Exception as e:
+        print(f"Error listing YouTube channels: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to load channels'
+        }), 500
+
+@app.route('/api/youtube/channels/save', methods=['POST'])
+@require_auth
+def api_save_youtube_channel():
+    """Save YouTube channel (create or update)"""
+    try:
+        from core.database.youtube_channels_db import YouTubeChannelsDB
+        
+        data = request.get_json() or {}
+        
+        # Validate required fields
+        required_fields = ['channel_name']
+        missing_fields = [field for field in required_fields if not data.get(field)]
+        
+        if missing_fields:
+            return jsonify({
+                'success': False,
+                'message': f'Missing required fields: {", ".join(missing_fields)}'
+            }), 400
+        
+        db = YouTubeChannelsDB()
+        
+        # Check if updating existing channel
+        channel_id = data.get('channel_id')
+        if channel_id:
+            # Update existing channel
+            try:
+                channel_id = int(channel_id)
+                result = db.update_channel(channel_id, data)
+            except ValueError:
+                return jsonify({
+                    'success': False,
+                    'message': 'Invalid channel ID'
+                }), 400
+        else:
+            # Create new channel
+            result = db.add_channel(data)
+        
+        if result['success']:
+            return jsonify(result)
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        print(f"Error saving YouTube channel: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to save channel'
+        }), 500
+
+@app.route('/api/youtube/channels/<int:channel_id>/delete', methods=['DELETE'])
+@require_auth
+def api_delete_youtube_channel(channel_id):
+    """Delete YouTube channel"""
+    try:
+        from core.database.youtube_channels_db import YouTubeChannelsDB
+        
+        db = YouTubeChannelsDB()
+        result = db.delete_channel(channel_id)
+        
+        if result['success']:
+            return jsonify(result)
+        else:
+            return jsonify(result), 404
+            
+    except Exception as e:
+        print(f"Error deleting YouTube channel {channel_id}: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to delete channel'
+        }), 500
+
+@app.route('/api/youtube/channels/<int:channel_id>')
+@require_auth
+def api_get_youtube_channel(channel_id):
+    """Get specific YouTube channel details"""
+    try:
+        from core.database.youtube_channels_db import YouTubeChannelsDB
+        
+        db = YouTubeChannelsDB()
+        channel = db.get_channel(channel_id)
+        
+        if channel:
+            return jsonify({
+                'success': True,
+                'channel': channel
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'Channel not found'
+            }), 404
+            
+    except Exception as e:
+        print(f"Error getting YouTube channel {channel_id}: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to get channel'
+        }), 500
+
+@app.route('/api/youtube/channels/<int:channel_id>/enable-automation', methods=['POST'])
+@require_auth
+def api_enable_channel_automation(channel_id):
+    """Enable 24/7 automation for a channel"""
+    try:
+        from core.database.youtube_channels_db import YouTubeChannelsDB
+        from core.automation.youtube_automation import get_automation_engine
+        
+        db = YouTubeChannelsDB()
+        automation_engine = get_automation_engine()
+        
+        # Enable automation in database
+        result = db.enable_automation(channel_id)
+        
+        if result['success']:
+            # Start/restart the automation engine
+            engine_status = automation_engine.start_automation()
+            
+            return jsonify({
+                'success': True,
+                'message': 'Channel automation enabled and engine started',
+                'channel_automation': result,
+                'engine_status': engine_status,
+                'next_run': result.get('next_run')
+            })
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        print(f"Error enabling automation for channel {channel_id}: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to enable automation'
+        }), 500
+
+@app.route('/api/youtube/automation/status')
+@require_auth
+def api_youtube_automation_status():
+    """Get comprehensive YouTube automation status"""
+    try:
+        from core.automation.youtube_automation import get_automation_engine
+        
+        automation_engine = get_automation_engine()
+        status = automation_engine.get_automation_status()
+        
+        return jsonify(status)
+        
+    except Exception as e:
+        print(f"Error getting YouTube automation status: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to get YouTube automation status'
+        }), 500
+
+@app.route('/api/youtube/automation/start', methods=['POST'])
+@require_auth
+def api_start_automation():
+    """Start 24/7 automation system"""
+    try:
+        from core.automation.youtube_automation import get_automation_engine
+        
+        automation_engine = get_automation_engine()
+        result = automation_engine.start_automation()
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"Error starting automation: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to start automation'
+        }), 500
+
+@app.route('/api/youtube/automation/stop', methods=['POST'])
+@require_auth
+def api_stop_automation():
+    """Stop 24/7 automation system"""
+    try:
+        from core.automation.youtube_automation import get_automation_engine
+        
+        automation_engine = get_automation_engine()
+        result = automation_engine.stop_automation()
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"Error stopping automation: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to stop automation'
+        }), 500
+
+@app.route('/api/files/videos/<filename>')
+@require_auth
+def serve_video_file(filename):
+    """Serve video files"""
+    try:
+        from flask import send_from_directory
+        return send_from_directory('output/videos', filename)
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 404
+
+@app.route('/api/files/images/<filename>')
+@require_auth
+def serve_image_file(filename):
+    """Serve image files"""
+    try:
+        from flask import send_from_directory
+        return send_from_directory('output/images', filename)
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 404
 
 if __name__ == '__main__':
     # Create required directories

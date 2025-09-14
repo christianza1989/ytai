@@ -160,9 +160,12 @@ class SunoClient:
                 "instrumental": instrumental,
                 "model": model,
                 "style": style,
-                "title": title,
                 "callBackUrl": os.getenv('CALLBACK_URL', 'https://webhook.site/unique-id')
             }
+            
+            # Only include title if provided - let Suno auto-generate if empty
+            if title and title.strip():
+                payload["title"] = title
             
             # Add prompt only if not instrumental (as per API docs)
             if not instrumental:

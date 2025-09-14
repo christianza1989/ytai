@@ -20,3 +20,6 @@ google-auth>=2.20.0
 
 # Optional: Image generation
 stability-sdk>=0.8.0
+
+# Automation and scheduling
+schedule>=1.2.0

@@ -1,0 +1,435 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Batch Operations{% endblock %}
+
+{% block extra_css %}
+<style>
+.batch-operation-card {
+    border: 1px solid #e1e8ed;
+    transition: all 0.3s ease;
+}
+
+.batch-operation-card:hover {
+    border-color: #4a90e2;
+    box-shadow: 0 4px 15px rgba(74, 144, 226, 0.2);
+}
+
+.operation-status {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+.status-running {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-completed {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-failed {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.status-queued {
+    background: #cce5ff;
+    color: #004085;
+}
+
+.progress-mini {
+    height: 8px;
+    border-radius: 4px;
+}
+
+.batch-stats {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.operation-actions {
+    display: flex;
+    gap: 8px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="fas fa-tasks me-2"></i>Batch Operations</h2>
+            <p class="text-muted mb-0">Monitor and manage background music generation and processing tasks</p>
+        </div>
+        <button class="btn btn-primary" onclick="refreshOperations()">
+            <i class="fas fa-sync-alt me-2"></i>Refresh
+        </button>
+    </div>
+
+    <!-- Batch Statistics -->
+    <div class="batch-stats">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h4 class="text-primary mb-1" id="totalOperations">0</h4>
+                    <small class="text-muted">Total Operations</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h4 class="text-warning mb-1" id="runningOperations">0</h4>
+                    <small class="text-muted">Running</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h4 class="text-success mb-1" id="completedOperations">0</h4>
+                    <small class="text-muted">Completed</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h4 class="text-danger mb-1" id="failedOperations">0</h4>
+                    <small class="text-muted">Failed</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Operation Filters -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <select class="form-select" id="statusFilter" onchange="filterOperations()">
+                <option value="all">All Statuses</option>
+                <option value="running">Running</option>
+                <option value="completed">Completed</option>
+                <option value="failed">Failed</option>
+                <option value="queued">Queued</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <select class="form-select" id="typeFilter" onchange="filterOperations()">
+                <option value="all">All Types</option>
+                <option value="batch_generation">Batch Generation</option>
+                <option value="audio_merge">Audio Merging</option>
+                <option value="video_creation">Video Creation</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <input type="text" class="form-control" id="searchFilter" placeholder="Search operations..." onkeyup="filterOperations()">
+        </div>
+    </div>
+
+    <!-- Operations List -->
+    <div class="row" id="operationsList">
+        <div class="col-12 text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading operations...</span>
+            </div>
+            <p class="text-muted mt-3">Loading batch operations...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Operation Detail Modal -->
+<div class="modal fade" id="operationDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Operation Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="operationDetailContent">
+                <!-- Operation details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="operationActionBtn" style="display: none;">
+                    <i class="fas fa-play me-1"></i>Action
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let operations = [];
+let refreshInterval;
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    loadOperations();
+    
+    // Auto-refresh every 5 seconds
+    refreshInterval = setInterval(loadOperations, 5000);
+});
+
+function loadOperations() {
+    fetch('/api/batch/operations')
+        .then(response => response.json())
+        .then(data => {
+            operations = data.operations || [];
+            updateStatistics();
+            renderOperations();
+        })
+        .catch(error => {
+            console.error('Error loading operations:', error);
+            showErrorInList('Failed to load operations');
+        });
+}
+
+function updateStatistics() {
+    const stats = {
+        total: operations.length,
+        running: operations.filter(op => op.status === 'running').length,
+        completed: operations.filter(op => op.status === 'completed').length,
+        failed: operations.filter(op => op.status === 'failed').length
+    };
+    
+    document.getElementById('totalOperations').textContent = stats.total;
+    document.getElementById('runningOperations').textContent = stats.running;
+    document.getElementById('completedOperations').textContent = stats.completed;
+    document.getElementById('failedOperations').textContent = stats.failed;
+}
+
+function renderOperations() {
+    const container = document.getElementById('operationsList');
+    
+    if (operations.length === 0) {
+        container.innerHTML = `
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No batch operations found</h5>
+                <p class="text-muted">Start a batch generation to see operations here.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const operationsHtml = operations.map(operation => `
+        <div class="col-md-6 mb-3 operation-item" data-status="${operation.status}" data-type="${operation.type}">
+            <div class="card batch-operation-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-${getOperationIcon(operation.type)} me-2"></i>
+                            ${operation.title || operation.type}
+                        </h6>
+                        <span class="operation-status status-${operation.status}">
+                            ${operation.status.charAt(0).toUpperCase() + operation.status.slice(1)}
+                        </span>
+                    </div>
+                    
+                    <p class="card-text text-muted small mb-2">
+                        ${operation.description || 'No description available'}
+                    </p>
+                    
+                    ${operation.progress !== undefined ? `
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <small class="text-muted">Progress</small>
+                                <small class="text-muted">${operation.progress}%</small>
+                            </div>
+                            <div class="progress progress-mini">
+                                <div class="progress-bar ${getProgressBarClass(operation.status)}" 
+                                     role="progressbar" 
+                                     style="width: ${operation.progress}%">
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>
+                            ${formatTime(operation.started_at)}
+                        </small>
+                        <div class="operation-actions">
+                            <button class="btn btn-sm btn-outline-info" onclick="viewOperationDetails('${operation.id}')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            ${operation.status === 'running' ? `
+                                <button class="btn btn-sm btn-outline-warning" onclick="pauseOperation('${operation.id}')">
+                                    <i class="fas fa-pause"></i>
+                                </button>
+                            ` : ''}
+                            ${operation.status === 'failed' ? `
+                                <button class="btn btn-sm btn-outline-success" onclick="retryOperation('${operation.id}')">
+                                    <i class="fas fa-redo"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    container.innerHTML = operationsHtml;
+}
+
+function getOperationIcon(type) {
+    const icons = {
+        'batch_generation': 'music',
+        'audio_merge': 'link',
+        'video_creation': 'video'
+    };
+    return icons[type] || 'tasks';
+}
+
+function getProgressBarClass(status) {
+    const classes = {
+        'running': 'bg-primary progress-bar-striped progress-bar-animated',
+        'completed': 'bg-success',
+        'failed': 'bg-danger',
+        'queued': 'bg-info'
+    };
+    return classes[status] || 'bg-secondary';
+}
+
+function formatTime(timestamp) {
+    if (!timestamp) return 'Unknown';
+    const date = new Date(timestamp);
+    return date.toLocaleString();
+}
+
+function filterOperations() {
+    const statusFilter = document.getElementById('statusFilter').value;
+    const typeFilter = document.getElementById('typeFilter').value;
+    const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
+    
+    const items = document.querySelectorAll('.operation-item');
+    
+    items.forEach(item => {
+        const status = item.getAttribute('data-status');
+        const type = item.getAttribute('data-type');
+        const text = item.textContent.toLowerCase();
+        
+        const statusMatch = statusFilter === 'all' || status === statusFilter;
+        const typeMatch = typeFilter === 'all' || type === typeFilter;
+        const searchMatch = searchFilter === '' || text.includes(searchFilter);
+        
+        if (statusMatch && typeMatch && searchMatch) {
+            item.style.display = 'block';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
+function refreshOperations() {
+    loadOperations();
+}
+
+function viewOperationDetails(operationId) {
+    const operation = operations.find(op => op.id === operationId);
+    if (!operation) return;
+    
+    const modal = new bootstrap.Modal(document.getElementById('operationDetailModal'));
+    const content = document.getElementById('operationDetailContent');
+    
+    content.innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Operation Information</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>ID:</strong></td><td>${operation.id}</td></tr>
+                    <tr><td><strong>Type:</strong></td><td>${operation.type}</td></tr>
+                    <tr><td><strong>Status:</strong></td><td><span class="operation-status status-${operation.status}">${operation.status}</span></td></tr>
+                    <tr><td><strong>Started:</strong></td><td>${formatTime(operation.started_at)}</td></tr>
+                    ${operation.completed_at ? `<tr><td><strong>Completed:</strong></td><td>${formatTime(operation.completed_at)}</td></tr>` : ''}
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6>Progress Details</h6>
+                <p>${operation.current_step || 'No progress information'}</p>
+                ${operation.progress !== undefined ? `
+                    <div class="progress mb-3">
+                        <div class="progress-bar ${getProgressBarClass(operation.status)}" 
+                             role="progressbar" 
+                             style="width: ${operation.progress}%">
+                            ${operation.progress}%
+                        </div>
+                    </div>
+                ` : ''}
+                ${operation.error ? `
+                    <div class="alert alert-danger">
+                        <strong>Error:</strong> ${operation.error}
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+        ${operation.tracks ? `
+            <div class="mt-3">
+                <h6>Generated Tracks</h6>
+                <div class="row">
+                    ${operation.tracks.map(track => `
+                        <div class="col-md-6 mb-2">
+                            <div class="card">
+                                <div class="card-body p-2">
+                                    <h6 class="card-title mb-1">${track.title}</h6>
+                                    <audio src="${track.url}" controls style="width: 100%;"></audio>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : ''}
+    `;
+    
+    modal.show();
+}
+
+function pauseOperation(operationId) {
+    fetch(`/api/batch/operations/${operationId}/pause`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadOperations();
+            } else {
+                alert('Failed to pause operation: ' + (data.error || 'Unknown error'));
+            }
+        });
+}
+
+function retryOperation(operationId) {
+    fetch(`/api/batch/operations/${operationId}/retry`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadOperations();
+            } else {
+                alert('Failed to retry operation: ' + (data.error || 'Unknown error'));
+            }
+        });
+}
+
+function showErrorInList(message) {
+    const container = document.getElementById('operationsList');
+    container.innerHTML = `
+        <div class="col-12 text-center py-5">
+            <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+            <h5 class="text-danger">Error</h5>
+            <p class="text-muted">${message}</p>
+        </div>
+    `;
+}
+
+// Clean up interval when page unloads
+window.addEventListener('beforeunload', function() {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+    }
+});
+</script>
+{% endblock %}

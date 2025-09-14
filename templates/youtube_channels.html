@@ -245,49 +245,122 @@
                         </div>
                     </div>
                     
-                    <!-- Music Style Configuration -->
+                    <!-- Music Genre Selection -->
                     <div class="row">
                         <div class="col-12 mb-4">
-                            <h6><i class="fas fa-music text-success me-2"></i>Music Style & Preferences</h6>
+                            <h6><i class="fas fa-music text-success me-2"></i>Genre Selection & Configuration</h6>
                             <hr>
                             
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">Select Music Genres (Check all that apply) *</label>
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        AI will automatically rotate between selected genres for content diversity
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row" id="genreCheckboxes">
+                                <div class="col-md-3 mb-3">
+                                    <h6 class="text-primary">Relaxing & Ambient</h6>
+                                    <div class="form-check">
+                                        <input class="form-check-input genre-checkbox" type="checkbox" value="lo-fi-hip-hop" id="genre_lofi">
+                                        <label class="form-check-label" for="genre_lofi">Lo-Fi Hip Hop</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input genre-checkbox" type="checkbox" value="ambient" id="genre_ambient">
+                                        <label class="form-check-label" for="genre_ambient">Ambient</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input genre-checkbox" type="checkbox" value="chillout" id="genre_chillout">
+                                        <label class="form-check-label" for="genre_chillout">Chillout</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input genre-checkbox" type="checkbox" value="meditation" id="genre_meditation">
+                                        <label class="form-check-label" for="genre_meditation">Meditation</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input genre-checkbox" type="checkbox" value="nature-sounds" id="genre_nature">
+                                        <label class="form-check-label" for="genre_nature">Nature Sounds</label>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-3 mb-3">
+                                    <h6 class="text-success">Study & Work</h6>
+                                    <div class="form-check">
+                                        <input class="form-check-input genre-checkbox" type="checkbox" value="study-music" id="genre_study">
+                                        <label class="form-check-label" for="genre_study">Study Music</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input genre-checkbox" type="checkbox" value="focus-beats" id="genre_focus">
+                                        <label class="form-check-label" for="genre_focus">Focus Beats</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input genre-checkbox" type="checkbox" value="coffee-shop" id="genre_coffee">
+                                        <label class="form-check-label" for="genre_coffee">Coffee Shop</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input genre-checkbox" type="checkbox" value="classical" id="genre_classical">
+                                        <label class="form-check-label" for="genre_classical">Classical</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input genre-checkbox" type="checkbox" value="jazz" id="genre_jazz">
+                                        <label class="form-check-label" for="genre_jazz">Jazz</label>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-3 mb-3">
+                                    <h6 class="text-warning">Electronic & Upbeat</h6>
+                                    <div class="form-check">
+                                        <input class="form-check-input genre-checkbox" type="checkbox" value="house" id="genre_house">
+                                        <label class="form-check-label" for="genre_house">House</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input genre-checkbox" type="checkbox" value="techno" id="genre_techno">
+                                        <label class="form-check-label" for="genre_techno">Techno</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input genre-checkbox" type="checkbox" value="trance" id="genre_trance">
+                                        <label class="form-check-label" for="genre_trance">Trance</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input genre-checkbox" type="checkbox" value="synthwave" id="genre_synthwave">
+                                        <label class="form-check-label" for="genre_synthwave">Synthwave</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input genre-checkbox" type="checkbox" value="drum-bass" id="genre_dnb">
+                                        <label class="form-check-label" for="genre_dnb">Drum & Bass</label>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-3 mb-3">
+                                    <h6 class="text-danger">Gaming & Energy</h6>
+                                    <div class="form-check">
+                                        <input class="form-check-input genre-checkbox" type="checkbox" value="gaming-music" id="genre_gaming">
+                                        <label class="form-check-label" for="genre_gaming">Gaming Music</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input genre-checkbox" type="checkbox" value="trap" id="genre_trap">
+                                        <label class="form-check-label" for="genre_trap">Trap</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input genre-checkbox" type="checkbox" value="dubstep" id="genre_dubstep">
+                                        <label class="form-check-label" for="genre_dubstep">Dubstep</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input genre-checkbox" type="checkbox" value="rock" id="genre_rock">
+                                        <label class="form-check-label" for="genre_rock">Rock</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input genre-checkbox" type="checkbox" value="workout" id="genre_workout">
+                                        <label class="form-check-label" for="genre_workout">Workout Music</label>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <div class="row">
-                                <div class="col-md-4 mb-3">
-                                    <label for="primaryGenre" class="form-label">Primary Genre *</label>
-                                    <select class="form-select" id="primaryGenre" name="primary_genre" required>
-                                        <option value="">Select Genre...</option>
-                                        <option value="lo-fi-hip-hop">Lo-Fi Hip Hop</option>
-                                        <option value="ambient">Ambient</option>
-                                        <option value="jazz">Jazz</option>
-                                        <option value="classical">Classical</option>
-                                        <option value="electronic">Electronic</option>
-                                        <option value="pop">Pop</option>
-                                        <option value="rock">Rock</option>
-                                        <option value="house">House</option>
-                                        <option value="techno">Techno</option>
-                                        <option value="trance">Trance</option>
-                                        <option value="drum-bass">Drum & Bass</option>
-                                        <option value="dubstep">Dubstep</option>
-                                        <option value="trap">Trap</option>
-                                        <option value="synthwave">Synthwave</option>
-                                        <option value="chillout">Chillout</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    <label for="secondaryGenres" class="form-label">Secondary Genres</label>
-                                    <select class="form-select" id="secondaryGenres" name="secondary_genres" multiple>
-                                        <option value="chill">Chill</option>
-                                        <option value="study">Study Music</option>
-                                        <option value="relaxing">Relaxing</option>
-                                        <option value="upbeat">Upbeat</option>
-                                        <option value="melancholic">Melancholic</option>
-                                        <option value="energetic">Energetic</option>
-                                        <option value="peaceful">Peaceful</option>
-                                        <option value="motivational">Motivational</option>
-                                    </select>
-                                    <div class="form-text">Hold Ctrl/Cmd to select multiple</div>
-                                </div>
-                                <div class="col-md-4 mb-3">
+                                <div class="col-md-6 mb-3">
                                     <label for="targetAudience" class="form-label">Target Audience</label>
                                     <select class="form-select" id="targetAudience" name="target_audience">
                                         <option value="general">General Audience</option>
@@ -299,41 +372,95 @@
                                         <option value="fitness">Fitness Enthusiasts</option>
                                     </select>
                                 </div>
-                            </div>
-                            
-                            <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label for="uploadSchedule" class="form-label">Upload Schedule</label>
-                                    <select class="form-select" id="uploadSchedule" name="upload_schedule">
-                                        <option value="daily">Daily</option>
-                                        <option value="every-2-days">Every 2 Days</option>
-                                        <option value="every-3-days">Every 3 Days</option>
-                                        <option value="weekly">Weekly</option>
-                                        <option value="twice-weekly">Twice Weekly</option>
-                                        <option value="custom">Custom Schedule</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="preferredUploadTime" class="form-label">Preferred Upload Time</label>
-                                    <input type="time" class="form-control" id="preferredUploadTime" name="preferred_upload_time" value="14:00">
+                                    <label class="form-label">Selected Genres</label>
+                                    <div class="border p-2 rounded bg-light" id="selectedGenresDisplay" style="min-height: 38px;">
+                                        <span class="text-muted">No genres selected</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Automation Settings -->
+                    <!-- Upload Scheduling Configuration -->
                     <div class="row">
                         <div class="col-12 mb-4">
-                            <h6><i class="fas fa-robot text-primary me-2"></i>Automation Settings</h6>
+                            <h6><i class="fas fa-clock text-primary me-2"></i>Upload Scheduling & Automation</h6>
                             <hr>
                             
                             <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="uploadSchedule" class="form-label">Upload Frequency</label>
+                                    <select class="form-select" id="uploadSchedule" name="upload_schedule" onchange="updateScheduleOptions()">
+                                        <option value="daily">Daily</option>
+                                        <option value="every-2-days">Every 2 Days</option>
+                                        <option value="every-3-days">Every 3 Days</option>
+                                        <option value="weekly">Weekly</option>
+                                        <option value="twice-weekly">Twice Weekly</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3" id="dailyCountContainer">
+                                    <label for="dailyUploadCount" class="form-label">Videos per Day</label>
+                                    <select class="form-select" id="dailyUploadCount" name="daily_upload_count" onchange="updateUploadHours()">
+                                        <option value="1">1 video/day</option>
+                                        <option value="2">2 videos/day</option>
+                                        <option value="3">3 videos/day</option>
+                                        <option value="4">4 videos/day</option>
+                                        <option value="5">5 videos/day</option>
+                                        <option value="6">6 videos/day</option>
+                                        <option value="8">8 videos/day</option>
+                                        <option value="10">10 videos/day</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="vocalProbability" class="form-label">AI Vocal Decision</label>
+                                    <select class="form-select" id="vocalProbability" name="vocal_probability">
+                                        <option value="0.9">90% Vocal - 10% Instrumental</option>
+                                        <option value="0.8" selected>80% Vocal - 20% Instrumental</option>
+                                        <option value="0.7">70% Vocal - 30% Instrumental</option>
+                                        <option value="0.5">50% Vocal - 50% Instrumental</option>
+                                        <option value="0.3">30% Vocal - 70% Instrumental</option>
+                                        <option value="0.2">20% Vocal - 80% Instrumental</option>
+                                        <option value="0.1">10% Vocal - 90% Instrumental</option>
+                                        <option value="0.0">100% Instrumental Only</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="row" id="uploadHoursContainer">
+                                <div class="col-12 mb-3">
+                                    <label class="form-label">Upload Times & AI Vocal Probability per Upload</label>
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-robot me-2"></i>
+                                        AI will decide vocal vs instrumental for each upload based on these probabilities
+                                    </div>
+                                    <div id="uploadHoursConfig">
+                                        <!-- Upload time slots will be generated here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 24/7 Automation Settings -->
+                    <div class="row">
+                        <div class="col-12 mb-4">
+                            <h6><i class="fas fa-robot text-primary me-2"></i>24/7 Automation Configuration</h6>
+                            <hr>
+                            
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>24/7 Automation:</strong> Once enabled, the system will automatically generate music, create 16:9 thumbnails, produce videos, and upload to YouTube according to your schedule.
+                            </div>
+                            
+                            <div class="row">
                                 <div class="col-md-6">
+                                    <h6 class="text-success">Core Automation</h6>
                                     <div class="mb-3">
                                         <div class="form-check form-switch">
                                             <input class="form-check-input" type="checkbox" id="autoUpload" name="auto_upload" checked>
                                             <label class="form-check-label" for="autoUpload">
-                                                Enable Auto-Upload
+                                                <strong>Enable Auto-Upload to YouTube</strong>
                                             </label>
                                         </div>
                                     </div>
@@ -342,7 +469,7 @@
                                         <div class="form-check form-switch">
                                             <input class="form-check-input" type="checkbox" id="autoThumbnails" name="auto_thumbnails" checked>
                                             <label class="form-check-label" for="autoThumbnails">
-                                                Auto-Generate Thumbnails (Nano-Banana)
+                                                <strong>Auto-Generate 16:9 Thumbnails (Nano-Banana)</strong>
                                             </label>
                                         </div>
                                     </div>
@@ -351,12 +478,23 @@
                                         <div class="form-check form-switch">
                                             <input class="form-check-input" type="checkbox" id="autoSEO" name="auto_seo" checked>
                                             <label class="form-check-label" for="autoSEO">
-                                                Auto-Optimize SEO (Titles, Tags, Descriptions)
+                                                <strong>Auto-Optimize SEO</strong> (Titles, Tags, Descriptions)
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="aiDecisionEnabled" name="ai_decision_enabled" checked>
+                                            <label class="form-check-label" for="aiDecisionEnabled">
+                                                <strong>AI-Driven Vocal/Instrumental Decisions</strong>
                                             </label>
                                         </div>
                                     </div>
                                 </div>
+                                
                                 <div class="col-md-6">
+                                    <h6 class="text-info">Advanced Features</h6>
                                     <div class="mb-3">
                                         <div class="form-check form-switch">
                                             <input class="form-check-input" type="checkbox" id="enableAnalytics" name="enable_analytics" checked>
@@ -382,6 +520,18 @@
                                             <option value="unlisted">Unlisted</option>
                                             <option value="public">Public</option>
                                         </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="bg-light p-3 rounded">
+                                            <h6 class="text-primary mb-2">🚀 24/7 Automation Status</h6>
+                                            <div id="automationStatus" class="text-muted">
+                                                Save channel to enable automation
+                                            </div>
+                                            <button type="button" class="btn btn-success btn-sm mt-2" id="enableAutomationBtn" onclick="enableChannelAutomation()" disabled>
+                                                <i class="fas fa-play me-1"></i>Start 24/7 Automation
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -716,6 +866,28 @@ function addNewChannel() {
     `;
     document.getElementById('channelForm').reset();
     document.getElementById('channelId').value = '';
+    
+    // Reset genre selection
+    document.querySelectorAll('.genre-checkbox').forEach(cb => cb.checked = false);
+    updateSelectedGenres();
+    
+    // Reset automation status
+    const automationBtn = document.getElementById('enableAutomationBtn');
+    const automationStatus = document.getElementById('automationStatus');
+    
+    automationStatus.innerHTML = `
+        <div class="text-muted">
+            Save channel to enable automation
+        </div>
+    `;
+    automationBtn.disabled = true;
+    automationBtn.classList.remove('btn-secondary');
+    automationBtn.classList.add('btn-success');
+    automationBtn.innerHTML = '<i class="fas fa-play me-1"></i>Start 24/7 Automation';
+    
+    // Initialize upload hours
+    updateScheduleOptions();
+    
     const modal = new bootstrap.Modal(document.getElementById('channelModal'));
     modal.show();
 }
@@ -725,24 +897,88 @@ function editChannel(channelId) {
     if (!channel) return;
     
     document.getElementById('channelModalTitle').innerHTML = `
-        <i class="fab fa-youtube text-danger me-2"></i>Edit Channel: ${channel.name}
+        <i class="fab fa-youtube text-danger me-2"></i>Edit Channel: ${channel.channel_name || channel.name}
     `;
     
-    // Populate form with channel data
+    // Populate basic form data
     document.getElementById('channelId').value = channel.id;
-    document.getElementById('channelName').value = channel.name;
-    document.getElementById('channelUrl').value = channel.url || '';
-    document.getElementById('channelIdInput').value = channel.channel_id || '';
+    document.getElementById('channelName').value = channel.channel_name || channel.name || '';
+    document.getElementById('channelUrl').value = channel.channel_url || channel.url || '';
+    document.getElementById('channelIdInput').value = channel.youtube_channel_id || channel.channel_id || '';
     document.getElementById('channelDescription').value = channel.description || '';
-    document.getElementById('primaryGenre').value = channel.primary_genre || '';
-    document.getElementById('uploadSchedule').value = channel.upload_schedule || '';
-    document.getElementById('preferredUploadTime').value = channel.preferred_upload_time || '14:00';
-    document.getElementById('autoUpload').checked = channel.auto_upload || false;
-    document.getElementById('autoThumbnails').checked = channel.auto_thumbnails || false;
-    document.getElementById('autoSEO').checked = channel.auto_seo || false;
-    document.getElementById('enableAnalytics').checked = channel.enable_analytics || false;
+    
+    // Populate genre selection
+    document.querySelectorAll('.genre-checkbox').forEach(cb => cb.checked = false);
+    const selectedGenres = channel.selected_genres || [];
+    selectedGenres.forEach(genre => {
+        const checkbox = document.querySelector(`.genre-checkbox[value="${genre}"]`);
+        if (checkbox) checkbox.checked = true;
+    });
+    updateSelectedGenres();
+    
+    // Populate target audience
+    document.getElementById('targetAudience').value = channel.target_audience || 'general';
+    
+    // Populate schedule settings
+    document.getElementById('uploadSchedule').value = channel.upload_schedule || 'daily';
+    document.getElementById('dailyUploadCount').value = channel.daily_upload_count || 1;
+    document.getElementById('vocalProbability').value = channel.vocal_probability || 0.8;
+    
+    // Populate automation settings
+    document.getElementById('autoUpload').checked = channel.auto_upload !== false;
+    document.getElementById('autoThumbnails').checked = channel.auto_thumbnails !== false;
+    document.getElementById('autoSEO').checked = channel.auto_seo !== false;
+    document.getElementById('aiDecisionEnabled').checked = channel.ai_decision_enabled !== false;
+    document.getElementById('enableAnalytics').checked = channel.enable_analytics !== false;
     document.getElementById('enableMonetization').checked = channel.enable_monetization || false;
     document.getElementById('privacySettings').value = channel.privacy_settings || 'private';
+    
+    // Update schedule options and upload hours
+    updateScheduleOptions();
+    
+    // Populate upload hours if available
+    if (channel.upload_hours && channel.upload_hours.length > 0) {
+        setTimeout(() => {
+            channel.upload_hours.forEach((hourConfig, index) => {
+                const timeInput = document.querySelector(`input[name="upload_hour_${index}"]`);
+                const vocalProbInput = document.querySelector(`select[name="vocal_prob_${index}"]`);
+                
+                if (timeInput && vocalProbInput) {
+                    const timeStr = String(hourConfig.hour).padStart(2, '0') + ':' + String(hourConfig.minute || 0).padStart(2, '0');
+                    timeInput.value = timeStr;
+                    vocalProbInput.value = hourConfig.vocal_probability || 0.8;
+                }
+            });
+        }, 100);
+    }
+    
+    // Update automation status
+    const automationBtn = document.getElementById('enableAutomationBtn');
+    const automationStatus = document.getElementById('automationStatus');
+    
+    if (channel.automation_enabled) {
+        automationStatus.innerHTML = `
+            <div class="text-success">
+                <i class="fas fa-check-circle me-1"></i>
+                Automation Active${channel.automation_next_run ? ' - Next run: ' + new Date(channel.automation_next_run).toLocaleString() : ''}
+            </div>
+        `;
+        automationBtn.textContent = 'Automation Running';
+        automationBtn.disabled = true;
+        automationBtn.classList.remove('btn-success');
+        automationBtn.classList.add('btn-secondary');
+    } else {
+        automationStatus.innerHTML = `
+            <div class="text-info">
+                <i class="fas fa-info-circle me-1"></i>
+                Ready to enable automation
+            </div>
+        `;
+        automationBtn.disabled = false;
+        automationBtn.classList.remove('btn-secondary');
+        automationBtn.classList.add('btn-success');
+        automationBtn.innerHTML = '<i class="fas fa-play me-1"></i>Start 24/7 Automation';
+    }
     
     const modal = new bootstrap.Modal(document.getElementById('channelModal'));
     modal.show();
@@ -753,9 +989,58 @@ function saveChannel() {
     const formData = new FormData(form);
     const channelData = Object.fromEntries(formData.entries());
     
+    // Collect selected genres
+    const selectedGenres = Array.from(document.querySelectorAll('.genre-checkbox:checked')).map(cb => cb.value);
+    channelData.selected_genres = selectedGenres;
+    
+    // Collect upload hours configuration
+    const dailyCount = parseInt(channelData.daily_upload_count || 1);
+    const uploadHours = [];
+    
+    if (channelData.upload_schedule === 'daily') {
+        for (let i = 0; i < dailyCount; i++) {
+            const timeInput = document.querySelector(`input[name="upload_hour_${i}"]`);
+            const vocalProbInput = document.querySelector(`select[name="vocal_prob_${i}"]`);
+            
+            if (timeInput && vocalProbInput) {
+                const [hour, minute] = timeInput.value.split(':');
+                uploadHours.push({
+                    hour: parseInt(hour),
+                    minute: parseInt(minute || 0),
+                    vocal_probability: parseFloat(vocalProbInput.value)
+                });
+            }
+        }
+    } else {
+        // Single upload for non-daily schedules
+        const timeInput = document.querySelector('input[name="upload_time"]');
+        const vocalProbInput = document.querySelector('select[name="single_vocal_prob"]');
+        
+        if (timeInput && vocalProbInput) {
+            const [hour, minute] = timeInput.value.split(':');
+            uploadHours.push({
+                hour: parseInt(hour),
+                minute: parseInt(minute || 0),
+                vocal_probability: parseFloat(vocalProbInput.value)
+            });
+        }
+    }
+    
+    channelData.upload_hours = uploadHours;
+    
     // Validate required fields
-    if (!channelData.channel_name || !channelData.primary_genre) {
-        showToast('Please fill all required fields', 'error');
+    if (!channelData.channel_name) {
+        showToast('Please enter channel name', 'error');
+        return;
+    }
+    
+    if (selectedGenres.length === 0) {
+        showToast('Please select at least one music genre', 'error');
+        return;
+    }
+    
+    if (uploadHours.length === 0) {
+        showToast('Please configure upload times', 'error');
         return;
     }
     
@@ -779,6 +1064,23 @@ function saveChannel() {
         if (data.success) {
             showToast(data.message, 'success');
             
+            // Update channel ID for automation
+            if (data.channel && data.channel.id) {
+                document.getElementById('channelId').value = data.channel.id;
+                
+                // Enable automation button
+                const automationBtn = document.getElementById('enableAutomationBtn');
+                if (automationBtn) {
+                    automationBtn.disabled = false;
+                    document.getElementById('automationStatus').innerHTML = `
+                        <div class="text-info">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Channel saved successfully. Ready to enable automation.
+                        </div>
+                    `;
+                }
+            }
+            
             // Update local channels array
             if (channelData.channel_id) {
                 // Update existing
@@ -793,7 +1095,9 @@ function saveChannel() {
             
             renderChannelsTable();
             updateStatistics();
-            bootstrap.Modal.getInstance(document.getElementById('channelModal')).hide();
+            
+            // Don't close modal immediately, let user enable automation
+            showToast('Channel saved! You can now enable 24/7 automation above.', 'info');
         } else {
             showToast(data.message || 'Failed to save channel', 'error');
         }
@@ -1114,6 +1418,157 @@ function bulkDeleteChannels() {
         }
     });
 }
+
+// Genre selection management
+function updateSelectedGenres() {
+    const checkboxes = document.querySelectorAll('.genre-checkbox:checked');
+    const display = document.getElementById('selectedGenresDisplay');
+    
+    if (checkboxes.length === 0) {
+        display.innerHTML = '<span class="text-muted">No genres selected</span>';
+        return;
+    }
+    
+    const genres = Array.from(checkboxes).map(cb => {
+        const label = document.querySelector(`label[for="${cb.id}"]`).textContent;
+        return `<span class="badge bg-primary me-1">${label}</span>`;
+    });
+    
+    display.innerHTML = genres.join('');
+}
+
+// Update schedule options based on frequency
+function updateScheduleOptions() {
+    const schedule = document.getElementById('uploadSchedule').value;
+    const dailyContainer = document.getElementById('dailyCountContainer');
+    
+    if (schedule === 'daily') {
+        dailyContainer.style.display = 'block';
+        updateUploadHours();
+    } else {
+        dailyContainer.style.display = 'none';
+        // For non-daily schedules, show single time picker
+        document.getElementById('uploadHoursConfig').innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <label class="form-label">Upload Time</label>
+                    <input type="time" class="form-control" name="upload_time" value="14:00">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Vocal Probability</label>
+                    <select class="form-select" name="single_vocal_prob">
+                        <option value="0.8" selected>80% Vocal</option>
+                        <option value="0.5">50% Vocal</option>
+                        <option value="0.2">20% Vocal</option>
+                        <option value="0.0">100% Instrumental</option>
+                    </select>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// Update upload hours configuration based on daily count
+function updateUploadHours() {
+    const count = parseInt(document.getElementById('dailyUploadCount').value);
+    const container = document.getElementById('uploadHoursConfig');
+    
+    const defaultTimes = [6, 8, 10, 12, 14, 16, 18, 20, 22, 0]; // 24-hour format
+    const defaultVocalProb = parseFloat(document.getElementById('vocalProbability').value);
+    
+    let html = '<div class="row">';
+    
+    for (let i = 0; i < count; i++) {
+        const hour = defaultTimes[i] || (14 + i);
+        const timeStr = String(hour).padStart(2, '0') + ':00';
+        
+        html += `
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-body p-3">
+                        <h6 class="card-title mb-2">Upload ${i + 1}</h6>
+                        <div class="mb-2">
+                            <label class="form-label small">Time</label>
+                            <input type="time" class="form-control form-control-sm" 
+                                   name="upload_hour_${i}" value="${timeStr}">
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label small">Vocal Probability</label>
+                            <select class="form-select form-select-sm" name="vocal_prob_${i}">
+                                <option value="0.9" ${defaultVocalProb >= 0.85 ? 'selected' : ''}>90% Vocal</option>
+                                <option value="0.8" ${defaultVocalProb >= 0.75 && defaultVocalProb < 0.85 ? 'selected' : ''}>80% Vocal</option>
+                                <option value="0.7" ${defaultVocalProb >= 0.65 && defaultVocalProb < 0.75 ? 'selected' : ''}>70% Vocal</option>
+                                <option value="0.5" ${defaultVocalProb >= 0.45 && defaultVocalProb < 0.65 ? 'selected' : ''}>50% Vocal</option>
+                                <option value="0.3" ${defaultVocalProb >= 0.25 && defaultVocalProb < 0.45 ? 'selected' : ''}>30% Vocal</option>
+                                <option value="0.2" ${defaultVocalProb >= 0.15 && defaultVocalProb < 0.25 ? 'selected' : ''}>20% Vocal</option>
+                                <option value="0.1" ${defaultVocalProb >= 0.05 && defaultVocalProb < 0.15 ? 'selected' : ''}>10% Vocal</option>
+                                <option value="0.0" ${defaultVocalProb < 0.05 ? 'selected' : ''}>Instrumental</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// Enable 24/7 automation for channel
+function enableChannelAutomation() {
+    const channelId = document.getElementById('channelId').value;
+    
+    if (!channelId) {
+        showToast('Please save the channel first', 'warning');
+        return;
+    }
+    
+    const btn = document.getElementById('enableAutomationBtn');
+    const originalText = btn.innerHTML;
+    showLoading(btn);
+    
+    fetch(`/api/youtube/channels/${channelId}/enable-automation`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading(btn, originalText);
+        
+        if (data.success) {
+            showToast('🚀 24/7 Automation enabled! System will start generating content automatically.', 'success');
+            document.getElementById('automationStatus').innerHTML = `
+                <div class="text-success">
+                    <i class="fas fa-check-circle me-1"></i>
+                    Automation Active - Next run: ${new Date(data.next_run).toLocaleString()}
+                </div>
+            `;
+            btn.textContent = 'Automation Running';
+            btn.disabled = true;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-secondary');
+        } else {
+            showToast(data.message || 'Failed to enable automation', 'error');
+        }
+    })
+    .catch(error => {
+        hideLoading(btn, originalText);
+        console.error('Error enabling automation:', error);
+        showToast('Error enabling automation', 'error');
+    });
+}
+
+// Add event listeners for genre selection
+document.addEventListener('DOMContentLoaded', function() {
+    // Genre checkbox listeners
+    document.querySelectorAll('.genre-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedGenres);
+    });
+    
+    // Initialize upload hours
+    updateUploadHours();
+    updateScheduleOptions();
+});
 
 // Initialize page message
 showToast('🎯 YouTube Channels Manager loaded - Ready to manage your empire!', 'success');

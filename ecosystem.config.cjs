@@ -8,6 +8,7 @@ module.exports = {
         FLASK_ENV: 'development',
         PORT: 5000
       },
+      env_file: '.env',
       watch: false,
       instances: 1,
       exec_mode: 'fork',
