@@ -17,6 +17,10 @@ from typing import Dict, List, Any, Optional
 import logging
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from dotenv import load_dotenv
+
+# Load environment variables first
+load_dotenv()
 
 # Add current directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

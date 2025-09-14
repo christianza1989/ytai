@@ -1024,10 +1024,119 @@ def api_youtube_channels_list():
         ]
         return jsonify({'channels': demo_channels})
 
+# OLD DUPLICATE YOUTUBE ENDPOINTS REMOVED 
+# They were using database_manager instead of youtube_channels_db
+# This caused conflicts with new endpoints starting at line 4112+
 
-# OLD DUPLICATE ENDPOINTS REMOVED (lines 1027-1139)
-# These used database_manager and conflicted with youtube_channels_db
+# @app.route('/api/youtube/channels/save', methods=['POST']) - REMOVED
+# def api_youtube_channels_save(): - REMOVED
+    """Save or update YouTube channel"""
+    try:
+        from core.database.database_manager import DatabaseManager
+        
+        data = request.get_json() or {}
+        db_manager = DatabaseManager()
+        
+        # Prepare channel data - support both field name formats
+        channel_data = {
+            'name': data.get('name') or data.get('channel_name'),
+            'url': data.get('url') or data.get('channel_url'), 
+            'youtube_channel_id': data.get('youtube_channel_id'),
+            'description': data.get('description'),
+            'primary_genre': data.get('primary_genre'),
+            'secondary_genres': data.get('secondary_genres', []),
+            'target_audience': data.get('target_audience'),
+            'upload_schedule': data.get('upload_schedule'),
+            'preferred_upload_time': data.get('preferred_upload_time', '14:00'),
+            'style_preferences': {'branding_style': data.get('branding_style')} if data.get('branding_style') else {},
+            'auto_upload': data.get('auto_upload') == 'on' or data.get('auto_upload') is True,
+            'auto_thumbnails': data.get('auto_thumbnails') == 'on' or data.get('auto_thumbnails') is True,
+            'auto_seo': data.get('auto_seo') == 'on' or data.get('auto_seo') is True,
+            'enable_analytics': data.get('enable_analytics') == 'on' or data.get('enable_analytics') is True,
+            'enable_monetization': data.get('enable_monetization') == 'on' or data.get('enable_monetization') is True,
+            'privacy_settings': data.get('privacy_settings', 'private'),
+            'api_key': data.get('api_key'),
+            'client_id': data.get('client_id'),
+            'client_secret': data.get('client_secret'),
+            'status': 'active' if data.get('api_key') else 'needs_setup'
+        }
+        
+        channel_id = data.get('channel_id')
+        if channel_id:
+            # Update existing channel
+            channel = db_manager.update_youtube_channel(int(channel_id), channel_data)
+            if channel:
+                return jsonify({
+                    'success': True, 
+                    'message': 'Channel updated successfully', 
+                    'channel': channel.to_dict()
+                })
+            else:
+                return jsonify({'success': False, 'message': 'Channel not found'}), 404
+        else:
+            # Create new channel
+            channel_id = db_manager.create_youtube_channel(channel_data)
+            if channel_id:
+                return jsonify({
+                    'success': True, 
+                    'message': 'Channel created successfully', 
+                    'channel_id': channel_id
+                })
+            else:
+                return jsonify({'success': False, 'message': 'Failed to create channel'}), 500
+            
+    except Exception as e:
+        print(f"Error saving channel: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
 
+@app.route('/api/youtube/channels/<int:channel_id>/delete', methods=['DELETE'])
+@require_auth
+def api_youtube_channels_delete(channel_id):
+    """Delete YouTube channel"""
+    try:
+        from core.database.database_manager import DatabaseManager
+        
+        db_manager = DatabaseManager()
+        success = db_manager.delete_youtube_channel(channel_id)
+        
+        if success:
+            return jsonify({'success': True, 'message': 'Channel deleted successfully'})
+        else:
+            return jsonify({'success': False, 'message': 'Channel not found'}), 404
+            
+    except Exception as e:
+        print(f"Error deleting channel: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/youtube/channels/<int:channel_id>/generate', methods=['POST'])
+@require_auth
+def api_youtube_channels_generate(channel_id):
+    """Generate content for specific channel"""
+    data = request.get_json() or {}
+    content_type = data.get('type', 'music')  # music, thumbnail, full_video
+    
+    task_id = f"channel_{channel_id}_{content_type}_{int(time.time())}"
+    
+    # Store task info
+    system_state.generation_tasks[task_id] = {
+        'id': task_id,
+        'channel_id': channel_id,
+        'content_type': content_type,
+        'status': 'running',
+        'progress': 0,
+        'current_step': 'Initializing...',
+        'created_at': datetime.now(),
+        'logs': []
+    }
+    
+    # Start generation in background thread
+    thread = threading.Thread(target=generate_channel_content, args=(task_id, channel_id, content_type))
+    thread.daemon = True
+    thread.start()
+    
+    return jsonify({'success': True, 'task_id': task_id, 'message': f'Content generation started for channel {channel_id}'})
+
+@app.route('/api/automation/start', methods=['POST'])
 @require_auth
 def api_automation_start():
     """Start 24/7 automation for all channels"""
@@ -4052,18 +4161,18 @@ def api_save_youtube_channel():
         
         # Check if updating existing channel
         channel_id = data.get('channel_id')
-        if channel_id and str(channel_id).strip():  # Check if not empty string
-            # Update existing channel - channel_id should be our internal DB ID (integer)
+        if channel_id:
+            # Update existing channel
             try:
                 channel_id = int(channel_id)
                 result = db.update_channel(channel_id, data)
-            except (ValueError, TypeError):
+            except ValueError:
                 return jsonify({
                     'success': False,
-                    'message': 'Invalid internal channel ID format'
+                    'message': 'Invalid channel ID'
                 }), 400
         else:
-            # Create new channel (channel_id is empty, None, or invalid)
+            # Create new channel
             result = db.add_channel(data)
         
         if result['success']:
