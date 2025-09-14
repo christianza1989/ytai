@@ -312,12 +312,16 @@ def api_config():
     """API configuration management"""
     system_state.update_api_status()
     
-    # Get current env values (masked for security)
+    # Get current env values (masked for display in read-only mode)
     env_config = {}
     for key in ['SUNO_API_KEY', 'GEMINI_API_KEY', 'GEMINI_MODEL']:
         value = os.getenv(key, '')
         if value and value != f'your_{key.lower()}_here':
-            env_config[key] = value[:8] + '...' + value[-4:] if len(value) > 12 else 'configured'
+            # For display purposes, mask the key but store full value in data attribute
+            if key in ['SUNO_API_KEY', 'GEMINI_API_KEY'] and len(value) > 12:
+                env_config[key] = value[:8] + '...' + value[-4:]
+            else:
+                env_config[key] = value  # GEMINI_MODEL and short keys shown fully
         else:
             env_config[key] = 'not_configured'
     
@@ -3130,9 +3134,18 @@ def api_save_config():
             written_content = f.read()
             print(f"🔍 Verification - .env content after write:\n{written_content}")
         
+        # Reload .env file to update os.getenv()
+        from dotenv import load_dotenv
+        load_dotenv(override=True)  # Force reload with override
+        print("🔄 Reloaded .env file with override=True")
+        
         # Update API status after saving
         print("🔄 Updating API status...")
         system_state.update_api_status()
+        
+        # Verify the environment variables are updated
+        print(f"🔍 Verification - Current SUNO_API_KEY: {os.getenv('SUNO_API_KEY', 'NOT_SET')[:8]}...")
+        print(f"🔍 Verification - Current GEMINI_API_KEY: {os.getenv('GEMINI_API_KEY', 'NOT_SET')[:8]}...")
         
         return jsonify({
             'success': True,

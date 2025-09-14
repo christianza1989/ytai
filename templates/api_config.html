@@ -98,10 +98,22 @@
                         <div class="input-group">
                             <input type="password" class="form-control" id="sunoApiKey" 
                                    placeholder="Enter your Suno API key"
-                                   value="{{ 'configured' if env_config.SUNO_API_KEY != 'not_configured' else '' }}">
+                                   {% if env_config.SUNO_API_KEY != 'not_configured' %}
+                                   data-configured="true" 
+                                   data-masked-value="{{ env_config.SUNO_API_KEY }}"
+                                   value="{{ env_config.SUNO_API_KEY }}"
+                                   readonly
+                                   {% else %}
+                                   value=""
+                                   {% endif %}>
                             <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('sunoApiKey')">
                                 <i class="fas fa-eye"></i>
                             </button>
+                            {% if env_config.SUNO_API_KEY != 'not_configured' %}
+                            <button class="btn btn-outline-primary" type="button" onclick="editApiKey('sunoApiKey')">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            {% endif %}
                         </div>
                         <div class="form-text">
                             <i class="fas fa-info-circle me-1"></i>
@@ -164,10 +176,22 @@
                         <div class="input-group">
                             <input type="password" class="form-control" id="geminiApiKey" 
                                    placeholder="Enter your Gemini API key"
-                                   value="{{ 'configured' if env_config.GEMINI_API_KEY != 'not_configured' else '' }}">
+                                   {% if env_config.GEMINI_API_KEY != 'not_configured' %}
+                                   data-configured="true" 
+                                   data-masked-value="{{ env_config.GEMINI_API_KEY }}"
+                                   value="{{ env_config.GEMINI_API_KEY }}"
+                                   readonly
+                                   {% else %}
+                                   value=""
+                                   {% endif %}>
                             <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('geminiApiKey')">
                                 <i class="fas fa-eye"></i>
                             </button>
+                            {% if env_config.GEMINI_API_KEY != 'not_configured' %}
+                            <button class="btn btn-outline-primary" type="button" onclick="editApiKey('geminiApiKey')">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            {% endif %}
                         </div>
                         <div class="form-text">
                             <i class="fas fa-info-circle me-1"></i>
@@ -646,6 +670,73 @@
                 <p><small>💰 Cost: $0.039 per image (Gemini 2.5 Flash Image - nano-banana model)</small></p>
             `,
             confirmButtonText: 'Awesome! 🚀'
+        });
+    }
+    
+    // Function to edit API key
+    function editApiKey(inputId) {
+        const input = document.getElementById(inputId);
+        const editBtn = input.parentElement.querySelector('.btn-outline-primary');
+        
+        if (input.hasAttribute('readonly')) {
+            // Enable editing
+            input.removeAttribute('readonly');
+            input.value = ''; // Clear for new input
+            input.focus();
+            input.placeholder = 'Enter new API key';
+            editBtn.innerHTML = '<i class="fas fa-save"></i> Save';
+            editBtn.onclick = () => saveApiKeyEdit(inputId);
+        }
+    }
+    
+    function saveApiKeyEdit(inputId) {
+        const input = document.getElementById(inputId);
+        const newKey = input.value.trim();
+        
+        if (!newKey) {
+            showToast('Please enter a valid API key', 'warning');
+            return;
+        }
+        
+        // Determine service type and save
+        const service = inputId.includes('suno') ? 'suno' : 'gemini';
+        
+        // Prepare config data
+        let configData = {};
+        if (service === 'suno') {
+            configData.suno_api_key = newKey;
+        } else {
+            configData.gemini_api_key = newKey;
+            configData.gemini_model = document.getElementById('geminiModel').value;
+        }
+        
+        // Save the configuration
+        console.log('🚀 Saving edited API key:', { service, configData });
+        
+        fetch('/api/config/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify(configData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('API key updated successfully!', 'success');
+                
+                // Reload page to show updated values
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                showToast(`Error: ${data.error || 'Failed to save API key'}`, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Save error:', error);
+            showToast('Failed to save API key. Please try again.', 'error');
         });
     }
 </script>
