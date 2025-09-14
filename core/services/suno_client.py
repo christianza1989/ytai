@@ -240,7 +240,7 @@ class SunoClient:
                 status = task_data.get('status', 'UNKNOWN')
                 print(f"📊 Užduoties būsena: {status}")
 
-                if status == 'SUCCESS':
+                if status in ['SUCCESS', 'TEXT_SUCCESS', 'AUDIO_SUCCESS', 'COMPLETE']:
                     print("✅ Užduotis sėkmingai užbaigta!")
                     return task_data
                 elif status in ['FAILED', 'CREATE_TASK_FAILED', 'GENERATE_AUDIO_FAILED']:
