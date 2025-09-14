@@ -1,0 +1,291 @@
+{% extends "admin_base.html" %}
+
+{% block title %}🎵 Music Gallery - Generated Tracks{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+<li class="breadcrumb-item active">Music Gallery</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-music text-primary me-2"></i>
+            Music Gallery
+            <span class="badge bg-success ms-2">AI Generated</span>
+        </h1>
+        <p class="text-muted">Browse and download your AI-generated music tracks</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('generator') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>
+            Create New Track
+        </a>
+    </div>
+</div>
+
+<!-- Filter and Search -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+            <input type="text" class="form-control" id="searchTracks" placeholder="Search tracks...">
+        </div>
+    </div>
+    <div class="col-md-3">
+        <select class="form-select" id="filterGenre">
+            <option value="">All Genres</option>
+            <option value="electronic">Electronic</option>
+            <option value="rock">Rock</option>
+            <option value="pop">Pop</option>
+            <option value="classical">Classical</option>
+            <option value="jazz">Jazz</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <select class="form-select" id="filterModel">
+            <option value="">All Models</option>
+            <option value="V4_5">V4.5</option>
+            <option value="V4">V4</option>
+            <option value="V3_5">V3.5</option>
+        </select>
+    </div>
+</div>
+
+<!-- Music Gallery Grid -->
+<div class="row" id="musicGallery">
+    <!-- Tracks will be loaded here -->
+</div>
+
+<!-- Loading State -->
+<div id="loadingState" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-3">Loading your music gallery...</p>
+</div>
+
+<!-- Empty State -->
+<div id="emptyState" class="text-center py-5" style="display: none;">
+    <i class="fas fa-music fa-3x text-muted mb-3"></i>
+    <h5>No tracks found</h5>
+    <p class="text-muted">Create your first AI-generated music track to get started.</p>
+    <a href="{{ url_for('generator') }}" class="btn btn-primary">
+        <i class="fas fa-plus me-1"></i>
+        Create Your First Track
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Music Gallery JavaScript
+
+let allTracks = [];
+
+// Load music gallery on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadMusicGallery();
+    setupFilters();
+});
+
+function loadMusicGallery() {
+    showLoadingState();
+    
+    // Load completed generation tasks
+    fetch('/api/system/status', {
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        const tasks = data.generation_tasks || {};
+        const completedTracks = [];
+        
+        // Process completed tasks
+        Object.values(tasks).forEach(task => {
+            if (task.status === 'completed' && task.result && task.result.success) {
+                completedTracks.push({
+                    id: task.task_id || task.id,
+                    title: task.result.title || 'Untitled Track',
+                    audioUrl: task.result.audio_url,
+                    videoUrl: task.result.video_url,
+                    duration: task.result.duration || 'Unknown',
+                    model: task.result.model_used || 'Unknown',
+                    genre: task.result.metadata?.genre_category || 'Unknown',
+                    mood: task.result.metadata?.mood || 'Unknown',
+                    createdAt: task.result.metadata?.generation_time || task.created_at,
+                    isInstrumental: task.result.is_instrumental || false,
+                    promptUsed: task.result.prompt_used || 'No prompt',
+                    metadata: task.result.metadata || {}
+                });
+            }
+        });
+        
+        allTracks = completedTracks;
+        renderTracks(allTracks);
+        hideLoadingState();
+        
+        if (completedTracks.length === 0) {
+            showEmptyState();
+        }
+    })
+    .catch(error => {
+        console.error('Error loading gallery:', error);
+        hideLoadingState();
+        showEmptyState();
+    });
+}
+
+function renderTracks(tracks) {
+    const gallery = document.getElementById('musicGallery');
+    
+    if (tracks.length === 0) {
+        showEmptyState();
+        return;
+    }
+    
+    hideEmptyState();
+    
+    gallery.innerHTML = tracks.map(track => createTrackCard(track)).join('');
+}
+
+function createTrackCard(track) {
+    const createdDate = new Date(track.createdAt).toLocaleDateString();
+    const modelBadge = getModelBadge(track.model);
+    const genreBadge = `<span class="badge bg-secondary">${track.genre}</span>`;
+    const moodBadge = `<span class="badge bg-info">${track.mood}</span>`;
+    
+    return `
+        <div class="col-lg-4 col-md-6 mb-4 track-card" data-genre="${track.genre}" data-model="${track.model}">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="card-title mb-0">${track.title}</h6>
+                        ${modelBadge}
+                    </div>
+                    
+                    <div class="mb-2">
+                        ${genreBadge}
+                        ${moodBadge}
+                        ${track.isInstrumental ? '<span class="badge bg-warning">Instrumental</span>' : '<span class="badge bg-success">Vocal</span>'}
+                    </div>
+                    
+                    <p class="card-text small text-muted mb-3">
+                        <i class="fas fa-clock me-1"></i>${track.duration} • 
+                        <i class="fas fa-calendar me-1"></i>${createdDate}
+                    </p>
+                    
+                    ${track.audioUrl ? `
+                    <audio controls class="w-100 mb-3" preload="none">
+                        <source src="${track.audioUrl}" type="audio/mpeg">
+                        Your browser does not support audio playback.
+                    </audio>
+                    ` : '<div class="alert alert-warning small mb-3">Audio not available</div>'}
+                    
+                    <div class="d-flex gap-2">
+                        ${track.audioUrl ? `
+                        <a href="${track.audioUrl}" class="btn btn-primary btn-sm" download>
+                            <i class="fas fa-download me-1"></i>Audio
+                        </a>
+                        ` : ''}
+                        
+                        ${track.videoUrl ? `
+                        <a href="${track.videoUrl}" class="btn btn-info btn-sm" download>
+                            <i class="fas fa-video me-1"></i>Video
+                        </a>
+                        ` : ''}
+                        
+                        <button class="btn btn-outline-secondary btn-sm" onclick="showTrackDetails('${track.id}')">
+                            <i class="fas fa-info me-1"></i>Details
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function getModelBadge(model) {
+    const badges = {
+        'V4_5': '<span class="badge bg-primary">V4.5</span>',
+        'V4': '<span class="badge bg-success">V4</span>',
+        'V3_5': '<span class="badge bg-info">V3.5</span>'
+    };
+    return badges[model] || `<span class="badge bg-secondary">${model}</span>`;
+}
+
+function setupFilters() {
+    const searchInput = document.getElementById('searchTracks');
+    const genreFilter = document.getElementById('filterGenre');
+    const modelFilter = document.getElementById('filterModel');
+    
+    searchInput.addEventListener('input', filterTracks);
+    genreFilter.addEventListener('change', filterTracks);
+    modelFilter.addEventListener('change', filterTracks);
+}
+
+function filterTracks() {
+    const searchTerm = document.getElementById('searchTracks').value.toLowerCase();
+    const selectedGenre = document.getElementById('filterGenre').value;
+    const selectedModel = document.getElementById('filterModel').value;
+    
+    const filteredTracks = allTracks.filter(track => {
+        const matchesSearch = track.title.toLowerCase().includes(searchTerm) ||
+                            track.promptUsed.toLowerCase().includes(searchTerm);
+        
+        const matchesGenre = !selectedGenre || track.genre === selectedGenre;
+        const matchesModel = !selectedModel || track.model === selectedModel;
+        
+        return matchesSearch && matchesGenre && matchesModel;
+    });
+    
+    renderTracks(filteredTracks);
+}
+
+function showTrackDetails(trackId) {
+    const track = allTracks.find(t => t.id === trackId);
+    if (!track) return;
+    
+    Swal.fire({
+        title: track.title,
+        html: `
+            <div class="text-start">
+                <p><strong>Model:</strong> ${track.model}</p>
+                <p><strong>Genre:</strong> ${track.genre}</p>
+                <p><strong>Mood:</strong> ${track.mood}</p>
+                <p><strong>Duration:</strong> ${track.duration}</p>
+                <p><strong>Type:</strong> ${track.isInstrumental ? 'Instrumental' : 'Vocal'}</p>
+                <p><strong>Created:</strong> ${new Date(track.createdAt).toLocaleString()}</p>
+                <hr>
+                <p><strong>Prompt Used:</strong></p>
+                <p class="text-muted small">${track.promptUsed}</p>
+            </div>
+        `,
+        width: 600,
+        confirmButtonText: 'Close'
+    });
+}
+
+function showLoadingState() {
+    document.getElementById('loadingState').style.display = 'block';
+    document.getElementById('musicGallery').innerHTML = '';
+    document.getElementById('emptyState').style.display = 'none';
+}
+
+function hideLoadingState() {
+    document.getElementById('loadingState').style.display = 'none';
+}
+
+function showEmptyState() {
+    document.getElementById('emptyState').style.display = 'block';
+}
+
+function hideEmptyState() {
+    document.getElementById('emptyState').style.display = 'none';
+}
+
+// Auto-refresh gallery every 30 seconds
+setInterval(loadMusicGallery, 30000);
+</script>
+{% endblock %}

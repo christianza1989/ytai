@@ -40,14 +40,23 @@ class SunoClient:
         try:
             url = f"{self.base_url}/generate"
 
+            # Non-custom mode: only prompt is required, max 400 characters
+            if len(prompt) > 400:
+                prompt = prompt[:400]  # Truncate to API limit
+
             payload = {
                 "prompt": prompt,
                 "customMode": False,  # Non-custom mode for simplicity
-                "instrumental": False,
-                "model": "V4",  # Good balance of quality and speed
-                "callBackUrl": os.getenv('CALLBACK_URL', 'https://webhook.site/unique-id'),
-                **kwargs
+                "instrumental": kwargs.get('instrumental', False),
+                "model": kwargs.get('model', 'V4'),  # Use provided model or default to V4
+                "callBackUrl": os.getenv('CALLBACK_URL', 'https://webhook.site/unique-id')
             }
+            
+            # Add optional parameters if provided
+            optional_params = ['negativeTags', 'vocalGender', 'styleWeight', 'weirdnessConstraint', 'audioWeight']
+            for param in optional_params:
+                if param in kwargs and kwargs[param] is not None:
+                    payload[param] = kwargs[param]
             
             response = requests.post(url, json=payload, headers=self.headers, timeout=30)
             response.raise_for_status()
@@ -77,20 +86,46 @@ class SunoClient:
                               instrumental: bool = False,
                               model: str = "V4",
                               **kwargs) -> Optional[str]:
-        """Generate music with advanced parameters (custom mode)"""
+        """Generate music with advanced parameters (Custom Mode)"""
         try:
             url = f"{self.base_url}/generate"
 
+            # Apply character limits based on model
+            if model in ['V4_5', 'V4_5PLUS']:
+                # V4_5 limits
+                prompt_limit = 5000
+                style_limit = 1000
+            else:
+                # V3_5 and V4 limits
+                prompt_limit = 3000
+                style_limit = 200
+            
+            # Truncate to limits
+            if prompt and len(prompt) > prompt_limit:
+                prompt = prompt[:prompt_limit]
+            if style and len(style) > style_limit:
+                style = style[:style_limit]
+            if title and len(title) > 80:
+                title = title[:80]  # Title limit is 80 chars for all models
+
             payload = {
-                "prompt": prompt if not instrumental else "",
-                "style": style,
-                "title": title,
-                "customMode": True,
+                "customMode": True,  # Custom mode
                 "instrumental": instrumental,
                 "model": model,
-                "callBackUrl": os.getenv('CALLBACK_URL', 'https://webhook.site/unique-id'),
-                **kwargs
+                "style": style,
+                "title": title,
+                "callBackUrl": os.getenv('CALLBACK_URL', 'https://webhook.site/unique-id')
             }
+            
+            # Add prompt only if not instrumental (as per API docs)
+            if not instrumental:
+                payload["prompt"] = prompt
+            
+            # Add optional parameters if provided
+            optional_params = ['negativeTags', 'vocalGender', 'styleWeight', 'weirdnessConstraint', 'audioWeight']
+            for param in optional_params:
+                if param in kwargs and kwargs[param] is not None:
+                    payload[param] = kwargs[param]
 
             response = requests.post(url, json=payload, headers=self.headers)
             response.raise_for_status()

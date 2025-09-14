@@ -335,6 +335,12 @@ def generator():
     """Professional Music Generator - Advanced AI-Powered Music Creation"""
     return render_template('music_generator.html', api_status=system_state.api_status)
 
+@app.route('/music-gallery')
+@require_auth
+def music_gallery():
+    """Music Gallery - Browse generated tracks"""
+    return render_template('music_gallery.html')
+
 @app.route('/old-generator')
 @require_auth
 def old_generator():
@@ -2719,7 +2725,7 @@ def process_music_generation(task_id, data):
             update_progress(30, "🏷️ Setting song title...", f"Title: {data.get('song_title')}")
         
         # Add model selection
-        suno_request['model'] = data.get('suno_model', 'chirp-v3-5')
+        suno_request['model'] = data.get('suno_model', 'V4')
         update_progress(35, f"⚙️ Using Suno model: {suno_request['model']}...", "Model configuration set")
         
         # REAL SUNO API INTEGRATION
