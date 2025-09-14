@@ -1,8 +1,14 @@
 {
   "theme": "cyberpunk",
   "language": "lt",
+  "autosave": "60",
   "notifications": true,
   "animations": true,
-  "saved_at": "2025-09-14T00:13:35.496295",
-  "version": "1.0"
+  "refreshRate": "5000",
+  "maxTasks": "3",
+  "cache": true,
+  "debugMode": false,
+  "saved_at": "2025-09-14T00:16:09.643673",
+  "version": "1.0",
+  "theme_updated": "2025-09-14T00:20:11.906000"
 }
