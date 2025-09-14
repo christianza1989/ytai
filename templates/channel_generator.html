@@ -386,7 +386,12 @@
 <script>
     // Channel Generator JavaScript
     let selectedGenre = null;
-    let genreTreeData = null;
+    let genreTreeData = {};
+    let selectedPath = {
+        category: null,
+        subgenre: null,
+        substyle: null
+    };
 
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
@@ -400,14 +405,6 @@
         // Load genre tree data and render it properly
         loadGenreTreeData();
     }
-
-    // Genre Tree Data - copied from working genre tree selector
-    let genreTreeData = {};
-    let selectedPath = {
-        category: null,
-        subgenre: null,
-        substyle: null
-    };
 
     // Load genre tree data from backend or fallback to mock
     async function loadGenreTreeData() {
@@ -758,9 +755,36 @@
     }
 
     function selectQuickGenre(genrePath) {
+        console.log('Quick selecting genre:', genrePath);
         selectedGenre = genrePath;
-        updateSelectedGenreInfo(genrePath);
+        
+        // Find genre data for this quick selection
+        let genreData = null;
+        
+        // Search through the genre tree for matching data
+        Object.entries(genreTreeData).forEach(([categoryName, categoryData]) => {
+            if (categoryData.subgenres) {
+                Object.entries(categoryData.subgenres).forEach(([subgenreName, subgenreData]) => {
+                    const fullPath = `${categoryName}/${subgenreName}`.toLowerCase();
+                    const searchPath = genrePath.toLowerCase().replace('-', '_').replace(' ', '_');
+                    
+                    if (fullPath.includes(searchPath) || subgenreName.toLowerCase().includes(searchPath)) {
+                        genreData = subgenreData;
+                    }
+                });
+            }
+        });
+        
+        // Update UI
+        updateSelectedGenreInfo(genrePath, genreData);
         updateStrategyPreview();
+        
+        // Visual feedback for quick selection buttons
+        document.querySelectorAll('.btn-outline-primary, .btn-outline-success, .btn-outline-info, .btn-outline-warning').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
         showToast(`Quick selected: ${genrePath}`, 'info');
     }
 
@@ -1030,6 +1054,38 @@
 
     function getRandomRange(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    // Utility function for toast notifications
+    function showToast(message, type = 'info') {
+        // Create toast element
+        const toastContainer = document.getElementById('toast-container') || createToastContainer();
+        
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        
+        toast.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        toastContainer.appendChild(toast);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.remove();
+            }
+        }, 5000);
+    }
+
+    function createToastContainer() {
+        const container = document.createElement('div');
+        container.id = 'toast-container';
+        container.style.cssText = 'position: fixed; top: 0; right: 0; z-index: 9999; pointer-events: none;';
+        document.body.appendChild(container);
+        return container;
     }
 </script>
 {% endblock %}
