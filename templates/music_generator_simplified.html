@@ -422,7 +422,7 @@ function startGeneration() {
     // Prepare data
     const generationData = {
         mode: currentMode,
-        suno_model: 'V4_5' // From settings
+        suno_model: window.currentSunoModel || 'V4' // Dynamic from settings
     };
     
     if (currentMode === 'simple') {
@@ -464,12 +464,24 @@ function pollGenerationStatus() {
     if (!generationTaskId) return;
     
     const statusText = document.getElementById('statusText');
+    let lastTrackCount = 0;
+    
+    // Show immediate placeholder tracks for progressive loading
+    showImmediateTrackPlaceholders();
     
     generationInterval = setInterval(() => {
         fetch(`/api/music/status/${generationTaskId}`)
         .then(response => response.json())
         .then(data => {
-            statusText.textContent = data.current_step || 'Generating...';
+            if (statusText) {
+                statusText.textContent = data.current_step || 'Generating...';
+            }
+            
+            // Progressive loading: Show tracks as they become available
+            if (data.partial_tracks && data.partial_tracks.length > lastTrackCount) {
+                showProgressiveTracks(data.partial_tracks);
+                lastTrackCount = data.partial_tracks.length;
+            }
             
             if (data.status === 'completed') {
                 clearInterval(generationInterval);
@@ -482,7 +494,7 @@ function pollGenerationStatus() {
         .catch(error => {
             console.error('Status check error:', error);
         });
-    }, 3000);
+    }, 2000); // Check every 2 seconds for faster updates
 }
 
 function showResults(result) {
@@ -596,6 +608,159 @@ function displayTracks(tracks) {
     });
 }
 
+// Show immediate placeholder tracks for progressive loading
+function showImmediateTrackPlaceholders() {
+    const container = document.getElementById('tracksContainer');
+    container.style.display = 'block';
+    
+    // Create placeholder tracks (usually 2 tracks are generated)
+    const placeholderTracks = [
+        {
+            clip_number: 1,
+            title: 'Track 1 (Generating...)',
+            audio_url: null,
+            streamAudioUrl: null,
+            image_url: null,
+            duration: null,
+            suno_clip_id: 'placeholder-1',
+            tags: 'AI Generated',
+            ready: false,
+            loading: true
+        },
+        {
+            clip_number: 2,
+            title: 'Track 2 (Generating...)',
+            audio_url: null,
+            streamAudioUrl: null,
+            image_url: null,
+            duration: null,
+            suno_clip_id: 'placeholder-2',
+            tags: 'AI Generated',
+            ready: false,
+            loading: true
+        }
+    ];
+    
+    showProgressiveTracks(placeholderTracks);
+}
+
+function showProgressiveTracks(partialTracks) {
+    const container = document.getElementById('tracksContainer');
+    const status = document.getElementById('generationStatus');
+    
+    // Show the container if it's not already visible
+    container.style.display = 'block';
+    
+    // Get or create tracks list
+    let tracksList = container.querySelector('.tracks-list');
+    if (!tracksList) {
+        container.innerHTML = `
+            <div class="alert alert-info">
+                <i class="fas fa-music me-2"></i>
+                <strong>🎵 Tracks are loading progressively...</strong>
+                <p class="mb-0 mt-2">You can start listening as soon as tracks become available!</p>
+            </div>
+        `;
+        tracksList = document.createElement('div');
+        tracksList.className = 'tracks-list';
+        container.appendChild(tracksList);
+    }
+    
+    // Clear previous tracks to refresh with new data
+    tracksList.innerHTML = '';
+    
+    partialTracks.forEach((track, index) => {
+        const trackElement = document.createElement('div');
+        trackElement.className = `col-md-6 mb-4 ${track.loading ? 'track-loading' : 'track-ready'}`;
+        
+        const readyBadge = track.ready ? 
+            '<span class="badge bg-success ms-2"><i class="fas fa-play"></i> Ready to play</span>' :
+            '<span class="badge bg-warning ms-2"><i class="fas fa-clock"></i> Processing...</span>';
+        
+        const duration = track.duration ? 
+            `${Math.floor(track.duration / 60)}:${Math.floor(track.duration % 60).toString().padStart(2, '0')}` : 
+            'Loading...';
+            
+        trackElement.innerHTML = `
+            <div class="card h-100 track-card" data-track-id="${track.suno_clip_id}">
+                <div class="card-body">
+                    <h5 class="card-title d-flex align-items-center">
+                        <i class="fas fa-music text-primary me-2"></i>
+                        ${track.title}
+                        ${readyBadge}
+                    </h5>
+                    <p class="track-tags text-muted mb-3">
+                        Duration: ${duration} • ${track.tags || 'AI Generated'}
+                    </p>
+                    
+                    <div class="waveform-placeholder mb-3" style="min-height: 60px; background: ${(track.streamAudioUrl || track.audio_url) ? '#f8f9ff' : '#f5f5f5'}; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                        ${(track.streamAudioUrl || track.audio_url) ? 
+                            `<audio src="${track.streamAudioUrl || track.audio_url}" controls preload="metadata" style="width: 100%;" onloadedmetadata="updateTrackDuration(this, '${track.suno_clip_id}')"></audio>` :
+                            '<div class="text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Generating audio...</div>'
+                        }
+                    </div>
+                    
+                    ${track.image_url ? 
+                        `<img src="${track.image_url}" alt="Album Art" class="img-fluid rounded mb-2" style="max-height: 200px; width: 100%; object-fit: cover;">` :
+                        ''
+                    }
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="fas fa-robot me-1"></i>
+                            Generated with ${track.model_name || 'Suno AI'}
+                        </small>
+                        ${track.ready && track.audio_url ? 
+                            `<a href="${track.audio_url}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-download me-1"></i>Download
+                            </a>` :
+                            (track.streamAudioUrl ? 
+                                `<a href="${track.streamAudioUrl}" target="_blank" class="btn btn-sm btn-outline-info">
+                                    <i class="fas fa-play me-1"></i>Listen
+                                </a>` :
+                                '<button class="btn btn-sm btn-outline-secondary" disabled>Processing...</button>'
+                            )
+                        }
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        tracksList.appendChild(trackElement);
+    });
+    
+    // Update status text to show progressive loading info
+    const statusText = document.getElementById('statusText');
+    const readyCount = partialTracks.filter(t => t.ready).length;
+    const totalCount = partialTracks.length;
+    
+    if (readyCount > 0 && statusText) {
+        statusText.textContent = `🎵 ${readyCount}/${totalCount} tracks ready for playback!`;
+    }
+}
+
+// Helper function to update track duration when audio loads
+function updateTrackDuration(audioElement, trackId) {
+    try {
+        if (audioElement && audioElement.duration && !isNaN(audioElement.duration)) {
+            const minutes = Math.floor(audioElement.duration / 60);
+            const seconds = Math.floor(audioElement.duration % 60);
+            const durationText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            const trackCard = audioElement.closest('.track-card');
+            if (trackCard) {
+                const tagsElement = trackCard.querySelector('.track-tags');
+                if (tagsElement && tagsElement.textContent) {
+                    tagsElement.textContent = tagsElement.textContent.replace(/Duration: Loading\.\.\./, `Duration: ${durationText}`);
+                }
+            }
+        }
+    } catch (error) {
+        console.log('Error updating track duration:', error);
+        // Ignore errors - duration update is not critical
+    }
+}
+
 function showError(message) {
     const btn = document.getElementById('generateBtn');
     const status = document.getElementById('generationStatus');
@@ -607,8 +772,18 @@ function showError(message) {
     alert(`Error: ${message}`);
 }
 
+// Load Suno model from existing API config system
+function loadSunoModel() {
+    // Default model
+    window.currentSunoModel = 'V4';
+    console.log('🔧 Using default Suno model: V4 (configure in API Config)');
+}
+
+
+
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
+    loadSunoModel();
     selectMode('simple');
 });
 </script>

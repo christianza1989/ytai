@@ -314,16 +314,22 @@ def api_config():
     
     # Get current env values (masked for display in read-only mode)
     env_config = {}
-    for key in ['SUNO_API_KEY', 'GEMINI_API_KEY', 'GEMINI_MODEL']:
+    for key in ['SUNO_API_KEY', 'SUNO_MODEL', 'GEMINI_API_KEY', 'GEMINI_MODEL']:
         value = os.getenv(key, '')
         if value and value != f'your_{key.lower()}_here':
             # For display purposes, mask the key but store full value in data attribute
             if key in ['SUNO_API_KEY', 'GEMINI_API_KEY'] and len(value) > 12:
                 env_config[key] = value[:8] + '...' + value[-4:]
             else:
-                env_config[key] = value  # GEMINI_MODEL and short keys shown fully
+                env_config[key] = value  # Models and short keys shown fully
         else:
-            env_config[key] = 'not_configured'
+            # Set defaults for models
+            if key == 'SUNO_MODEL':
+                env_config[key] = 'V4'
+            elif key == 'GEMINI_MODEL':
+                env_config[key] = 'gemini-2.5-flash'
+            else:
+                env_config[key] = 'not_configured'
     
     return render_template('api_config.html', 
                          api_status=system_state.api_status,
@@ -333,7 +339,12 @@ def api_config():
 @require_auth
 def generator():
     """Simplified Suno-Style Music Generator"""
-    return render_template('music_generator_simplified.html', api_status=system_state.api_status)
+    import time
+    return render_template('music_generator_simplified.html', 
+                         api_status=system_state.api_status,
+                         cache_bust=int(time.time()))
+
+
 
 @app.route('/music-gallery')
 @require_auth
@@ -2635,17 +2646,19 @@ def api_music_generate():
     try:
         data = request.get_json() or {}
         
-        # Validate required fields
-        if not data.get('music_type'):
+        # Validate required fields - support both advanced and simplified modes
+        # For simplified generator (from music_generator_simplified.html)
+        if data.get('mode'):  # Simplified mode
+            if not data.get('prompt'):
+                return jsonify({
+                    'success': False,
+                    'error': 'Prompt is required for simplified mode'
+                }), 400
+        # For advanced generator
+        elif not data.get('music_type') or not data.get('genre_category'):
             return jsonify({
                 'success': False,
-                'error': 'Music type is required'
-            }), 400
-            
-        if not data.get('genre_category'):
-            return jsonify({
-                'success': False,
-                'error': 'Genre category is required'
+                'error': 'Music type and genre category are required for advanced mode'
             }), 400
         
         # Generate unique task ID
@@ -2685,11 +2698,18 @@ def api_music_generate():
 @app.route('/api/music/status/<task_id>')
 @require_auth
 def api_music_status(task_id):
-    """Get music generation task status"""
+    """Get music generation task status with progressive updates"""
     task = system_state.generation_tasks.get(task_id, {})
     if not task:
         return jsonify({'error': 'Task not found'}), 404
-    return jsonify(task)
+    
+    # Include partial tracks for progressive loading
+    response = dict(task)
+    if 'partial_tracks' in task:
+        response['partial_tracks'] = task['partial_tracks']
+        response['tracks_ready'] = task.get('tracks_ready', 0)
+    
+    return jsonify(response)
 
 @app.route('/api/music/cancel/<task_id>', methods=['POST'])
 @require_auth
@@ -2724,7 +2744,7 @@ def process_music_generation(task_id, data):
         # Prepare Suno API request
         suno_request = {
             'prompt': music_prompt,
-            'make_instrumental': data.get('music_type') == 'instrumental' or data.get('make_instrumental', False),
+            'make_instrumental': data.get('music_type') == 'instrumental' or data.get('make_instrumental', False) or data.get('instrumental', False),
             'wait_audio': data.get('wait_audio', True)
         }
         
@@ -2735,13 +2755,14 @@ def process_music_generation(task_id, data):
                 suno_request['lyrics'] = custom_lyrics
                 update_progress(25, "📝 Processing custom lyrics...", f"Added custom lyrics ({len(custom_lyrics)} chars)")
         
-        # Add song title if provided
-        if data.get('song_title'):
-            suno_request['title'] = data.get('song_title')
-            update_progress(30, "🏷️ Setting song title...", f"Title: {data.get('song_title')}")
+        # Add song title if provided (support both advanced and simplified modes)
+        song_title = data.get('song_title') or data.get('title')
+        if song_title:
+            suno_request['title'] = song_title
+            update_progress(30, "🏷️ Setting song title...", f"Title: {song_title}")
         
-        # Add model selection
-        suno_request['model'] = data.get('suno_model', 'V4')
+        # Add model selection - use from environment (API Config) or fallback
+        suno_request['model'] = os.getenv('SUNO_MODEL', data.get('suno_model', 'V4'))
         update_progress(35, f"⚙️ Using Suno model: {suno_request['model']}...", "Model configuration set")
         
         # REAL SUNO API INTEGRATION
@@ -2771,7 +2792,7 @@ def process_music_generation(task_id, data):
         
         # Prepare parameters for Suno API
         suno_params = {
-            'model': suno_request.get('model', 'V4'),
+            'model': os.getenv('SUNO_MODEL', suno_request.get('model', 'V4')),
             'instrumental': suno_request.get('make_instrumental', False),
         }
         
@@ -2785,13 +2806,16 @@ def process_music_generation(task_id, data):
         
         # Generate music using advanced mode for better control
         try:
-            if suno_request.get('title') and not suno_request.get('make_instrumental'):
-                # Use advanced generation for vocal tracks with titles
-                update_progress(68, "🎵 Using advanced Suno generation...", "Generating vocal track with title")
+            # Check if we have enough info for advanced generation
+            use_advanced = (suno_request.get('title') or data.get('style')) and not suno_request.get('make_instrumental')
+            
+            if use_advanced:
+                # Use advanced generation for vocal tracks with titles or styles
+                update_progress(68, "🎵 Using advanced Suno generation...", "Generating vocal track with custom parameters")
                 generation_result = suno.generate_music_advanced(
                     prompt=music_prompt,
-                    style=data.get('genre_specific', data.get('genre_category', 'pop')),
-                    title=suno_request.get('title', f"Generated {data.get('genre_specific', 'Track')}"),
+                    style=data.get('style') or data.get('genre_specific', data.get('genre_category', 'pop music')),
+                    title=suno_request.get('title', f"Generated Track"),
                     instrumental=suno_request.get('make_instrumental', False),
                     model=suno_params['model']
                 )
@@ -2826,12 +2850,19 @@ def process_music_generation(task_id, data):
         # Wait for completion with real-time updates
         update_progress(75, "🎛️ Suno AI is generating your music...", "This may take 60-120 seconds")
         
-        # Wait for completion (this is the real wait time)
-        suno_result = suno.wait_for_generation_completion(suno_task_id, max_wait_time=300)
+        # Progressive waiting with real-time updates
+        suno_result = wait_for_completion_with_progressive_updates(
+            suno, suno_task_id, task, update_progress, max_wait_time=300
+        )
         
-        if not suno_result or suno_result.get('status') != 'SUCCESS':
-            error_msg = suno_result.get('msg', 'Unknown error') if suno_result else 'No response from Suno'
-            raise Exception(f"Suno generation failed: {error_msg}")
+        # Check if generation was successful (Suno API uses different success statuses)
+        if not suno_result:
+            raise Exception("No response from Suno API")
+            
+        suno_status = suno_result.get('status', '')
+        if suno_status not in ['SUCCESS', 'TEXT_SUCCESS', 'AUDIO_SUCCESS', 'COMPLETE']:
+            error_msg = suno_result.get('errorMessage') or suno_result.get('msg', 'Unknown error')
+            raise Exception(f"Suno generation failed (status: {suno_status}): {error_msg}")
             
         update_progress(90, "🎧 Processing Suno AI results...", "Downloading generated audio")
         
@@ -2912,10 +2943,102 @@ def process_music_generation(task_id, data):
         task['result'] = {'error': str(e)}
         task['logs'].append(f"[{datetime.now().strftime('%H:%M:%S')}] ERROR: {str(e)}")
 
+def wait_for_completion_with_progressive_updates(suno, task_id, task, update_progress, max_wait_time=300):
+    """Wait for Suno completion with progressive track updates"""
+    import time
+    
+    start_time = time.time()
+    check_interval = 10  # Check every 10 seconds
+    last_track_count = 0
+    
+    update_progress(75, "🎵 Waiting for Suno AI generation...", "Starting generation process")
+    
+    while time.time() - start_time < max_wait_time:
+        try:
+            # Get current status
+            task_data = suno.get_task_status(task_id)
+            
+            if not task_data:
+                time.sleep(check_interval)
+                continue
+            
+            status = task_data.get('status', 'UNKNOWN')
+            elapsed = int(time.time() - start_time)
+            
+            update_progress(
+                75 + (elapsed / max_wait_time) * 20,  # Progress from 75% to 95% over time
+                f"🎛️ Suno AI working... ({elapsed}s)",
+                f"Status: {status}"
+            )
+            
+            # Check for partial results
+            if 'response' in task_data and task_data['response']:
+                suno_data = task_data['response'].get('sunoData', [])
+                
+                # If we have new tracks, update the task with partial results
+                if len(suno_data) > last_track_count:
+                    update_progress(
+                        80 + (len(suno_data) * 5),  # More progress as tracks appear
+                        f"🎵 {len(suno_data)} track(s) ready for preview!",
+                        "Processing audio streams..."
+                    )
+                    
+                    # Store partial results for progressive loading
+                    partial_tracks = []
+                    for i, track in enumerate(suno_data):
+                        processed_track = {
+                            'clip_number': i + 1,
+                            'title': track.get('title', f"Track {i + 1}"),
+                            'audio_url': track.get('streamAudioUrl') or track.get('audioUrl') or track.get('sourceStreamAudioUrl'),
+                            'image_url': track.get('imageUrl') or track.get('sourceImageUrl'),
+                            'duration': track.get('duration'),
+                            'suno_clip_id': track.get('id'),
+                            'tags': track.get('tags', ''),
+                            'prompt': track.get('prompt', ''),
+                            'model_name': track.get('modelName'),
+                            'ready': bool(track.get('streamAudioUrl') or track.get('audioUrl')),  # Is playable?
+                            'loading': not bool(track.get('duration'))  # Still processing?
+                        }
+                        partial_tracks.append(processed_track)
+                    
+                    # Update task with partial results for progressive loading
+                    task['partial_tracks'] = partial_tracks
+                    task['tracks_ready'] = len([t for t in partial_tracks if t['ready']])
+                    
+                    last_track_count = len(suno_data)
+            
+            # Check completion status
+            if status in ['SUCCESS', 'TEXT_SUCCESS', 'AUDIO_SUCCESS', 'COMPLETE']:
+                return task_data
+            elif status in ['FAILED', 'CREATE_TASK_FAILED', 'GENERATE_AUDIO_FAILED']:
+                error_msg = task_data.get('errorMessage', task_data.get('msg', 'Unknown error'))
+                raise Exception(f"Generation failed: {error_msg}")
+            elif status == 'SENSITIVE_WORD_ERROR':
+                raise Exception("Content policy violation")
+            
+            time.sleep(check_interval)
+            
+        except Exception as e:
+            if "Generation failed" in str(e) or "Content policy" in str(e):
+                raise e
+            # For other errors, continue waiting
+            time.sleep(check_interval)
+    
+    raise Exception(f'Generation timeout after {max_wait_time} seconds')
+
 def build_suno_prompt(data):
     """Build comprehensive Suno AI prompt from user selections"""
     prompt_parts = []
     
+    # Check if this is simplified mode (from music_generator_simplified.html)
+    if data.get('mode'):  # Simplified mode
+        # Return the prompt directly if provided
+        if data.get('prompt'):
+            return data['prompt']
+        else:
+            return "Create a beautiful musical piece"
+    
+    # Advanced mode - build from components
     # Add genre information
     genre_category = data.get('genre_category', '')
     genre_specific = data.get('genre_specific', '')
@@ -3142,6 +3265,10 @@ def api_save_config():
             os.environ['SUNO_API_KEY'] = data['suno_api_key']
             print(f"✅ Updated SUNO_API_KEY in memory: {data['suno_api_key'][:8]}...")
         
+        if 'suno_model' in data and data['suno_model']:
+            os.environ['SUNO_MODEL'] = data['suno_model']
+            print(f"✅ Updated SUNO_MODEL in memory: {data['suno_model']}")
+        
         if 'gemini_api_key' in data and data['gemini_api_key']:
             os.environ['GEMINI_API_KEY'] = data['gemini_api_key']
             print(f"✅ Updated GEMINI_API_KEY in memory: {data['gemini_api_key'][:8]}...")
@@ -3159,9 +3286,10 @@ def api_save_config():
             with open(env_file_path, 'r') as f:
                 env_lines = f.readlines()
         
-        # Update or add API keys
+        # Update or add API keys and models
         keys_to_update = {
             'SUNO_API_KEY': data.get('suno_api_key'),
+            'SUNO_MODEL': data.get('suno_model'),
             'GEMINI_API_KEY': data.get('gemini_api_key'),
             'GEMINI_MODEL': data.get('gemini_model')
         }
@@ -3305,6 +3433,7 @@ def api_test_config():
             'error': str(e)
         }), 500
 
+
 @app.route('/api/settings/load')
 @require_auth
 def api_load_settings():
@@ -3321,7 +3450,8 @@ def api_load_settings():
                 'theme': 'default',
                 'language': 'lt',
                 'notifications': True,
-                'animations': True
+                'animations': True,
+                'suno_model': 'V4'
             }
         
         return jsonify({

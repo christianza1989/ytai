@@ -124,9 +124,9 @@
                     <div class="mb-3">
                         <label for="sunoModel" class="form-label">Preferred Model</label>
                         <select class="form-select" id="sunoModel">
-                            <option value="V4_5">V4.5 - Superior genre blending, up to 8 min ⚡</option>
-                            <option value="V4" selected>V4 - Best audio quality, up to 4 min ✨</option>
-                            <option value="V3_5">V3.5 - Solid arrangements, up to 4 min 🎵</option>
+                            <option value="V4_5" {% if env_config.SUNO_MODEL == 'V4_5' %}selected{% endif %}>V4.5 - Superior genre blending, up to 8 min ⚡</option>
+                            <option value="V4" {% if env_config.SUNO_MODEL == 'V4' or not env_config.SUNO_MODEL or env_config.SUNO_MODEL == 'not_configured' %}selected{% endif %}>V4 - Best audio quality, up to 4 min ✨</option>
+                            <option value="V3_5" {% if env_config.SUNO_MODEL == 'V3_5' %}selected{% endif %}>V3.5 - Solid arrangements, up to 4 min 🎵</option>
                         </select>
                     </div>
                     
