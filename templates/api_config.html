@@ -459,6 +459,7 @@
             headers: {
                 'Content-Type': 'application/json',
             },
+            credentials: 'same-origin', // Include session cookies
             body: JSON.stringify(testData)
         })
         .then(response => response.json())
@@ -568,15 +569,22 @@
         }
         
         // Send to real API endpoint
+        console.log('🚀 Sending config data:', configData);
+        
         fetch('/api/config/save', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
+            credentials: 'same-origin', // Include session cookies
             body: JSON.stringify(configData)
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('📨 Response status:', response.status);
+            return response.json();
+        })
         .then(data => {
+            console.log('📩 Response data:', data);
             hideLoading(button, originalText);
             
             if (data.success) {
@@ -584,9 +592,11 @@
                 
                 // Reload page to show updated API status
                 setTimeout(() => {
+                    console.log('🔄 Reloading page to show updated API status...');
                     window.location.reload();
                 }, 1500);
             } else {
+                console.error('❌ Save failed:', data.error);
                 showToast(`Error: ${data.error || 'Failed to save configuration'}`, 'error');
             }
         })

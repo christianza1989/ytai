@@ -3072,16 +3072,20 @@ def api_save_config():
     """Save API configuration (API keys, models, etc.)"""
     try:
         data = request.get_json() or {}
+        print(f"🔧 API Config Save - Received data: {data}")
         
         # Update environment variables for current session
         if 'suno_api_key' in data and data['suno_api_key']:
             os.environ['SUNO_API_KEY'] = data['suno_api_key']
+            print(f"✅ Updated SUNO_API_KEY in memory: {data['suno_api_key'][:8]}...")
         
         if 'gemini_api_key' in data and data['gemini_api_key']:
             os.environ['GEMINI_API_KEY'] = data['gemini_api_key']
+            print(f"✅ Updated GEMINI_API_KEY in memory: {data['gemini_api_key'][:8]}...")
             
         if 'gemini_model' in data and data['gemini_model']:
             os.environ['GEMINI_MODEL'] = data['gemini_model']
+            print(f"✅ Updated GEMINI_MODEL in memory: {data['gemini_model']}")
         
         # Update .env file for persistence
         env_file_path = '.env'
@@ -3112,11 +3116,22 @@ def api_save_config():
                 existing_vars[key] = value
         
         # Write back to .env file
+        print(f"💾 Writing to .env file: {env_file_path}")
+        print(f"📝 Keys to write: {list(existing_vars.keys())}")
+        
         with open(env_file_path, 'w') as f:
             for key, value in existing_vars.items():
                 f.write(f"{key}={value}\n")
         
+        print("✅ .env file written successfully")
+        
+        # Verify the file was written
+        with open(env_file_path, 'r') as f:
+            written_content = f.read()
+            print(f"🔍 Verification - .env content after write:\n{written_content}")
+        
         # Update API status after saving
+        print("🔄 Updating API status...")
         system_state.update_api_status()
         
         return jsonify({
