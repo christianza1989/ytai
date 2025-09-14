@@ -335,23 +335,11 @@ def generator():
     """Simplified Suno-Style Music Generator"""
     return render_template('music_generator_simplified.html', api_status=system_state.api_status)
 
-@app.route('/generator-advanced')
-@require_auth  
-def generator_advanced():
-    """Advanced Music Generator (Original)"""
-    return render_template('music_generator.html', api_status=system_state.api_status)
-
 @app.route('/music-gallery')
 @require_auth
 def music_gallery():
     """Music Gallery - Browse generated tracks"""
     return render_template('music_gallery.html')
-
-@app.route('/old-generator')
-@require_auth
-def old_generator():
-    """Legacy generator (kept for reference)"""
-    return render_template('generator.html', api_status=system_state.api_status)
 
 @app.route('/analytics')
 @require_auth
@@ -461,6 +449,28 @@ def api_system_status():
         'generation_tasks': system_state.generation_tasks,
         'timestamp': datetime.now().isoformat()
     })
+
+@app.route('/debug/suno-status')
+def debug_suno_status():
+    """Debug endpoint to check Suno status without auth (for testing)"""
+    try:
+        from core.services.suno_client import SunoClient
+        suno = SunoClient()
+        status = suno.get_credits_with_status()
+        
+        return jsonify({
+            'debug': True,
+            'timestamp': datetime.now().isoformat(),
+            'suno_status': status,
+            'api_key_configured': bool(os.getenv('SUNO_API_KEY')),
+            'api_key_preview': os.getenv('SUNO_API_KEY', '')[:10] + '...' if os.getenv('SUNO_API_KEY') else 'None'
+        })
+    except Exception as e:
+        return jsonify({
+            'debug': True,
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        })
 
 @app.route('/api/projects/<project_name>/delete', methods=['DELETE'])
 @require_auth
@@ -3334,6 +3344,6 @@ if __name__ == '__main__':
     
     print("🚀 Starting Professional Autonominis Muzikantas Admin Interface...")
     print("🔐 Default admin password: admin123")
-    print("🌐 Access: http://localhost:5000")
+    print("🌐 Access: http://localhost:8000")
     
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    app.run(host='0.0.0.0', port=8000, debug=False)
