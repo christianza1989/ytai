@@ -1,0 +1,615 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Music Generator - Suno AI{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Simplified Suno-Style Music Generator */
+.suno-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.generation-mode {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 30px;
+    margin-bottom: 30px;
+    color: white;
+    text-align: center;
+}
+
+.mode-selector {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.mode-card {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 180px;
+}
+
+.mode-card:hover, .mode-card.active {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: #00d4ff;
+    transform: translateY(-2px);
+}
+
+.prompt-section {
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.custom-section {
+    background: #f8f9ff;
+    border: 2px dashed #667eea;
+    border-radius: 12px;
+    padding: 25px;
+    margin-top: 20px;
+    display: none;
+}
+
+.custom-section.active {
+    display: block;
+}
+
+.prompt-textarea {
+    border: 2px solid #e1e5e9;
+    border-radius: 12px;
+    padding: 15px;
+    font-size: 16px;
+    min-height: 120px;
+    resize: vertical;
+}
+
+.prompt-textarea:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.generate-section {
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.generate-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 50px;
+    color: white;
+    font-weight: 600;
+    font-size: 18px;
+    padding: 15px 40px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.generate-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.generate-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.tracks-container {
+    display: none;
+    margin-top: 30px;
+}
+
+.track-card {
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid #667eea;
+}
+
+.track-player {
+    background: #f8f9ff;
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 15px;
+}
+
+.waveform-placeholder {
+    background: #e1e5e9;
+    height: 60px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    margin: 15px 0;
+}
+
+.progress-bar {
+    background: #e1e5e9;
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.generation-status {
+    display: none;
+    text-align: center;
+    margin: 20px 0;
+}
+
+.spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(102, 126, 234, 0.3);
+    border-radius: 50%;
+    border-top-color: #667eea;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="suno-container">
+    <!-- Header -->
+    <div class="generation-mode">
+        <h2><i class="fas fa-music me-2"></i>Suno AI Music Generator</h2>
+        <p class="mb-0">Create professional music with AI. Choose your mode and describe your vision.</p>
+    </div>
+
+    <!-- Mode Selection -->
+    <div class="mode-selector">
+        <div class="mode-card active" data-mode="simple" onclick="selectMode('simple')">
+            <i class="fas fa-magic fa-2x mb-3"></i>
+            <h5>Simple</h5>
+            <p class="mb-0">Describe your song and let AI handle everything</p>
+        </div>
+        <div class="mode-card" data-mode="custom" onclick="selectMode('custom')">
+            <i class="fas fa-cogs fa-2x mb-3"></i>
+            <h5>Custom</h5>
+            <p class="mb-0">Full control with title, style, and lyrics</p>
+        </div>
+    </div>
+
+    <!-- Simple Mode -->
+    <div class="prompt-section" id="simpleMode">
+        <h4><i class="fas fa-edit me-2"></i>Describe Your Song</h4>
+        <p class="text-muted mb-3">Tell us what kind of music you want. Be as detailed as possible for best results.</p>
+        
+        <textarea class="form-control prompt-textarea" id="simplePrompt" 
+                  placeholder="Example: An upbeat pop song about summer love with acoustic guitar, light drums, and a catchy chorus"
+                  maxlength="400"></textarea>
+        
+        <div class="d-flex justify-content-between mt-2">
+            <small class="text-muted">
+                <i class="fas fa-info-circle me-1"></i>
+                Simple mode - max 400 characters
+            </small>
+            <small class="text-muted" id="simpleCharCount">0/400</small>
+        </div>
+
+        <!-- Instrumental Option -->
+        <div class="mt-3">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="simpleInstrumental">
+                <label class="form-check-label" for="simpleInstrumental">
+                    <i class="fas fa-volume-mute me-1"></i>
+                    Make it instrumental (no vocals)
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Mode -->
+    <div class="custom-section" id="customMode">
+        <h4><i class="fas fa-sliders-h me-2"></i>Custom Generation</h4>
+        
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="customTitle" class="form-label fw-bold">Song Title</label>
+                <input type="text" class="form-control" id="customTitle" 
+                       placeholder="Enter song title" maxlength="80">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="customStyle" class="form-label fw-bold">Music Style</label>
+                <input type="text" class="form-control" id="customStyle" 
+                       placeholder="e.g., Pop, Rock, Electronic, Jazz" maxlength="200">
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label for="customPrompt" class="form-label fw-bold">Lyrics/Content Description</label>
+            <textarea class="form-control prompt-textarea" id="customPrompt" rows="4"
+                      placeholder="Describe the lyrics, story, or musical elements you want..."
+                      maxlength="3000"></textarea>
+            <div class="d-flex justify-content-between mt-2">
+                <small class="text-muted">Custom mode - up to 3000 characters</small>
+                <small class="text-muted" id="customCharCount">0/3000</small>
+            </div>
+        </div>
+
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="customInstrumental">
+            <label class="form-check-label" for="customInstrumental">
+                <i class="fas fa-volume-mute me-1"></i>
+                Instrumental only (no lyrics)
+            </label>
+        </div>
+    </div>
+
+    <!-- Generate Section -->
+    <div class="generate-section">
+        <button type="button" class="generate-btn" id="generateBtn" onclick="startGeneration()">
+            <i class="fas fa-play me-2"></i>
+            Generate Music
+        </button>
+        
+        <div class="generation-status" id="generationStatus">
+            <div class="spinner me-2"></div>
+            <span id="statusText">Starting generation...</span>
+        </div>
+    </div>
+
+    <!-- Generated Tracks -->
+    <div class="tracks-container" id="tracksContainer">
+        <h4><i class="fas fa-headphones me-2"></i>Generated Tracks</h4>
+        <p class="text-muted">Suno generates 2 versions for you to choose from</p>
+        
+        <div id="tracksList">
+            <!-- Tracks will be inserted here -->
+        </div>
+    </div>
+</div>
+
+<!-- Track Template -->
+<template id="trackTemplate">
+    <div class="track-card">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <h5 class="mb-1 track-title">Song Title</h5>
+                <p class="text-muted mb-0 track-tags">Tags will appear here</p>
+            </div>
+            <div class="text-end">
+                <button class="btn btn-outline-primary btn-sm me-2 download-btn">
+                    <i class="fas fa-download me-1"></i>Download
+                </button>
+                <button class="btn btn-primary btn-sm play-btn">
+                    <i class="fas fa-play me-1"></i>Play
+                </button>
+            </div>
+        </div>
+        
+        <div class="track-player">
+            <div class="waveform-placeholder">
+                <span>🎵 Audio waveform will appear here</span>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 0%"></div>
+            </div>
+            
+            <!-- Player Controls -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="time-display">
+                    <small class="text-muted">00:00 / 02:30</small>
+                </div>
+                <div class="player-controls">
+                    <button class="btn btn-sm btn-outline-secondary me-2">
+                        <i class="fas fa-step-backward"></i>
+                    </button>
+                    <button class="btn btn-sm btn-primary me-2 main-play-btn">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-step-forward"></i>
+                    </button>
+                </div>
+                <div class="volume-control">
+                    <i class="fas fa-volume-up me-2"></i>
+                    <input type="range" class="form-range" min="0" max="100" value="80" style="width: 80px;">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Additional Options -->
+        <div class="mt-3 pt-3 border-top">
+            <button class="btn btn-sm btn-outline-info me-2">
+                <i class="fas fa-cut me-1"></i>Separate Vocals
+            </button>
+            <button class="btn btn-sm btn-outline-success me-2">
+                <i class="fas fa-plus me-1"></i>Extend
+            </button>
+            <button class="btn btn-sm btn-outline-warning">
+                <i class="fas fa-video me-1"></i>Create Video
+            </button>
+        </div>
+    </div>
+</template>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentMode = 'simple';
+let generationTaskId = null;
+let generationInterval = null;
+
+// Mode Selection
+function selectMode(mode) {
+    currentMode = mode;
+    
+    // Update UI
+    document.querySelectorAll('.mode-card').forEach(card => {
+        card.classList.remove('active');
+    });
+    document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
+    
+    // Show/hide sections
+    if (mode === 'simple') {
+        document.getElementById('simpleMode').style.display = 'block';
+        document.getElementById('customMode').classList.remove('active');
+    } else {
+        document.getElementById('simpleMode').style.display = 'block'; // Keep simple always visible
+        document.getElementById('customMode').classList.add('active');
+    }
+}
+
+// Character counting
+document.getElementById('simplePrompt').addEventListener('input', function() {
+    const count = this.value.length;
+    document.getElementById('simpleCharCount').textContent = `${count}/400`;
+});
+
+document.getElementById('customPrompt').addEventListener('input', function() {
+    const count = this.value.length;
+    document.getElementById('customCharCount').textContent = `${count}/3000`;
+});
+
+// Generation
+function startGeneration() {
+    const btn = document.getElementById('generateBtn');
+    const status = document.getElementById('generationStatus');
+    
+    // Validate input
+    if (currentMode === 'simple') {
+        const prompt = document.getElementById('simplePrompt').value.trim();
+        if (!prompt) {
+            alert('Please describe your song first!');
+            return;
+        }
+    } else {
+        const title = document.getElementById('customTitle').value.trim();
+        const style = document.getElementById('customStyle').value.trim();
+        if (!title || !style) {
+            alert('Please fill in title and style for custom mode!');
+            return;
+        }
+    }
+    
+    // Start generation
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner me-2"></div>Generating...';
+    status.style.display = 'block';
+    
+    // Prepare data
+    const generationData = {
+        mode: currentMode,
+        suno_model: 'V4_5' // From settings
+    };
+    
+    if (currentMode === 'simple') {
+        generationData.prompt = document.getElementById('simplePrompt').value;
+        generationData.instrumental = document.getElementById('simpleInstrumental').checked;
+        generationData.custom_mode = false;
+    } else {
+        generationData.title = document.getElementById('customTitle').value;
+        generationData.style = document.getElementById('customStyle').value;
+        generationData.prompt = document.getElementById('customPrompt').value;
+        generationData.instrumental = document.getElementById('customInstrumental').checked;
+        generationData.custom_mode = true;
+    }
+    
+    // Send request
+    fetch('/api/music/generate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(generationData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            generationTaskId = data.task_id;
+            pollGenerationStatus();
+        } else {
+            showError(data.message || 'Generation failed');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showError('Network error occurred');
+    });
+}
+
+function pollGenerationStatus() {
+    if (!generationTaskId) return;
+    
+    const statusText = document.getElementById('statusText');
+    
+    generationInterval = setInterval(() => {
+        fetch(`/api/music/status/${generationTaskId}`)
+        .then(response => response.json())
+        .then(data => {
+            statusText.textContent = data.current_step || 'Generating...';
+            
+            if (data.status === 'completed') {
+                clearInterval(generationInterval);
+                showResults(data.result);
+            } else if (data.status === 'failed') {
+                clearInterval(generationInterval);
+                showError(data.error || 'Generation failed');
+            }
+        })
+        .catch(error => {
+            console.error('Status check error:', error);
+        });
+    }, 3000);
+}
+
+function showResults(result) {
+    const btn = document.getElementById('generateBtn');
+    const status = document.getElementById('generationStatus');
+    const container = document.getElementById('tracksContainer');
+    
+    // Reset button
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-play me-2"></i>Generate Music';
+    status.style.display = 'none';
+    
+    // Show tracks (Suno generates multiple tracks)
+    const tracksToDisplay = result.tracks || [result]; // Use tracks array if available, fallback to single result
+    displayTracks(tracksToDisplay);
+    container.style.display = 'block';
+    
+    // Update header to show track count
+    const headerText = document.querySelector('#tracksContainer h4');
+    if (result.total_tracks && result.total_tracks > 1) {
+        headerText.innerHTML = `<i class="fas fa-headphones me-2"></i>Generated Tracks (${result.total_tracks} versions)`;
+    }
+    
+    // Scroll to results
+    container.scrollIntoView({ behavior: 'smooth' });
+}
+
+function displayTracks(tracks) {
+    const tracksList = document.getElementById('tracksList');
+    const template = document.getElementById('trackTemplate');
+    
+    tracksList.innerHTML = '';
+    
+    tracks.forEach((track, index) => {
+        const trackElement = template.content.cloneNode(true);
+        
+        // Populate track data with proper field mapping
+        const title = track.title || `Generated Track ${track.clip_number || index + 1}`;
+        const model = track.model_used || track.model_name || 'V4_5';
+        const duration = track.duration || 'Unknown';
+        const tags = track.tags || '';
+        
+        trackElement.querySelector('.track-title').textContent = title;
+        
+        // Create detailed info text
+        let infoText = `Model: ${model}`;
+        if (duration !== 'Unknown') {
+            infoText += ` • Duration: ${duration}`;
+        }
+        if (tags) {
+            infoText += ` • Style: ${tags}`;
+        }
+        trackElement.querySelector('.track-tags').textContent = infoText;
+        
+        // Add audio player if URL available
+        if (track.audio_url) {
+            const audioElement = document.createElement('audio');
+            audioElement.src = track.audio_url;
+            audioElement.controls = true;
+            audioElement.preload = 'metadata'; // For faster loading
+            audioElement.style.width = '100%';
+            
+            // Add loading state
+            audioElement.addEventListener('loadstart', function() {
+                const waveform = this.parentElement;
+                waveform.style.background = '#f0f0f0';
+            });
+            
+            audioElement.addEventListener('loadedmetadata', function() {
+                const waveform = this.parentElement;
+                waveform.style.background = '#f8f9ff';
+                
+                // Update duration if not set
+                if (duration === 'Unknown' && this.duration) {
+                    const minutes = Math.floor(this.duration / 60);
+                    const seconds = Math.floor(this.duration % 60);
+                    const durationText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    trackElement.querySelector('.track-tags').textContent = 
+                        trackElement.querySelector('.track-tags').textContent.replace('Unknown', durationText);
+                }
+            });
+            
+            const waveform = trackElement.querySelector('.waveform-placeholder');
+            waveform.innerHTML = '';
+            waveform.appendChild(audioElement);
+        } else {
+            // Show placeholder for tracks without audio URL
+            const waveform = trackElement.querySelector('.waveform-placeholder');
+            waveform.innerHTML = '<span class="text-muted"><i class="fas fa-clock me-2"></i>Audio processing...</span>';
+        }
+        
+        // Add download functionality
+        const downloadBtn = trackElement.querySelector('.download-btn');
+        if (track.audio_url) {
+            downloadBtn.onclick = () => {
+                const a = document.createElement('a');
+                a.href = track.audio_url;
+                a.download = `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.mp3`;
+                a.click();
+            };
+        } else {
+            downloadBtn.disabled = true;
+            downloadBtn.innerHTML = '<i class="fas fa-clock me-1"></i>Processing...';
+        }
+        
+        // Store track data for additional features
+        trackElement.firstElementChild.dataset.trackId = track.suno_clip_id;
+        trackElement.firstElementChild.dataset.trackData = JSON.stringify(track);
+        
+        tracksList.appendChild(trackElement);
+    });
+}
+
+function showError(message) {
+    const btn = document.getElementById('generateBtn');
+    const status = document.getElementById('generationStatus');
+    
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-play me-2"></i>Generate Music';
+    status.style.display = 'none';
+    
+    alert(`Error: ${message}`);
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    selectMode('simple');
+});
+</script>
+{% endblock %}
