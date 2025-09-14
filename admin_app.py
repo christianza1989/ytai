@@ -2733,9 +2733,13 @@ def process_music_generation(task_id, data):
             # Check credits first
             credits = suno.get_credits()
             if credits <= 0:
-                raise Exception("Insufficient Suno AI credits. Please add credits to your account.")
+                raise Exception("Insufficient Suno AI credits. Please add credits to your account at https://api.sunoapi.org/")
                 
             update_progress(60, f"💳 Credits available: {credits}", f"Ready to generate with {credits} credits")
+            
+            # Warn if credits are low
+            if credits < 10:
+                update_progress(62, f"⚠️ Low credits warning: {credits} remaining", "Consider topping up soon")
             
         except Exception as e:
             raise Exception(f"Suno API connection failed: {str(e)}")
@@ -2758,24 +2762,34 @@ def process_music_generation(task_id, data):
             suno_params['title'] = suno_request['title']
         
         # Generate music using advanced mode for better control
-        if suno_request.get('title') and not suno_request.get('make_instrumental'):
-            # Use advanced generation for vocal tracks with titles
-            generation_result = suno.generate_music_advanced(
-                prompt=music_prompt,
-                style=data.get('genre_specific', data.get('genre_category', 'pop')),
-                title=suno_request.get('title', f"Generated {data.get('genre_specific', 'Track')}"),
-                instrumental=suno_request.get('make_instrumental', False),
-                model=suno_params['model']
-            )
-        else:
-            # Use simple generation for instrumental or basic tracks
-            generation_result = suno.generate_music_simple(
-                prompt=music_prompt,
-                **suno_params
-            )
-        
-        if not generation_result:
-            raise Exception("Failed to initiate Suno AI generation")
+        try:
+            if suno_request.get('title') and not suno_request.get('make_instrumental'):
+                # Use advanced generation for vocal tracks with titles
+                update_progress(68, "🎵 Using advanced Suno generation...", "Generating vocal track with title")
+                generation_result = suno.generate_music_advanced(
+                    prompt=music_prompt,
+                    style=data.get('genre_specific', data.get('genre_category', 'pop')),
+                    title=suno_request.get('title', f"Generated {data.get('genre_specific', 'Track')}"),
+                    instrumental=suno_request.get('make_instrumental', False),
+                    model=suno_params['model']
+                )
+            else:
+                # Use simple generation for instrumental or basic tracks
+                update_progress(68, "🎵 Using simple Suno generation...", "Generating instrumental track")
+                generation_result = suno.generate_music_simple(
+                    prompt=music_prompt,
+                    **suno_params
+                )
+            
+            update_progress(69, "🔄 Processing Suno response...", f"Generation result type: {type(generation_result)}")
+            
+            if not generation_result:
+                raise Exception("Suno API returned null/empty response")
+                
+        except Exception as suno_error:
+            error_msg = f"Suno API call failed: {str(suno_error)}"
+            update_progress(0, f"❌ {error_msg}", error_msg)
+            raise Exception(error_msg)
             
         # Extract task ID from result
         if isinstance(generation_result, dict) and 'taskId' in generation_result:

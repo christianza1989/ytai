@@ -45,23 +45,29 @@ class SunoClient:
                 "customMode": False,  # Non-custom mode for simplicity
                 "instrumental": False,
                 "model": "V4",  # Good balance of quality and speed
-                "callBackUrl": os.getenv('CALLBACK_URL', ''),
+                "callBackUrl": os.getenv('CALLBACK_URL', 'https://webhook.site/unique-id'),
                 **kwargs
             }
-
-            response = requests.post(url, json=payload, headers=self.headers)
+            
+            response = requests.post(url, json=payload, headers=self.headers, timeout=30)
             response.raise_for_status()
 
             data = response.json()
+            
             if data.get('code') == 200:
                 # Return full response data for more information
                 return data.get('data', {})
+            elif data.get('code') == 429:
+                # Insufficient credits error
+                raise Exception(f"Insufficient Suno credits: {data.get('msg')}")
             else:
-                print(f"Error generating music: {data.get('msg')}")
-                return None
+                error_msg = data.get('msg', 'Unknown API error')
+                raise Exception(f"Suno API error (code {data.get('code')}): {error_msg}")
 
         except Exception as e:
             print(f"Failed to generate music: {e}")
+            import traceback
+            traceback.print_exc()
             return None
 
     def generate_music_advanced(self,
@@ -82,7 +88,7 @@ class SunoClient:
                 "customMode": True,
                 "instrumental": instrumental,
                 "model": model,
-                "callBackUrl": os.getenv('CALLBACK_URL', ''),
+                "callBackUrl": os.getenv('CALLBACK_URL', 'https://webhook.site/unique-id'),
                 **kwargs
             }
 
@@ -92,9 +98,12 @@ class SunoClient:
             data = response.json()
             if data.get('code') == 200:
                 return data.get('data', {}).get('taskId')
+            elif data.get('code') == 429:
+                # Insufficient credits error
+                raise Exception(f"Insufficient Suno credits: {data.get('msg')}")
             else:
-                print(f"Error generating music: {data.get('msg')}")
-                return None
+                error_msg = data.get('msg', 'Unknown API error')
+                raise Exception(f"Suno API error (code {data.get('code')}): {error_msg}")
 
         except Exception as e:
             print(f"Failed to generate music: {e}")
@@ -127,7 +136,7 @@ class SunoClient:
 
             payload = {
                 "prompt": prompt,
-                "callBackUrl": os.getenv('CALLBACK_URL', ''),
+                "callBackUrl": os.getenv('CALLBACK_URL', 'https://webhook.site/unique-id'),
                 **kwargs
             }
 
