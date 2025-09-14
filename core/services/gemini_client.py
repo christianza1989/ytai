@@ -8,7 +8,9 @@ class GeminiClient:
 
     def __init__(self):
         self.api_key = os.getenv('GEMINI_API_KEY')
-        self.model_name = os.getenv('GEMINI_MODEL', 'gemini-2.5-flash')  # Default to gemini-2.5-flash
+        # FIXED MODEL: gemini-2.5-flash is the LATEST and ONLY supported model
+        # This model CANNOT be changed as it's the newest and most advanced version
+        self.model_name = 'gemini-2.5-flash'  # LATEST MODEL - DO NOT CHANGE
 
         if not self.api_key:
             raise ValueError("GEMINI_API_KEY environment variable is required")
