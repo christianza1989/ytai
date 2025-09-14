@@ -2461,63 +2461,9 @@ def create_expansion_plan():
             'error': str(e)
         }), 500
 
-@app.route('/api/settings/save', methods=['POST'])
-@require_auth
-def api_save_settings():
-    """Save system settings"""
-    try:
-        data = request.get_json() or {}
-        
-        # Here you could save to database or file
-        # For now, we'll just return success since client handles localStorage
-        
-        settings_file = Path('user_settings.json')
-        with open(settings_file, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2)
-        
-        return jsonify({
-            'success': True,
-            'message': 'Settings saved successfully',
-            'timestamp': datetime.now().isoformat()
-        })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
 
-@app.route('/api/settings/load')
-@require_auth
-def api_load_settings():
-    """Load system settings"""
-    try:
-        settings_file = Path('user_settings.json')
-        if settings_file.exists():
-            with open(settings_file, 'r', encoding='utf-8') as f:
-                settings = json.load(f)
-        else:
-            # Default settings
-            settings = {
-                'theme': 'default',
-                'language': 'lt',
-                'autosave': '60',
-                'notifications': True,
-                'animations': True,
-                'refreshRate': '5000',
-                'maxTasks': '3',
-                'cache': True,
-                'debugMode': False
-            }
-        
-        return jsonify({
-            'success': True,
-            'settings': settings
-        })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+
+
 
 @app.route('/favicon.ico')
 def favicon():
@@ -2885,6 +2831,131 @@ def build_suno_prompt(data):
     final_prompt += ', professional production, high quality audio'
     
     return final_prompt
+
+# ===================================================================
+# SYSTEM THEME MANAGEMENT API ENDPOINTS
+# ===================================================================
+
+@app.route('/api/settings/theme', methods=['GET', 'POST'])
+@require_auth
+def api_theme_settings():
+    """Manage system theme settings"""
+    settings_file = 'user_settings.json'
+    
+    if request.method == 'POST':
+        try:
+            data = request.get_json() or {}
+            theme_name = data.get('theme', 'default')
+            
+            # Load existing settings
+            current_settings = {}
+            try:
+                with open(settings_file, 'r') as f:
+                    current_settings = json.load(f)
+            except (FileNotFoundError, json.JSONDecodeError):
+                pass
+            
+            # Update theme setting
+            current_settings['theme'] = theme_name
+            current_settings['theme_updated'] = datetime.now().isoformat()
+            
+            # Save updated settings
+            with open(settings_file, 'w') as f:
+                json.dump(current_settings, f, indent=2)
+            
+            return jsonify({
+                'success': True,
+                'message': f'Theme set to {theme_name}',
+                'theme': theme_name
+            })
+            
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+    
+    else:  # GET request
+        try:
+            # Load current theme setting
+            current_settings = {}
+            try:
+                with open(settings_file, 'r') as f:
+                    current_settings = json.load(f)
+            except (FileNotFoundError, json.JSONDecodeError):
+                pass
+            
+            theme = current_settings.get('theme', 'default')
+            
+            return jsonify({
+                'success': True,
+                'theme': theme,
+                'updated': current_settings.get('theme_updated')
+            })
+            
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+
+@app.route('/api/settings/save', methods=['POST'])
+@require_auth
+def api_save_settings():
+    """Save all system settings"""
+    try:
+        data = request.get_json() or {}
+        settings_file = 'user_settings.json'
+        
+        # Add metadata
+        data['saved_at'] = datetime.now().isoformat()
+        data['version'] = '1.0'
+        
+        # Save to file
+        with open(settings_file, 'w') as f:
+            json.dump(data, f, indent=2)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Settings saved successfully',
+            'settings': data
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/settings/load')
+@require_auth
+def api_load_settings():
+    """Load all system settings"""
+    try:
+        settings_file = 'user_settings.json'
+        
+        # Load settings
+        try:
+            with open(settings_file, 'r') as f:
+                settings = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            settings = {
+                'theme': 'default',
+                'language': 'lt',
+                'notifications': True,
+                'animations': True
+            }
+        
+        return jsonify({
+            'success': True,
+            'settings': settings
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 if __name__ == '__main__':
     # Create required directories

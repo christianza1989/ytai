@@ -424,6 +424,260 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #a8a8a8;
         }
+
+        /* ===================================================================
+           ADVANCED THEME SYSTEM - All Theme Styles
+           ================================================================= */
+
+        /* AI Futuristic Theme */
+        :root {
+            --ai-gradient-bg: linear-gradient(135deg, #0f1419 0%, #1a202c 25%, #2d3748 50%, #1e2a3a 75%, #0f1419 100%);
+            --ai-glass-bg: rgba(255, 255, 255, 0.05);
+            --ai-glass-border: rgba(255, 255, 255, 0.1);
+            --ai-glow-primary: #00d4ff;
+            --ai-glow-secondary: #7c3aed;
+            --ai-text-primary: #ffffff;
+            --ai-text-secondary: #cbd5e0;
+        }
+
+        body.ai-theme {
+            background: var(--ai-gradient-bg);
+            background-attachment: fixed;
+            color: var(--ai-text-primary);
+        }
+
+        body.ai-theme::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(124, 58, 237, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        body.ai-theme .sidebar {
+            background: var(--ai-glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid var(--ai-glass-border);
+        }
+
+        body.ai-theme .top-navbar {
+            background: var(--ai-glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--ai-glass-border);
+        }
+
+        body.ai-theme .card {
+            background: var(--ai-glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--ai-glass-border);
+            color: var(--ai-text-primary);
+        }
+
+        body.ai-theme .form-control,
+        body.ai-theme .form-select {
+            background: var(--ai-glass-bg);
+            border: 1px solid var(--ai-glass-border);
+            color: var(--ai-text-primary);
+        }
+
+        body.ai-theme .form-control:focus,
+        body.ai-theme .form-select:focus {
+            background: var(--ai-glass-bg);
+            border-color: var(--ai-glow-primary);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+            color: var(--ai-text-primary);
+        }
+
+        /* Cyberpunk Theme */
+        body.cyberpunk-theme {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0a1a 50%, #0a1a1a 100%);
+            background-attachment: fixed;
+            color: #ff00ff;
+        }
+
+        body.cyberpunk-theme::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255, 0, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(0, 255, 255, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        body.cyberpunk-theme .card {
+            background: rgba(255, 0, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 0, 255, 0.2);
+            color: #ff00ff;
+        }
+
+        body.cyberpunk-theme .sidebar {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 0, 255, 0.3);
+        }
+
+        body.cyberpunk-theme .top-navbar {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 0, 255, 0.3);
+        }
+
+        body.cyberpunk-theme .form-control,
+        body.cyberpunk-theme .form-select {
+            background: rgba(255, 0, 255, 0.05);
+            border: 1px solid rgba(255, 0, 255, 0.2);
+            color: #ff00ff;
+        }
+
+        body.cyberpunk-theme .form-control:focus,
+        body.cyberpunk-theme .form-select:focus {
+            border-color: rgba(0, 255, 255, 0.5);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+            color: #ff00ff;
+        }
+
+        /* Matrix Theme */
+        body.matrix-theme {
+            background: linear-gradient(135deg, #000000 0%, #001100 50%, #000000 100%);
+            background-attachment: fixed;
+            color: #00ff00;
+        }
+
+        body.matrix-theme::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 30% 30%, rgba(0, 255, 0, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 70% 70%, rgba(0, 255, 0, 0.03) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        body.matrix-theme .card {
+            background: rgba(0, 255, 0, 0.03);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(0, 255, 0, 0.2);
+            color: #00ff00;
+        }
+
+        body.matrix-theme .sidebar {
+            background: rgba(0, 0, 0, 0.9);
+            border-right: 1px solid rgba(0, 255, 0, 0.3);
+        }
+
+        body.matrix-theme .top-navbar {
+            background: rgba(0, 0, 0, 0.9);
+            border-bottom: 1px solid rgba(0, 255, 0, 0.3);
+        }
+
+        body.matrix-theme .form-control,
+        body.matrix-theme .form-select {
+            background: rgba(0, 255, 0, 0.02);
+            border: 1px solid rgba(0, 255, 0, 0.2);
+            color: #00ff00;
+        }
+
+        body.matrix-theme .form-control:focus,
+        body.matrix-theme .form-select:focus {
+            border-color: rgba(0, 255, 0, 0.5);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+            color: #00ff00;
+        }
+
+        /* Neon Theme */
+        body.neon-theme {
+            background: linear-gradient(135deg, #0a0015 0%, #15001a 50%, #1a0020 100%);
+            background-attachment: fixed;
+            color: #ff006e;
+        }
+
+        body.neon-theme::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 25% 25%, rgba(255, 0, 110, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(131, 56, 236, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        body.neon-theme .card {
+            background: rgba(255, 0, 110, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 0, 110, 0.2);
+            color: #ff006e;
+        }
+
+        body.neon-theme .sidebar {
+            background: rgba(10, 0, 21, 0.8);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 0, 110, 0.3);
+        }
+
+        body.neon-theme .top-navbar {
+            background: rgba(10, 0, 21, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 0, 110, 0.3);
+        }
+
+        body.neon-theme .form-control,
+        body.neon-theme .form-select {
+            background: rgba(255, 0, 110, 0.05);
+            border: 1px solid rgba(255, 0, 110, 0.2);
+            color: #ff006e;
+        }
+
+        body.neon-theme .form-control:focus,
+        body.neon-theme .form-select:focus {
+            border-color: rgba(131, 56, 236, 0.5);
+            box-shadow: 0 0 15px rgba(131, 56, 236, 0.3);
+            color: #ff006e;
+        }
+
+        /* Default Theme Enhancements */
+        body.default-theme {
+            background: #f8f9fa;
+            color: #333;
+        }
+
+        body.default-theme .card {
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            color: #333;
+        }
+
+        body.default-theme .sidebar {
+            background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        }
+
+        body.default-theme .top-navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #dee2e6;
+        }
     </style>
     
     {% block extra_css %}{% endblock %}
@@ -675,38 +929,111 @@
         }
         
         function toggleTheme() {
-            // Theme toggle functionality
-            document.body.classList.toggle('dark-theme');
-            const isDarkMode = document.body.classList.contains('dark-theme');
+            // Get current theme
+            const currentTheme = localStorage.getItem('systemTheme') || 'default';
+            let newTheme;
             
-            // Update icon
-            const icons = document.querySelectorAll('.theme-toggle i');
-            icons.forEach(icon => {
-                if (isDarkMode) {
-                    icon.className = 'fas fa-sun';
-                } else {
-                    icon.className = 'fas fa-moon';
-                }
-            });
+            // Cycle through themes or toggle between default and dark
+            if (currentTheme === 'default') {
+                newTheme = 'dark';
+            } else if (currentTheme === 'dark') {
+                newTheme = 'ai';
+            } else {
+                newTheme = 'default';
+            }
             
-            // Save preference to localStorage
-            localStorage.setItem('darkMode', isDarkMode);
+            // Apply new theme
+            applySystemTheme(newTheme);
             
-            // Show toast notification
-            showToast(`Switched to ${isDarkMode ? 'Dark' : 'Light'} Mode`, 'info');
+            // Show notification
+            const themeNames = {
+                'default': 'Default Light',
+                'dark': 'Dark Mode',
+                'ai': 'AI Futuristic',
+                'cyberpunk': 'Cyberpunk',
+                'matrix': 'Matrix',
+                'neon': 'Neon Lights'
+            };
+            
+            showToast(`Switched to ${themeNames[newTheme]} Theme`, 'info');
         }
         
         // Load theme preference on page load
         document.addEventListener('DOMContentLoaded', function() {
-            const darkMode = localStorage.getItem('darkMode') === 'true';
-            if (darkMode) {
-                document.body.classList.add('dark-theme');
-                const icons = document.querySelectorAll('.theme-toggle i');
-                icons.forEach(icon => {
-                    icon.className = 'fas fa-sun';
-                });
-            }
+            // Advanced theme system initialization
+            loadAndApplySystemTheme();
+            
+            // Listen for theme changes from system settings
+            window.addEventListener('themeChanged', function(e) {
+                applySystemTheme(e.detail.theme);
+            });
+            
+            // Listen for storage changes (theme changes from other tabs)
+            window.addEventListener('storage', function(e) {
+                if (e.key === 'systemTheme' || e.key === 'selectedTheme') {
+                    loadAndApplySystemTheme();
+                }
+            });
         });
+        
+        function loadAndApplySystemTheme() {
+            // Load theme from multiple sources for compatibility
+            const systemTheme = localStorage.getItem('systemTheme') || 
+                               localStorage.getItem('selectedTheme') || 
+                               'default';
+            
+            applySystemTheme(systemTheme);
+        }
+        
+        function applySystemTheme(themeName) {
+            // Remove all theme classes
+            const themeClasses = ['dark-theme', 'ai-theme', 'cyberpunk-theme', 'matrix-theme', 'neon-theme', 'default-theme'];
+            document.body.classList.remove(...themeClasses);
+            
+            // Apply specific theme
+            switch(themeName) {
+                case 'dark':
+                    document.body.classList.add('dark-theme');
+                    break;
+                case 'ai':
+                    document.body.classList.add('ai-theme');
+                    break;
+                case 'cyberpunk':
+                    document.body.classList.add('cyberpunk-theme');
+                    break;
+                case 'matrix':
+                    document.body.classList.add('matrix-theme');
+                    break;
+                case 'neon':
+                    document.body.classList.add('neon-theme');
+                    break;
+                case 'default':
+                default:
+                    document.body.classList.add('default-theme');
+                    break;
+            }
+            
+            // Update theme toggle icons
+            updateThemeToggleIcons(themeName);
+            
+            // Update localStorage for compatibility
+            localStorage.setItem('systemTheme', themeName);
+            localStorage.setItem('selectedTheme', themeName);
+            
+            const isDark = themeName !== 'default';
+            localStorage.setItem('darkMode', isDark.toString());
+        }
+        
+        function updateThemeToggleIcons(themeName) {
+            const icons = document.querySelectorAll('.theme-toggle i');
+            icons.forEach(icon => {
+                if (themeName === 'default') {
+                    icon.className = 'fas fa-moon';
+                } else {
+                    icon.className = 'fas fa-sun';
+                }
+            });
+        }
         
         // Auto-refresh system status
         function updateSystemStatus() {

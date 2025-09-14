@@ -1,5 +1,8 @@
 {
-  "theme": "ai",
+  "theme": "cyberpunk",
   "language": "lt",
-  "notifications": true
+  "notifications": true,
+  "animations": true,
+  "saved_at": "2025-09-14T00:13:35.496295",
+  "version": "1.0"
 }

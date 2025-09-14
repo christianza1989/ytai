@@ -269,6 +269,114 @@
         background: var(--ai-glow-secondary);
         box-shadow: 0 0 15px rgba(124, 58, 237, 0.4);
     }
+
+    /* Cyberpunk Theme */
+    body.cyberpunk-theme {
+        background: linear-gradient(135deg, #0a0a0a 0%, #1a0a1a 50%, #0a1a1a 100%);
+        background-attachment: fixed;
+        color: #ff00ff;
+    }
+
+    body.cyberpunk-theme::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: 
+            radial-gradient(circle at 20% 50%, rgba(255, 0, 255, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 80% 20%, rgba(0, 255, 255, 0.1) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: -1;
+    }
+
+    body.cyberpunk-theme .card {
+        background: rgba(255, 0, 255, 0.05);
+        border: 1px solid rgba(255, 0, 255, 0.2);
+        color: #ff00ff;
+    }
+
+    body.cyberpunk-theme .sidebar {
+        background: rgba(0, 0, 0, 0.8);
+        border-right: 1px solid rgba(255, 0, 255, 0.3);
+    }
+
+    /* Matrix Theme */
+    body.matrix-theme {
+        background: linear-gradient(135deg, #000000 0%, #001100 50%, #000000 100%);
+        background-attachment: fixed;
+        color: #00ff00;
+    }
+
+    body.matrix-theme::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: 
+            radial-gradient(circle at 30% 30%, rgba(0, 255, 0, 0.05) 0%, transparent 50%),
+            radial-gradient(circle at 70% 70%, rgba(0, 255, 0, 0.03) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: -1;
+    }
+
+    body.matrix-theme .card {
+        background: rgba(0, 255, 0, 0.03);
+        border: 1px solid rgba(0, 255, 0, 0.2);
+        color: #00ff00;
+    }
+
+    body.matrix-theme .sidebar {
+        background: rgba(0, 0, 0, 0.9);
+        border-right: 1px solid rgba(0, 255, 0, 0.3);
+    }
+
+    /* Neon Theme */
+    body.neon-theme {
+        background: linear-gradient(135deg, #0a0015 0%, #15001a 50%, #1a0020 100%);
+        background-attachment: fixed;
+        color: #ff006e;
+    }
+
+    body.neon-theme::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: 
+            radial-gradient(circle at 25% 25%, rgba(255, 0, 110, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 75% 75%, rgba(131, 56, 236, 0.1) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: -1;
+    }
+
+    body.neon-theme .card {
+        background: rgba(255, 0, 110, 0.05);
+        border: 1px solid rgba(255, 0, 110, 0.2);
+        color: #ff006e;
+    }
+
+    body.neon-theme .sidebar {
+        background: rgba(10, 0, 21, 0.8);
+        border-right: 1px solid rgba(255, 0, 110, 0.3);
+    }
+
+    /* Default Theme Enhancements */
+    body.default-theme {
+        background: #f8f9fa;
+        color: #333;
+    }
+
+    body.default-theme .card {
+        background: #ffffff;
+        border: 1px solid #dee2e6;
+        color: #333;
+    }
 </style>
 {% endblock %}
 
@@ -517,13 +625,22 @@
     });
     
     function loadCurrentTheme() {
-        // Load theme from localStorage or use default
-        const savedTheme = localStorage.getItem('systemTheme') || 'default';
-        currentTheme = savedTheme;
+        // Load theme from localStorage - check multiple storage keys for compatibility
+        const savedTheme = localStorage.getItem('systemTheme') || 
+                          localStorage.getItem('selectedTheme') || 
+                          'default';
         
-        // Apply theme without showing as selected (since we're in settings)
-        // We'll show AI theme as selected by default in the interface
+        currentTheme = savedTheme;
+        selectedTheme = savedTheme;
+        
+        // Apply theme immediately when loading page
+        applyThemeToBody(currentTheme);
+        
+        // Update theme selection in UI
         updateThemeSelection();
+        
+        // Load from server as backup
+        loadThemeFromServer();
     }
     
     function selectTheme(themeName) {
@@ -545,13 +662,20 @@
     function applySelectedTheme() {
         // Apply the selected theme
         currentTheme = selectedTheme;
-        localStorage.setItem('systemTheme', currentTheme);
         
-        // Apply theme classes to body
+        // Save theme to all storage methods for compatibility
+        localStorage.setItem('systemTheme', currentTheme);
+        localStorage.setItem('selectedTheme', currentTheme);
+        
+        // Update darkMode setting for admin_base.html compatibility
+        const isDarkTheme = currentTheme !== 'default';
+        localStorage.setItem('darkMode', isDarkTheme.toString());
+        
+        // Apply theme classes to body immediately
         applyThemeToBody(currentTheme);
         
-        // Update base template theme toggle
-        updateBaseTheme(currentTheme);
+        // Save to server for persistence across sessions
+        saveThemeToServer(currentTheme);
         
         showToast(`Theme "${getThemeName(currentTheme)}" applied successfully!`, 'success');
         
@@ -561,11 +685,17 @@
         setTimeout(() => {
             activeTheme.style.transform = '';
         }, 300);
+        
+        // Dispatch a custom event to notify other parts of the app
+        window.dispatchEvent(new CustomEvent('themeChanged', { 
+            detail: { theme: currentTheme } 
+        }));
     }
     
     function applyThemeToBody(themeName) {
-        // Remove all theme classes
-        document.body.classList.remove('dark-theme', 'ai-theme', 'cyberpunk-theme', 'matrix-theme', 'neon-theme');
+        // Remove all theme classes first
+        const themeClasses = ['dark-theme', 'ai-theme', 'cyberpunk-theme', 'matrix-theme', 'neon-theme', 'default-theme'];
+        document.body.classList.remove(...themeClasses);
         
         // Apply specific theme class
         switch(themeName) {
@@ -584,10 +714,14 @@
             case 'neon':
                 document.body.classList.add('neon-theme');
                 break;
+            case 'default':
             default:
-                // Default theme - no additional classes
+                document.body.classList.add('default-theme');
                 break;
         }
+        
+        // Update theme toggle icon in header if it exists
+        updateHeaderThemeIcon(themeName);
     }
     
     function updateBaseTheme(themeName) {
@@ -749,12 +883,70 @@
         });
     }
     
-    // Apply AI theme immediately when page loads
-    document.addEventListener('DOMContentLoaded', function() {
-        // Auto-apply AI theme for demonstration
-        setTimeout(() => {
-            applyThemeToBody('ai');
-        }, 500);
+    // Additional theme management functions
+    function saveThemeToServer(themeName) {
+        fetch('/api/settings/theme', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                theme: themeName,
+                timestamp: new Date().toISOString()
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('Theme saved to server:', themeName);
+            }
+        })
+        .catch(error => {
+            console.error('Failed to save theme to server:', error);
+        });
+    }
+    
+    function loadThemeFromServer() {
+        fetch('/api/settings/theme')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.theme && data.theme !== currentTheme) {
+                // Server has a different theme, ask user if they want to use it
+                console.log('Server theme differs from local:', data.theme);
+            }
+        })
+        .catch(error => {
+            console.error('Failed to load theme from server:', error);
+        });
+    }
+    
+    function updateHeaderThemeIcon(themeName) {
+        // Update the theme toggle button in the header
+        const themeIcons = document.querySelectorAll('.theme-toggle i');
+        themeIcons.forEach(icon => {
+            if (themeName === 'default') {
+                icon.className = 'fas fa-moon';
+            } else {
+                icon.className = 'fas fa-sun';
+            }
+        });
+    }
+    
+    // Listen for theme changes from other pages
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'systemTheme' && e.newValue) {
+            currentTheme = e.newValue;
+            selectedTheme = e.newValue;
+            applyThemeToBody(currentTheme);
+            updateThemeSelection();
+        }
+    });
+    
+    // Prevent theme reset when navigating away
+    window.addEventListener('beforeunload', function() {
+        // Ensure theme is saved before leaving
+        localStorage.setItem('systemTheme', currentTheme);
+        localStorage.setItem('selectedTheme', currentTheme);
     });
 </script>
 {% endblock %}
