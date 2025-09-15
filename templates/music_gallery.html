@@ -441,8 +441,8 @@ function setupEventListeners() {
     // Initialize audio context on first user interaction
     document.addEventListener('click', initializeAudioContext, { once: true });
     
-    // Auto-refresh gallery every 30 seconds
-    setInterval(loadMusicGallery, 30000);
+    // Auto-refresh disabled to prevent interrupting audio playback
+    // setInterval(loadMusicGallery, 30000);
 }
 
 function initializeAudioContext() {
