@@ -6,7 +6,7 @@ module.exports = {
       args: 'admin_app.py',
       env: {
         FLASK_ENV: 'development',
-        PORT: 5000,
+        PORT: 3000,
         // API keys should be set in .env file or environment variables
         // SUNO_API_KEY: 'your-suno-api-key-here',
         // GEMINI_API_KEY: 'your-gemini-api-key-here',

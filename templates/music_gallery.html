@@ -2,127 +2,490 @@
 
 {% block title %}🎵 Music Gallery - Generated Tracks{% endblock %}
 
-{% block breadcrumb %}
-<li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
-<li class="breadcrumb-item active">Music Gallery</li>
+{% block extra_css %}
+<style>
+/* Music Gallery Styles */
+.music-gallery-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.track-card {
+    transition: all 0.3s ease;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.track-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+.track-card .card {
+    border: none;
+    border-radius: 16px;
+    background: linear-gradient(145deg, #ffffff, #f8f9fa);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.track-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px;
+    margin: -1rem -1rem 1rem -1rem;
+    border-radius: 16px 16px 0 0;
+}
+
+.advanced-player {
+    background: #f8f9ff;
+    border: 1px solid #e1e8ed;
+    border-radius: 12px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.waveform-container {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #e9ecef;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.player-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.play-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.play-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.volume-slider {
+    width: 80px;
+}
+
+.time-display {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #666;
+    min-width: 80px;
+}
+
+.track-info {
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 15px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 15px;
+}
+
+.action-btn {
+    border-radius: 20px;
+    font-size: 12px;
+    padding: 6px 12px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-download {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+}
+
+.btn-video {
+    background: linear-gradient(135deg, #dc3545, #fd7e14);
+    color: white;
+}
+
+.btn-extend {
+    background: linear-gradient(135deg, #6f42c1, #e83e8c);
+    color: white;
+}
+
+.btn-share {
+    background: linear-gradient(135deg, #17a2b8, #6610f2);
+    color: white;
+}
+
+.action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid #667eea;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #667eea;
+    display: block;
+}
+
+.stat-label {
+    color: #666;
+    font-size: 0.9rem;
+    margin-top: 5px;
+}
+
+.filter-section {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.search-box {
+    position: relative;
+}
+
+.search-box .fas {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+}
+
+.search-box input {
+    padding-left: 45px;
+    border-radius: 25px;
+    border: 1px solid #e1e8ed;
+}
+
+.genre-badge {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    margin: 2px;
+}
+
+.model-badge {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+}
+
+@media (max-width: 768px) {
+    .player-controls {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .action-buttons {
+        justify-content: center;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.modal-video-preview {
+    max-width: 100%;
+    border-radius: 8px;
+}
+
+.creation-progress {
+    display: none;
+    margin-top: 15px;
+}
+
+.progress-bar-animated {
+    animation: progress-bar-stripes 1s linear infinite;
+}
+
+@keyframes progress-bar-stripes {
+    0% {
+        background-position: 1rem 0;
+    }
+    100% {
+        background-position: 0 0;
+    }
+}
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-8">
-        <h1 class="h3 mb-0">
-            <i class="fas fa-music text-primary me-2"></i>
-            Music Gallery
-            <span class="badge bg-success ms-2">AI Generated</span>
-        </h1>
-        <p class="text-muted">Browse and download your AI-generated music tracks</p>
+<div class="music-gallery-container">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-music text-primary me-2"></i>
+                Music Gallery
+                <span class="badge bg-success ms-2" id="trackCount">0 Tracks</span>
+            </h1>
+            <p class="text-muted">Browse, play, and manage your AI-generated music collection</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="btn-group">
+                <a href="{{ url_for('generator') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>
+                    Create New Track
+                </a>
+                <button class="btn btn-outline-secondary" onclick="refreshGallery()">
+                    <i class="fas fa-sync-alt me-1"></i>
+                    Refresh
+                </button>
+            </div>
+        </div>
     </div>
-    <div class="col-md-4 text-end">
+
+    <!-- Statistics -->
+    <div class="stats-grid" id="statsGrid">
+        <div class="stat-card">
+            <span class="stat-number" id="totalTracks">0</span>
+            <div class="stat-label">Total Tracks</div>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number" id="totalDuration">0:00</span>
+            <div class="stat-label">Total Duration</div>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number" id="todayTracks">0</span>
+            <div class="stat-label">Created Today</div>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number" id="uniqueGenres">0</span>
+            <div class="stat-label">Unique Genres</div>
+        </div>
+    </div>
+
+    <!-- Filter and Search -->
+    <div class="filter-section">
+        <div class="row align-items-center">
+            <div class="col-md-4">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" class="form-control" id="searchTracks" placeholder="Search tracks, genres, or prompts...">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" id="filterGenre">
+                    <option value="">All Genres</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" id="filterModel">
+                    <option value="">All Models</option>
+                    <option value="V4_5">V4.5</option>
+                    <option value="V4">V4</option>
+                    <option value="V3_5">V3.5</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" id="filterType">
+                    <option value="">All Types</option>
+                    <option value="vocal">Vocal</option>
+                    <option value="instrumental">Instrumental</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" id="sortBy">
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="title">By Title</option>
+                    <option value="duration">By Duration</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Music Gallery Grid -->
+    <div class="row" id="musicGallery">
+        <!-- Tracks will be loaded here -->
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-3">Loading your music gallery...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="text-center py-5" style="display: none;">
+        <i class="fas fa-music fa-3x text-muted mb-3"></i>
+        <h5>No tracks found</h5>
+        <p class="text-muted">Create your first AI-generated music track to get started.</p>
         <a href="{{ url_for('generator') }}" class="btn btn-primary">
             <i class="fas fa-plus me-1"></i>
-            Create New Track
+            Create Your First Track
         </a>
     </div>
 </div>
 
-<!-- Filter and Search -->
-<div class="row mb-4">
-    <div class="col-md-6">
-        <div class="input-group">
-            <span class="input-group-text"><i class="fas fa-search"></i></span>
-            <input type="text" class="form-control" id="searchTracks" placeholder="Search tracks...">
+<!-- Video Creation Modal -->
+<div class="modal fade" id="videoCreationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-video me-2"></i>
+                    Create Video
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="videoCreationContent">
+                    <!-- Content will be populated dynamically -->
+                </div>
+                
+                <div class="creation-progress" id="videoProgress">
+                    <h6>Creating Video...</h6>
+                    <div class="progress mb-3">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%" id="videoProgressBar"></div>
+                    </div>
+                    <p class="text-muted" id="videoStatus">Starting video creation...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="startVideoCreation" onclick="startVideoCreation()">
+                    <i class="fas fa-play me-2"></i>
+                    Create Video
+                </button>
+            </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <select class="form-select" id="filterGenre">
-            <option value="">All Genres</option>
-            <option value="electronic">Electronic</option>
-            <option value="rock">Rock</option>
-            <option value="pop">Pop</option>
-            <option value="classical">Classical</option>
-            <option value="jazz">Jazz</option>
-        </select>
-    </div>
-    <div class="col-md-3">
-        <select class="form-select" id="filterModel">
-            <option value="">All Models</option>
-            <option value="V4_5">V4.5</option>
-            <option value="V4">V4</option>
-            <option value="V3_5">V3.5</option>
-        </select>
-    </div>
 </div>
 
-<!-- Music Gallery Grid -->
-<div class="row" id="musicGallery">
-    <!-- Tracks will be loaded here -->
-</div>
-
-<!-- Loading State -->
-<div id="loadingState" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
+<!-- Track Details Modal -->
+<div class="modal fade" id="trackDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Track Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="trackDetailsContent">
+                <!-- Content will be populated dynamically -->
+            </div>
+        </div>
     </div>
-    <p class="mt-3">Loading your music gallery...</p>
-</div>
-
-<!-- Empty State -->
-<div id="emptyState" class="text-center py-5" style="display: none;">
-    <i class="fas fa-music fa-3x text-muted mb-3"></i>
-    <h5>No tracks found</h5>
-    <p class="text-muted">Create your first AI-generated music track to get started.</p>
-    <a href="{{ url_for('generator') }}" class="btn btn-primary">
-        <i class="fas fa-plus me-1"></i>
-        Create Your First Track
-    </a>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 // Music Gallery JavaScript
-
 let allTracks = [];
+let currentPlayingAudio = null;
+let currentTrackForVideo = null;
 
-// Load music gallery on page load
+// Audio context for visualizations
+let audioContext = null;
+
 document.addEventListener('DOMContentLoaded', function() {
     loadMusicGallery();
     setupFilters();
+    setupEventListeners();
 });
+
+function setupEventListeners() {
+    // Initialize audio context on first user interaction
+    document.addEventListener('click', initializeAudioContext, { once: true });
+    
+    // Auto-refresh gallery every 30 seconds
+    setInterval(loadMusicGallery, 30000);
+}
+
+function initializeAudioContext() {
+    try {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    } catch (error) {
+        console.log('Web Audio API not supported:', error);
+    }
+}
 
 function loadMusicGallery() {
     showLoadingState();
     
-    // Load completed generation tasks
-    fetch('/api/system/status', {
-        credentials: 'same-origin'
-    })
-    .then(response => response.json())
-    .then(data => {
-        const tasks = data.generation_tasks || {};
+    // Load all generation data
+    Promise.all([
+        fetch('/api/system/status', { credentials: 'same-origin' }),
+        // Add more data sources as needed
+    ])
+    .then(responses => Promise.all(responses.map(r => r.json())))
+    .then(([systemData]) => {
+        const tasks = systemData.generation_tasks || {};
         const completedTracks = [];
         
         // Process completed tasks
         Object.values(tasks).forEach(task => {
-            if (task.status === 'completed' && task.result && task.result.success) {
-                completedTracks.push({
-                    id: task.task_id || task.id,
-                    title: task.result.title || 'Untitled Track',
-                    audioUrl: task.result.audio_url,
-                    videoUrl: task.result.video_url,
-                    duration: task.result.duration || 'Unknown',
-                    model: task.result.model_used || 'Unknown',
-                    genre: task.result.metadata?.genre_category || 'Unknown',
-                    mood: task.result.metadata?.mood || 'Unknown',
-                    createdAt: task.result.metadata?.generation_time || task.created_at,
-                    isInstrumental: task.result.is_instrumental || false,
-                    promptUsed: task.result.prompt_used || 'No prompt',
-                    metadata: task.result.metadata || {}
-                });
+            if (task.status === 'completed' && task.result) {
+                if (task.result.tracks && Array.isArray(task.result.tracks)) {
+                    // Handle multiple tracks from batch generation
+                    task.result.tracks.forEach((track, index) => {
+                        completedTracks.push(createTrackObject(task, track, index));
+                    });
+                } else if (task.result.audio_url || task.result.success) {
+                    // Handle single track
+                    completedTracks.push(createTrackObject(task, task.result));
+                }
             }
         });
         
+        // Sort by creation date (newest first)
+        completedTracks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        
         allTracks = completedTracks;
+        updateStatistics();
         renderTracks(allTracks);
         hideLoadingState();
         
@@ -137,6 +500,110 @@ function loadMusicGallery() {
     });
 }
 
+function createTrackObject(task, result, trackIndex = 0) {
+    const baseTitle = result.title || task.data?.prompt || 'Generated Track';
+    const trackTitle = trackIndex > 0 ? `${baseTitle} (Version ${trackIndex + 1})` : baseTitle;
+    
+    return {
+        id: `${task.task_id || task.id}_${trackIndex}`,
+        taskId: task.task_id || task.id,
+        title: trackTitle,
+        audioUrl: result.audio_url || result.streamAudioUrl,
+        videoUrl: result.video_url,
+        imageUrl: result.image_url,
+        duration: result.duration || 'Unknown',
+        model: result.model_used || result.model_name || task.data?.suno_model || 'V4',
+        genre: extractGenre(result, task),
+        mood: result.mood || task.data?.mood || 'Unknown',
+        createdAt: result.generation_time || task.created_at,
+        isInstrumental: result.is_instrumental || task.data?.instrumental || false,
+        promptUsed: result.prompt_used || task.data?.prompt || 'No prompt available',
+        tags: result.tags || '',
+        clipId: result.suno_clip_id || result.clip_id,
+        metadata: {
+            ...result.metadata,
+            trackNumber: trackIndex + 1,
+            totalTracks: task.result?.tracks?.length || 1,
+            generationType: task.data?.mode || 'simple'
+        }
+    };
+}
+
+function extractGenre(result, task) {
+    // Try multiple sources for genre information
+    if (result.metadata?.genre_category) return result.metadata.genre_category;
+    if (result.genre) return result.genre;
+    if (task.data?.genre) return task.data.genre;
+    
+    // Extract from tags or style
+    const tags = (result.tags || '').toLowerCase();
+    const style = (result.style || task.data?.style || '').toLowerCase();
+    const text = `${tags} ${style}`;
+    
+    const genres = ['pop', 'rock', 'electronic', 'jazz', 'classical', 'hip-hop', 'country', 'folk', 'blues', 'reggae', 'metal', 'punk', 'ambient', 'lofi'];
+    
+    for (const genre of genres) {
+        if (text.includes(genre)) {
+            return genre.charAt(0).toUpperCase() + genre.slice(1);
+        }
+    }
+    
+    return 'Unknown';
+}
+
+function updateStatistics() {
+    const totalTracks = allTracks.length;
+    const totalSeconds = allTracks.reduce((sum, track) => {
+        const duration = parseDuration(track.duration);
+        return sum + duration;
+    }, 0);
+    
+    const totalDuration = formatDuration(totalSeconds);
+    
+    const today = new Date().toDateString();
+    const todayTracks = allTracks.filter(track => 
+        new Date(track.createdAt).toDateString() === today
+    ).length;
+    
+    const uniqueGenres = [...new Set(allTracks.map(track => track.genre))].length;
+    
+    document.getElementById('totalTracks').textContent = totalTracks;
+    document.getElementById('totalDuration').textContent = totalDuration;
+    document.getElementById('todayTracks').textContent = todayTracks;
+    document.getElementById('uniqueGenres').textContent = uniqueGenres;
+    document.getElementById('trackCount').textContent = `${totalTracks} Track${totalTracks !== 1 ? 's' : ''}`;
+    
+    // Update genre filter options
+    const genreSelect = document.getElementById('filterGenre');
+    const currentGenres = [...new Set(allTracks.map(track => track.genre))].sort();
+    
+    genreSelect.innerHTML = '<option value="">All Genres</option>';
+    currentGenres.forEach(genre => {
+        const option = document.createElement('option');
+        option.value = genre;
+        option.textContent = genre;
+        genreSelect.appendChild(option);
+    });
+}
+
+function parseDuration(durationStr) {
+    if (!durationStr || durationStr === 'Unknown') return 0;
+    
+    const parts = durationStr.split(':');
+    if (parts.length === 2) {
+        return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+    } else if (parts.length === 1 && !isNaN(durationStr)) {
+        return parseInt(durationStr);
+    }
+    return 0;
+}
+
+function formatDuration(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
+
 function renderTracks(tracks) {
     const gallery = document.getElementById('musicGallery');
     
@@ -147,56 +614,100 @@ function renderTracks(tracks) {
     
     hideEmptyState();
     
-    gallery.innerHTML = tracks.map(track => createTrackCard(track)).join('');
+    gallery.innerHTML = tracks.map(track => createAdvancedTrackCard(track)).join('');
+    
+    // Initialize audio players after rendering
+    initializeAudioPlayers();
 }
 
-function createTrackCard(track) {
+function createAdvancedTrackCard(track) {
     const createdDate = new Date(track.createdAt).toLocaleDateString();
     const modelBadge = getModelBadge(track.model);
-    const genreBadge = `<span class="badge bg-secondary">${track.genre}</span>`;
-    const moodBadge = `<span class="badge bg-info">${track.mood}</span>`;
+    const genreBadge = `<span class="genre-badge">${track.genre}</span>`;
     
     return `
-        <div class="col-lg-4 col-md-6 mb-4 track-card" data-genre="${track.genre}" data-model="${track.model}">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <h6 class="card-title mb-0">${track.title}</h6>
+        <div class="col-xl-4 col-lg-6 col-md-6 mb-4 track-card" data-genre="${track.genre}" data-model="${track.model}" data-type="${track.isInstrumental ? 'instrumental' : 'vocal'}">
+            <div class="card h-100">
+                <div class="track-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 text-white">${track.title}</h6>
                         ${modelBadge}
                     </div>
-                    
-                    <div class="mb-2">
-                        ${genreBadge}
-                        ${moodBadge}
-                        ${track.isInstrumental ? '<span class="badge bg-warning">Instrumental</span>' : '<span class="badge bg-success">Vocal</span>'}
+                    <small class="text-white-50">
+                        <i class="fas fa-calendar me-1"></i>${createdDate} • 
+                        <i class="fas fa-clock me-1"></i>${track.duration}
+                    </small>
+                </div>
+                
+                <div class="card-body">
+                    <div class="track-info">
+                        <div class="d-flex flex-wrap gap-1 mb-2">
+                            ${genreBadge}
+                            <span class="badge ${track.isInstrumental ? 'bg-info' : 'bg-success'}">${track.isInstrumental ? 'Instrumental' : 'Vocal'}</span>
+                            ${track.mood !== 'Unknown' ? `<span class="badge bg-secondary">${track.mood}</span>` : ''}
+                        </div>
+                        <p class="small text-muted mb-1 track-prompt" title="${track.promptUsed}">
+                            ${track.promptUsed.length > 60 ? track.promptUsed.substring(0, 60) + '...' : track.promptUsed}
+                        </p>
                     </div>
-                    
-                    <p class="card-text small text-muted mb-3">
-                        <i class="fas fa-clock me-1"></i>${track.duration} • 
-                        <i class="fas fa-calendar me-1"></i>${createdDate}
-                    </p>
-                    
+
                     ${track.audioUrl ? `
-                    <audio controls class="w-100 mb-3" preload="none">
-                        <source src="${track.audioUrl}" type="audio/mpeg">
-                        Your browser does not support audio playback.
-                    </audio>
+                    <div class="advanced-player">
+                        <div class="waveform-container">
+                            <audio preload="metadata" data-track-id="${track.id}" onloadedmetadata="updateAudioInfo(this)">
+                                <source src="${track.audioUrl}" type="audio/mpeg">
+                                Your browser does not support audio playback.
+                            </audio>
+                            <div class="audio-placeholder">
+                                <i class="fas fa-music text-muted"></i>
+                                <span class="ms-2 text-muted">Click to load audio</span>
+                            </div>
+                        </div>
+                        
+                        <div class="player-controls">
+                            <button class="play-button" onclick="togglePlayPause('${track.id}')">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            
+                            <div class="time-display">
+                                <span id="currentTime-${track.id}">0:00</span> / 
+                                <span id="totalTime-${track.id}">${track.duration}</span>
+                            </div>
+                            
+                            <input type="range" class="form-range volume-slider" min="0" max="100" value="80" 
+                                   onchange="setVolume('${track.id}', this.value)" title="Volume">
+                            
+                            <button class="btn btn-sm btn-outline-secondary" onclick="showEqualizer('${track.id}')" title="Equalizer">
+                                <i class="fas fa-sliders-h"></i>
+                            </button>
+                        </div>
+                    </div>
                     ` : '<div class="alert alert-warning small mb-3">Audio not available</div>'}
                     
-                    <div class="d-flex gap-2">
+                    <div class="action-buttons">
                         ${track.audioUrl ? `
-                        <a href="${track.audioUrl}" class="btn btn-primary btn-sm" download>
-                            <i class="fas fa-download me-1"></i>Audio
-                        </a>
+                        <button class="action-btn btn-download" onclick="downloadTrack('${track.audioUrl}', '${track.title}')">
+                            <i class="fas fa-download me-1"></i>Download Audio
+                        </button>
+                        ` : ''}
+                        
+                        ${track.audioUrl ? `
+                        <button class="action-btn btn-video" onclick="showVideoCreation('${track.id}')">
+                            <i class="fas fa-video me-1"></i>Create Video
+                        </button>
                         ` : ''}
                         
                         ${track.videoUrl ? `
-                        <a href="${track.videoUrl}" class="btn btn-info btn-sm" download>
-                            <i class="fas fa-video me-1"></i>Video
+                        <a href="${track.videoUrl}" class="action-btn btn-video" download>
+                            <i class="fas fa-film me-1"></i>Download Video
                         </a>
                         ` : ''}
                         
-                        <button class="btn btn-outline-secondary btn-sm" onclick="showTrackDetails('${track.id}')">
+                        <button class="action-btn btn-extend" onclick="extendTrack('${track.id}')">
+                            <i class="fas fa-plus me-1"></i>Extend
+                        </button>
+                        
+                        <button class="action-btn btn-share" onclick="showTrackDetails('${track.id}')">
                             <i class="fas fa-info me-1"></i>Details
                         </button>
                     </div>
@@ -206,65 +717,464 @@ function createTrackCard(track) {
     `;
 }
 
-function getModelBadge(model) {
-    const badges = {
-        'V4_5': '<span class="badge bg-primary">V4.5</span>',
-        'V4': '<span class="badge bg-success">V4</span>',
-        'V3_5': '<span class="badge bg-info">V3.5</span>'
-    };
-    return badges[model] || `<span class="badge bg-secondary">${model}</span>`;
-}
-
-function setupFilters() {
-    const searchInput = document.getElementById('searchTracks');
-    const genreFilter = document.getElementById('filterGenre');
-    const modelFilter = document.getElementById('filterModel');
-    
-    searchInput.addEventListener('input', filterTracks);
-    genreFilter.addEventListener('change', filterTracks);
-    modelFilter.addEventListener('change', filterTracks);
-}
-
-function filterTracks() {
-    const searchTerm = document.getElementById('searchTracks').value.toLowerCase();
-    const selectedGenre = document.getElementById('filterGenre').value;
-    const selectedModel = document.getElementById('filterModel').value;
-    
-    const filteredTracks = allTracks.filter(track => {
-        const matchesSearch = track.title.toLowerCase().includes(searchTerm) ||
-                            track.promptUsed.toLowerCase().includes(searchTerm);
+function initializeAudioPlayers() {
+    // Add click handlers to load audio when first clicked
+    document.querySelectorAll('.waveform-container audio').forEach(audio => {
+        const placeholder = audio.nextElementSibling;
         
-        const matchesGenre = !selectedGenre || track.genre === selectedGenre;
-        const matchesModel = !selectedModel || track.model === selectedModel;
+        if (placeholder && placeholder.classList.contains('audio-placeholder')) {
+            placeholder.addEventListener('click', function() {
+                audio.load();
+                audio.style.display = 'block';
+                placeholder.style.display = 'none';
+            });
+        }
         
-        return matchesSearch && matchesGenre && matchesModel;
+        // Add time update listener
+        audio.addEventListener('timeupdate', function() {
+            updateTimeDisplay(audio.dataset.trackId, audio.currentTime, audio.duration);
+        });
+        
+        // Add ended event listener
+        audio.addEventListener('ended', function() {
+            resetPlayButton(audio.dataset.trackId);
+        });
     });
+}
+
+function togglePlayPause(trackId) {
+    const audio = document.querySelector(`audio[data-track-id="${trackId}"]`);
+    const playButton = document.querySelector(`.play-button[onclick="togglePlayPause('${trackId}')"] i`);
     
-    renderTracks(filteredTracks);
+    if (!audio) return;
+    
+    // Stop any currently playing audio
+    if (currentPlayingAudio && currentPlayingAudio !== audio) {
+        currentPlayingAudio.pause();
+        resetPlayButton(currentPlayingAudio.dataset.trackId);
+    }
+    
+    if (audio.paused) {
+        audio.play();
+        playButton.className = 'fas fa-pause';
+        currentPlayingAudio = audio;
+        
+        // Load audio if not loaded
+        if (audio.style.display === 'none' || !audio.style.display) {
+            audio.style.display = 'block';
+            const placeholder = audio.nextElementSibling;
+            if (placeholder && placeholder.classList.contains('audio-placeholder')) {
+                placeholder.style.display = 'none';
+            }
+        }
+    } else {
+        audio.pause();
+        playButton.className = 'fas fa-play';
+        currentPlayingAudio = null;
+    }
+}
+
+function resetPlayButton(trackId) {
+    const playButton = document.querySelector(`.play-button[onclick="togglePlayPause('${trackId}')"] i`);
+    if (playButton) {
+        playButton.className = 'fas fa-play';
+    }
+    if (currentPlayingAudio && currentPlayingAudio.dataset.trackId === trackId) {
+        currentPlayingAudio = null;
+    }
+}
+
+function updateTimeDisplay(trackId, currentTime, duration) {
+    const currentTimeElement = document.getElementById(`currentTime-${trackId}`);
+    const totalTimeElement = document.getElementById(`totalTime-${trackId}`);
+    
+    if (currentTimeElement && !isNaN(currentTime)) {
+        currentTimeElement.textContent = formatDuration(Math.floor(currentTime));
+    }
+    
+    if (totalTimeElement && !isNaN(duration)) {
+        totalTimeElement.textContent = formatDuration(Math.floor(duration));
+    }
+}
+
+function setVolume(trackId, volume) {
+    const audio = document.querySelector(`audio[data-track-id="${trackId}"]`);
+    if (audio) {
+        audio.volume = volume / 100;
+    }
+}
+
+function updateAudioInfo(audioElement) {
+    const trackId = audioElement.dataset.trackId;
+    if (audioElement.duration && !isNaN(audioElement.duration)) {
+        const totalTimeElement = document.getElementById(`totalTime-${trackId}`);
+        if (totalTimeElement) {
+            totalTimeElement.textContent = formatDuration(Math.floor(audioElement.duration));
+        }
+    }
+}
+
+function downloadTrack(audioUrl, title) {
+    const a = document.createElement('a');
+    a.href = audioUrl;
+    a.download = `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.mp3`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+function showVideoCreation(trackId) {
+    const track = allTracks.find(t => t.id === trackId);
+    if (!track) return;
+    
+    currentTrackForVideo = track;
+    
+    const modal = new bootstrap.Modal(document.getElementById('videoCreationModal'));
+    const content = document.getElementById('videoCreationContent');
+    
+    content.innerHTML = `
+        <div class="track-preview mb-4">
+            <h6>${track.title}</h6>
+            <p class="text-muted">${track.genre} • ${track.duration} • ${track.isInstrumental ? 'Instrumental' : 'Vocal'}</p>
+            ${track.audioUrl ? `
+            <audio controls class="w-100 mb-3" preload="metadata">
+                <source src="${track.audioUrl}" type="audio/mpeg">
+            </audio>
+            ` : ''}
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Video Style</h6>
+                <select class="form-select mb-3" id="videoStyle">
+                    <option value="visualizer">Audio Visualizer</option>
+                    <option value="album-art">Static Album Art</option>
+                    <option value="lyrics">Lyrics Video</option>
+                    <option value="abstract">Abstract Animation</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <h6>Quality</h6>
+                <select class="form-select mb-3" id="videoQuality">
+                    <option value="720p">720p HD</option>
+                    <option value="1080p">1080p Full HD</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">Custom Description (Optional)</label>
+            <textarea class="form-control" id="videoDescription" rows="3" 
+                      placeholder="Add a custom description for your video..."></textarea>
+        </div>
+    `;
+    
+    modal.show();
+}
+
+function startVideoCreation() {
+    if (!currentTrackForVideo) return;
+    
+    const style = document.getElementById('videoStyle').value;
+    const quality = document.getElementById('videoQuality').value;
+    const description = document.getElementById('videoDescription').value;
+    
+    // Show progress
+    document.getElementById('videoProgress').style.display = 'block';
+    document.getElementById('startVideoCreation').disabled = true;
+    
+    const videoData = {
+        track_id: currentTrackForVideo.id,
+        audio_url: currentTrackForVideo.audioUrl,
+        title: currentTrackForVideo.title,
+        style: style,
+        quality: quality,
+        description: description,
+        genre: currentTrackForVideo.genre,
+        is_instrumental: currentTrackForVideo.isInstrumental
+    };
+    
+    fetch('/api/video/create', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify(videoData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            pollVideoCreation(data.task_id);
+        } else {
+            showVideoError(data.error || 'Failed to start video creation');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showVideoError('Network error occurred');
+    });
+}
+
+function pollVideoCreation(taskId) {
+    const pollInterval = setInterval(() => {
+        fetch(`/api/music/status/${taskId}`, { credentials: 'same-origin' })
+        .then(response => response.json())
+        .then(data => {
+            updateVideoProgress(data.progress || 0, data.current_step || 'Processing...');
+            
+            if (data.status === 'completed') {
+                clearInterval(pollInterval);
+                showVideoComplete(data.result);
+            } else if (data.status === 'failed') {
+                clearInterval(pollInterval);
+                showVideoError(data.result?.error || 'Video creation failed');
+            }
+        })
+        .catch(error => {
+            console.error('Error polling video creation:', error);
+        });
+    }, 2000);
+}
+
+function updateVideoProgress(progress, status) {
+    document.getElementById('videoProgressBar').style.width = `${progress}%`;
+    document.getElementById('videoStatus').textContent = status;
+}
+
+function showVideoComplete(result) {
+    document.getElementById('videoProgress').innerHTML = `
+        <div class="alert alert-success">
+            <h6><i class="fas fa-check-circle me-2"></i>Video Created Successfully!</h6>
+            <p class="mb-2">Your video is ready for download.</p>
+            ${result.video_url ? `
+            <a href="${result.video_url}" class="btn btn-success btn-sm me-2" target="_blank">
+                <i class="fas fa-download me-1"></i>Download Video
+            </a>
+            ` : ''}
+            <button class="btn btn-primary btn-sm" onclick="refreshGallery()">
+                <i class="fas fa-sync-alt me-1"></i>Refresh Gallery
+            </button>
+        </div>
+    `;
+    
+    document.getElementById('startVideoCreation').disabled = false;
+}
+
+function showVideoError(error) {
+    document.getElementById('videoProgress').innerHTML = `
+        <div class="alert alert-danger">
+            <h6><i class="fas fa-exclamation-circle me-2"></i>Video Creation Failed</h6>
+            <p class="mb-0">${error}</p>
+        </div>
+    `;
+    
+    document.getElementById('startVideoCreation').disabled = false;
+}
+
+function extendTrack(trackId) {
+    const track = allTracks.find(t => t.id === trackId);
+    if (!track) return;
+    
+    // This would integrate with Suno's extend functionality
+    Swal.fire({
+        title: 'Extend Track',
+        text: `Extend "${track.title}" to create a longer version?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Extend It',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Call extend API
+            fetch('/api/music/extend', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    track_id: trackId,
+                    clip_id: track.clipId,
+                    audio_url: track.audioUrl
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire('Success!', 'Track extension started. Check back in a few minutes.', 'success');
+                } else {
+                    Swal.fire('Error', data.error || 'Failed to extend track', 'error');
+                }
+            })
+            .catch(error => {
+                Swal.fire('Error', 'Network error occurred', 'error');
+            });
+        }
+    });
 }
 
 function showTrackDetails(trackId) {
     const track = allTracks.find(t => t.id === trackId);
     if (!track) return;
     
-    Swal.fire({
-        title: track.title,
-        html: `
-            <div class="text-start">
-                <p><strong>Model:</strong> ${track.model}</p>
-                <p><strong>Genre:</strong> ${track.genre}</p>
-                <p><strong>Mood:</strong> ${track.mood}</p>
-                <p><strong>Duration:</strong> ${track.duration}</p>
-                <p><strong>Type:</strong> ${track.isInstrumental ? 'Instrumental' : 'Vocal'}</p>
-                <p><strong>Created:</strong> ${new Date(track.createdAt).toLocaleString()}</p>
-                <hr>
-                <p><strong>Prompt Used:</strong></p>
-                <p class="text-muted small">${track.promptUsed}</p>
+    const modal = new bootstrap.Modal(document.getElementById('trackDetailsModal'));
+    const content = document.getElementById('trackDetailsContent');
+    
+    content.innerHTML = `
+        <div class="row">
+            <div class="col-md-8">
+                <h5>${track.title}</h5>
+                <div class="mb-3">
+                    <span class="badge bg-primary me-1">${track.model}</span>
+                    <span class="badge bg-info me-1">${track.genre}</span>
+                    <span class="badge ${track.isInstrumental ? 'bg-warning' : 'bg-success'}">${track.isInstrumental ? 'Instrumental' : 'Vocal'}</span>
+                </div>
+                
+                <dl class="row">
+                    <dt class="col-sm-3">Duration:</dt>
+                    <dd class="col-sm-9">${track.duration}</dd>
+                    
+                    <dt class="col-sm-3">Created:</dt>
+                    <dd class="col-sm-9">${new Date(track.createdAt).toLocaleString()}</dd>
+                    
+                    <dt class="col-sm-3">Model:</dt>
+                    <dd class="col-sm-9">${track.model}</dd>
+                    
+                    <dt class="col-sm-3">Genre:</dt>
+                    <dd class="col-sm-9">${track.genre}</dd>
+                    
+                    <dt class="col-sm-3">Mood:</dt>
+                    <dd class="col-sm-9">${track.mood}</dd>
+                    
+                    ${track.tags ? `
+                    <dt class="col-sm-3">Tags:</dt>
+                    <dd class="col-sm-9">${track.tags}</dd>
+                    ` : ''}
+                    
+                    ${track.clipId ? `
+                    <dt class="col-sm-3">Clip ID:</dt>
+                    <dd class="col-sm-9"><code>${track.clipId}</code></dd>
+                    ` : ''}
+                </dl>
+                
+                <h6>Generation Prompt:</h6>
+                <p class="text-muted small bg-light p-3 rounded">${track.promptUsed}</p>
+                
+                ${track.metadata?.generationType ? `
+                <p><strong>Generation Type:</strong> ${track.metadata.generationType}</p>
+                ` : ''}
+                
+                ${track.metadata?.totalTracks > 1 ? `
+                <p><strong>Track:</strong> ${track.metadata.trackNumber} of ${track.metadata.totalTracks}</p>
+                ` : ''}
             </div>
-        `,
-        width: 600,
-        confirmButtonText: 'Close'
+            <div class="col-md-4">
+                ${track.imageUrl ? `
+                <img src="${track.imageUrl}" class="img-fluid rounded mb-3" alt="Album Art">
+                ` : ''}
+                
+                ${track.audioUrl ? `
+                <audio controls class="w-100 mb-3">
+                    <source src="${track.audioUrl}" type="audio/mpeg">
+                </audio>
+                ` : ''}
+                
+                <div class="d-grid gap-2">
+                    ${track.audioUrl ? `
+                    <a href="${track.audioUrl}" class="btn btn-primary btn-sm" download>
+                        <i class="fas fa-download me-1"></i>Download Audio
+                    </a>
+                    ` : ''}
+                    
+                    ${track.videoUrl ? `
+                    <a href="${track.videoUrl}" class="btn btn-info btn-sm" download>
+                        <i class="fas fa-video me-1"></i>Download Video
+                    </a>
+                    ` : ''}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    modal.show();
+}
+
+function setupFilters() {
+    const searchInput = document.getElementById('searchTracks');
+    const genreFilter = document.getElementById('filterGenre');
+    const modelFilter = document.getElementById('filterModel');
+    const typeFilter = document.getElementById('filterType');
+    const sortSelect = document.getElementById('sortBy');
+    
+    searchInput.addEventListener('input', filterAndSortTracks);
+    genreFilter.addEventListener('change', filterAndSortTracks);
+    modelFilter.addEventListener('change', filterAndSortTracks);
+    typeFilter.addEventListener('change', filterAndSortTracks);
+    sortSelect.addEventListener('change', filterAndSortTracks);
+}
+
+function filterAndSortTracks() {
+    const searchTerm = document.getElementById('searchTracks').value.toLowerCase();
+    const selectedGenre = document.getElementById('filterGenre').value;
+    const selectedModel = document.getElementById('filterModel').value;
+    const selectedType = document.getElementById('filterType').value;
+    const sortBy = document.getElementById('sortBy').value;
+    
+    let filteredTracks = allTracks.filter(track => {
+        const matchesSearch = track.title.toLowerCase().includes(searchTerm) ||
+                            track.promptUsed.toLowerCase().includes(searchTerm) ||
+                            track.genre.toLowerCase().includes(searchTerm) ||
+                            track.tags.toLowerCase().includes(searchTerm);
+        
+        const matchesGenre = !selectedGenre || track.genre === selectedGenre;
+        const matchesModel = !selectedModel || track.model === selectedModel;
+        const matchesType = !selectedType || 
+                          (selectedType === 'instrumental' && track.isInstrumental) ||
+                          (selectedType === 'vocal' && !track.isInstrumental);
+        
+        return matchesSearch && matchesGenre && matchesModel && matchesType;
     });
+    
+    // Sort tracks
+    filteredTracks.sort((a, b) => {
+        switch (sortBy) {
+            case 'oldest':
+                return new Date(a.createdAt) - new Date(b.createdAt);
+            case 'title':
+                return a.title.localeCompare(b.title);
+            case 'duration':
+                return parseDuration(b.duration) - parseDuration(a.duration);
+            case 'newest':
+            default:
+                return new Date(b.createdAt) - new Date(a.createdAt);
+        }
+    });
+    
+    renderTracks(filteredTracks);
+}
+
+function showEqualizer(trackId) {
+    // Placeholder for audio equalizer functionality
+    Swal.fire({
+        title: 'Audio Equalizer',
+        text: 'Audio equalizer feature coming soon!',
+        icon: 'info'
+    });
+}
+
+function refreshGallery() {
+    loadMusicGallery();
+}
+
+function getModelBadge(model) {
+    const badges = {
+        'V4_5': '<span class="model-badge">V4.5</span>',
+        'V4': '<span class="model-badge">V4</span>',
+        'V3_5': '<span class="model-badge">V3.5</span>',
+        'V3': '<span class="model-badge">V3</span>'
+    };
+    return badges[model] || `<span class="model-badge">${model}</span>`;
 }
 
 function showLoadingState() {
@@ -284,8 +1194,5 @@ function showEmptyState() {
 function hideEmptyState() {
     document.getElementById('emptyState').style.display = 'none';
 }
-
-// Auto-refresh gallery every 30 seconds
-setInterval(loadMusicGallery, 30000);
 </script>
 {% endblock %}

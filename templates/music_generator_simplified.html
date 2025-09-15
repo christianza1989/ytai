@@ -1310,7 +1310,24 @@ function displayBatchResults(batchResult) {
 }
 
 function displayTracks(tracks) {
-    const tracksList = document.getElementById('tracksList');
+    const container = document.getElementById('tracksContainer');
+    let tracksList = document.getElementById('tracksList');
+    
+    // If tracksList doesn't exist (might be replaced by progressive loading), recreate it
+    if (!tracksList) {
+        tracksList = container.querySelector('.tracks-list');
+        if (!tracksList) {
+            container.innerHTML = `
+                <h4><i class="fas fa-headphones me-2"></i>Generated Tracks</h4>
+                <p class="text-muted">Suno generates 2 versions for you to choose from</p>
+                <div id="tracksList">
+                    <!-- Tracks will be inserted here -->
+                </div>
+            `;
+            tracksList = document.getElementById('tracksList');
+        }
+    }
+    
     const template = document.getElementById('trackTemplate');
     
     tracksList.innerHTML = '';
@@ -1391,7 +1408,9 @@ function displayTracks(tracks) {
         trackElement.firstElementChild.dataset.trackId = track.suno_clip_id;
         trackElement.firstElementChild.dataset.trackData = JSON.stringify(track);
         
-        tracksList.appendChild(trackElement);
+        if (tracksList) {
+            tracksList.appendChild(trackElement);
+        }
     });
     
     // Add video creation buttons after tracks are rendered
@@ -1457,7 +1476,9 @@ function showProgressiveTracks(partialTracks) {
     }
     
     // Clear previous tracks to refresh with new data
-    tracksList.innerHTML = '';
+    if (tracksList) {
+        tracksList.innerHTML = '';
+    }
     
     partialTracks.forEach((track, index) => {
         const trackElement = document.createElement('div');
@@ -1519,7 +1540,9 @@ function showProgressiveTracks(partialTracks) {
         // Store track data in dataset for video button functionality
         trackElement.querySelector('.track-card').dataset.trackData = JSON.stringify(track);
         
-        tracksList.appendChild(trackElement);
+        if (tracksList) {
+            tracksList.appendChild(trackElement);
+        }
     });
     
     // Add video creation buttons after tracks are rendered

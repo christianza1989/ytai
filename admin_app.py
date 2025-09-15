@@ -347,7 +347,7 @@ def generator():
 
 
 
-@app.route('/music-gallery')
+@app.route('/music_gallery')
 @require_auth
 def music_gallery():
     """Music Gallery - Browse generated tracks"""
@@ -2588,6 +2588,125 @@ def api_music_cancel(task_id):
         task['current_step'] = 'Generation cancelled by user'
         return jsonify({'success': True, 'message': 'Task cancelled'})
     return jsonify({'success': False, 'error': 'Task not found or not cancellable'})
+
+@app.route('/api/music/extend', methods=['POST'])
+@require_auth
+def api_music_extend():
+    """Extend an existing music track using Suno AI"""
+    try:
+        data = request.get_json() or {}
+        
+        track_id = data.get('track_id')
+        clip_id = data.get('clip_id')
+        audio_url = data.get('audio_url')
+        
+        if not track_id or not audio_url:
+            return jsonify({
+                'success': False,
+                'error': 'Missing required fields: track_id and audio_url'
+            }), 400
+        
+        # Generate new task ID for extension
+        extend_task_id = f"extend_{int(time.time() * 1000)}"
+        
+        # Create task
+        system_state.generation_tasks[extend_task_id] = {
+            'task_id': extend_task_id,
+            'type': 'music_extension',
+            'status': 'queued',
+            'progress': 0,
+            'current_step': 'Queued for track extension',
+            'created_at': datetime.now().isoformat(),
+            'data': {
+                'original_track_id': track_id,
+                'clip_id': clip_id,
+                'audio_url': audio_url,
+                'extend_duration': 30  # Default extend by 30 seconds
+            },
+            'logs': [f"[{datetime.now().strftime('%H:%M:%S')}] Track extension queued"],
+            'result': None
+        }
+        
+        # Start background processing
+        threading.Thread(
+            target=process_music_extension,
+            args=(extend_task_id, data),
+            daemon=True
+        ).start()
+        
+        return jsonify({
+            'success': True,
+            'task_id': extend_task_id,
+            'message': 'Track extension started'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+def process_music_extension(task_id, data):
+    """Process music track extension in background"""
+    try:
+        task = system_state.generation_tasks[task_id]
+        
+        def update_progress(progress, step, log_message=None):
+            task['progress'] = progress
+            task['current_step'] = step
+            if log_message:
+                task['logs'].append(f"[{datetime.now().strftime('%H:%M:%S')}] {log_message}")
+        
+        # Update status to processing
+        task['status'] = 'processing'
+        update_progress(10, "🎵 Preparing track extension...", "Starting track extension process")
+        
+        # Initialize Suno client
+        from core.services.suno_client import SunoClient
+        suno_client = SunoClient()
+        
+        update_progress(25, "🔗 Connecting to Suno AI...", "Establishing connection to extend track")
+        
+        # Check if we have a clip ID for direct extension
+        clip_id = data.get('clip_id')
+        audio_url = data.get('audio_url')
+        
+        if clip_id and not suno_client.mock_mode:
+            # Try direct extension using clip ID
+            update_progress(50, "🎼 Extending track with Suno AI...", f"Extending clip ID: {clip_id}")
+            
+            # Call Suno extend API (this would need to be implemented in SunoClient)
+            # For now, return a placeholder response
+            update_progress(75, "⚠️ Extension feature coming soon...", "Suno extend API integration pending")
+            
+            # Simulate completion
+            task['status'] = 'completed'
+            task['result'] = {
+                'success': False,
+                'error': 'Track extension feature is coming soon! Suno AI extend API integration is in development.',
+                'original_track_id': data.get('original_track_id'),
+                'message': 'This feature will allow you to extend tracks by 30-60 seconds using Suno AI.'
+            }
+            
+        else:
+            # Mock mode or no clip ID
+            update_progress(50, "ℹ️ Demo mode active...", "Track extension in demo mode")
+            
+            task['status'] = 'completed'
+            task['result'] = {
+                'success': False,
+                'error': 'Track extension requires Suno AI API access and clip ID.',
+                'demo_mode': True,
+                'message': 'Configure Suno API to use track extension feature.'
+            }
+        
+        update_progress(100, "✅ Extension process completed", "Track extension process finished")
+        
+    except Exception as e:
+        task['status'] = 'failed'
+        task['result'] = {'success': False, 'error': str(e)}
+        task['current_step'] = f"❌ Extension failed: {str(e)}"
+        print(f"Error in music extension: {e}")
 
 def process_music_generation(task_id, data):
     """Process music generation in background thread"""
@@ -5465,6 +5584,6 @@ if __name__ == '__main__':
     
     print("🚀 Starting Professional Autonominis Muzikantas Admin Interface...")
     print("🔐 Default admin password: admin123")
-    print("🌐 Access: http://localhost:8000")
+    print("🌐 Access: http://localhost:3000")
     
-    app.run(host='0.0.0.0', port=8001, debug=False)
+    app.run(host='0.0.0.0', port=3000, debug=False)

@@ -763,6 +763,13 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'music_gallery' %}active{% endif %}" href="{{ url_for('music_gallery') }}">
+                                <i class="fas fa-headphones text-success"></i>
+                                Music Gallery
+                                <span class="badge bg-success ms-1">🎵 Library</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'batch' %}active{% endif %}" href="{{ url_for('batch') }}">
                                 <i class="fas fa-tasks"></i>
                                 Batch Operations
