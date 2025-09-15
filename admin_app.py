@@ -3998,6 +3998,101 @@ def api_create_video():
             'error': str(e)
         }), 500
 
+@app.route('/api/video/generate-metadata', methods=['POST'])
+@require_auth
+def api_generate_video_metadata():
+    """Generate optimized YouTube metadata using Gemini AI"""
+    try:
+        data = request.get_json() or {}
+        
+        track_title = data.get('track_title', '')
+        genre = data.get('genre', '')
+        mood = data.get('mood', '')
+        is_instrumental = data.get('is_instrumental', False)
+        target_audience = data.get('target_audience', 'general')
+        length_style = data.get('length_style', 'medium')
+        prompt_used = data.get('prompt_used', '')
+        
+        if not track_title:
+            return jsonify({
+                'success': False,
+                'error': 'Track title is required'
+            }), 400
+        
+        # Initialize Gemini client
+        gemini_client = GeminiClient()
+        
+        # Build comprehensive metadata generation prompt
+        metadata_prompt = f"""
+Generate optimized YouTube metadata for a music track with these details:
+
+Track Title: {track_title}
+Genre: {genre}
+Mood: {mood}
+Type: {'Instrumental' if is_instrumental else 'Vocal'}
+Target Audience: {target_audience}
+Style: {length_style}
+Original Prompt: {prompt_used}
+
+Please generate YouTube-optimized metadata in JSON format with these fields:
+- title: Catchy, SEO-optimized title (max 60 characters)
+- description: Engaging description (200-300 words) with keywords
+- tags: Array of 10-15 relevant tags for better discoverability
+- category: YouTube category (Music, Entertainment, etc.)
+- thumbnail_text: Text overlay suggestions for thumbnail
+
+Consider:
+- YouTube SEO best practices
+- Target audience preferences
+- Genre-specific keywords
+- Trending music terms
+- Engagement optimization
+
+Return ONLY the JSON object, no extra text.
+"""
+        
+        # Generate metadata with Gemini
+        response = gemini_client.generate_creative_content(metadata_prompt)
+        
+        if not response or not response.get('success'):
+            return jsonify({
+                'success': False,
+                'error': 'Failed to generate metadata with AI'
+            }), 500
+        
+        # Parse the generated content
+        metadata_text = response.get('content', '').strip()
+        
+        # Clean JSON if wrapped in markdown
+        if metadata_text.startswith('```json'):
+            metadata_text = metadata_text.split('```json')[1].split('```')[0]
+        elif metadata_text.startswith('```'):
+            metadata_text = metadata_text.split('```')[1].split('```')[0]
+        
+        try:
+            metadata = json.loads(metadata_text)
+        except json.JSONDecodeError:
+            # Fallback metadata if parsing fails
+            metadata = {
+                'title': f"{track_title} - {genre} Music",
+                'description': f"🎵 {track_title}\n\nGenre: {genre}\nMood: {mood}\nType: {'Instrumental' if is_instrumental else 'Vocal'}\n\n#music #{genre.lower().replace(' ', '')} #{mood.lower()}",
+                'tags': [genre.lower(), mood.lower(), 'music', 'ai generated', 'background music'],
+                'category': 'Music',
+                'thumbnail_text': track_title
+            }
+        
+        return jsonify({
+            'success': True,
+            'metadata': metadata,
+            'generated_with': 'gemini-2.5-flash'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Metadata generation failed: {str(e)}'
+        }), 500
+
 @app.route('/api/video/upload-youtube', methods=['POST'])
 @require_auth
 def api_upload_to_youtube():

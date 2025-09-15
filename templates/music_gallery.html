@@ -393,9 +393,17 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" id="startVideoCreation" onclick="startVideoCreation()">
-                    <i class="fas fa-play me-2"></i>
-                    Create Video
+                <button type="button" class="btn btn-outline-secondary" id="prevStep" onclick="previousStep()" style="display: none;">
+                    <i class="fas fa-arrow-left me-1"></i>Previous
+                </button>
+                <button type="button" class="btn btn-primary" id="nextStep" onclick="nextStep()">
+                    <i class="fas fa-arrow-right me-1"></i>Next Step
+                </button>
+                <button type="button" class="btn btn-success" id="createVideoBtn" onclick="startVideoCreation()" style="display: none;">
+                    <i class="fas fa-video me-1"></i>Create Video
+                </button>
+                <button type="button" class="btn btn-danger" id="uploadVideoBtn" onclick="uploadToYouTube()" style="display: none;">
+                    <i class="fab fa-youtube me-1"></i>Upload to YouTube
                 </button>
             </div>
         </div>
@@ -843,55 +851,168 @@ function showVideoCreation(trackId) {
             ` : ''}
         </div>
         
-        <div class="row">
-            <div class="col-md-6">
-                <h6>Video Style</h6>
-                <select class="form-select mb-3" id="videoStyle">
-                    <option value="visualizer">Audio Visualizer</option>
-                    <option value="album-art">Static Album Art</option>
-                    <option value="lyrics">Lyrics Video</option>
-                    <option value="abstract">Abstract Animation</option>
-                </select>
+        <!-- Step 1: Generate Album Art -->
+        <div class="step-section mb-4" id="step1">
+            <h6 class="d-flex align-items-center">
+                <span class="badge bg-primary me-2">1</span>
+                Generate Album Art (16:9)
+            </h6>
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="mb-3">
+                        <label class="form-label">Album Art Style</label>
+                        <select class="form-select" id="albumArtStyle">
+                            <option value="modern">Modern Digital Art</option>
+                            <option value="abstract">Abstract Geometric</option>
+                            <option value="vintage">Vintage Retro</option>
+                            <option value="minimalist">Minimalist</option>
+                            <option value="cyberpunk">Cyberpunk</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Custom Prompt (Optional)</label>
+                        <textarea class="form-control" id="albumArtPrompt" rows="2" 
+                                  placeholder="Custom description for album art..."></textarea>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div id="albumArtPreview" class="border rounded p-3 text-center bg-light">
+                        <i class="fas fa-image fa-2x text-muted mb-2"></i>
+                        <p class="mb-0 small text-muted">Album art will appear here</p>
+                    </div>
+                </div>
             </div>
-            <div class="col-md-6">
-                <h6>Quality</h6>
-                <select class="form-select mb-3" id="videoQuality">
-                    <option value="720p">720p HD</option>
-                    <option value="1080p">1080p Full HD</option>
-                </select>
+            <button class="btn btn-outline-primary" onclick="generateAlbumArt()">
+                <i class="fas fa-magic me-1"></i>Generate Album Art
+            </button>
+        </div>
+
+        <!-- Step 2: Generate Metadata -->
+        <div class="step-section mb-4" id="step2" style="display: none;">
+            <h6 class="d-flex align-items-center">
+                <span class="badge bg-info me-2">2</span>
+                Generate Video Metadata
+            </h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Target Audience</label>
+                        <select class="form-select" id="targetAudience">
+                            <option value="general">General Audience</option>
+                            <option value="students">Students & Study</option>
+                            <option value="relaxation">Relaxation & Sleep</option>
+                            <option value="workout">Fitness & Workout</option>
+                            <option value="gaming">Gaming & Focus</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Video Length Style</label>
+                        <select class="form-select" id="videoLengthStyle">
+                            <option value="short">Short & Sweet</option>
+                            <option value="medium">Medium Length</option>
+                            <option value="extended">Extended Loop</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div id="metadataPreview" class="border rounded p-3 bg-light">
+                        <h6>Generated Metadata:</h6>
+                        <p class="mb-1"><strong>Title:</strong> <span id="previewTitle">-</span></p>
+                        <p class="mb-1"><strong>Tags:</strong> <span id="previewTags">-</span></p>
+                        <p class="mb-0"><strong>Description:</strong> <span id="previewDescription">-</span></p>
+                    </div>
+                </div>
+            </div>
+            <button class="btn btn-outline-info" onclick="generateMetadata()">
+                <i class="fas fa-robot me-1"></i>Generate Metadata with AI
+            </button>
+        </div>
+
+        <!-- Step 3: Video Settings -->
+        <div class="step-section mb-4" id="step3" style="display: none;">
+            <h6 class="d-flex align-items-center">
+                <span class="badge bg-success me-2">3</span>
+                Video Creation Settings
+            </h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Video Style</label>
+                        <select class="form-select" id="videoStyle">
+                            <option value="album-art">Static Album Art</option>
+                            <option value="visualizer">Audio Visualizer</option>
+                            <option value="slideshow">Image Slideshow</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Quality</label>
+                        <select class="form-select" id="videoQuality">
+                            <option value="720p">720p HD</option>
+                            <option value="1080p">1080p Full HD</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Upload Schedule</label>
+                        <select class="form-select" id="uploadSchedule">
+                            <option value="immediate">Upload Immediately</option>
+                            <option value="scheduled">Schedule for Later</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="scheduleTimeSection" style="display: none;">
+                        <label class="form-label">Schedule Time</label>
+                        <input type="datetime-local" class="form-control" id="scheduleTime">
+                    </div>
+                </div>
             </div>
         </div>
-        
-        <div class="mb-3">
-            <label class="form-label">Custom Description (Optional)</label>
-            <textarea class="form-control" id="videoDescription" rows="3" 
-                      placeholder="Add a custom description for your video..."></textarea>
+
+        <!-- Step 4: YouTube Channel Selection -->
+        <div class="step-section mb-4" id="step4" style="display: none;">
+            <h6 class="d-flex align-items-center">
+                <span class="badge bg-warning me-2">4</span>
+                Select YouTube Channel
+            </h6>
+            <div id="youtubeChannelsList">
+                <div class="text-center py-3">
+                    <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                    Loading YouTube channels...
+                </div>
+            </div>
         </div>
     `;
+    
+    // Initialize workflow
+    initializeVideoWorkflow();
     
     modal.show();
 }
 
 function startVideoCreation() {
-    if (!currentTrackForVideo) return;
+    if (!currentTrackForVideo || !videoWorkflowData.albumArt) {
+        Swal.fire('Error', 'Please generate album art first', 'error');
+        return;
+    }
     
     const style = document.getElementById('videoStyle').value;
     const quality = document.getElementById('videoQuality').value;
-    const description = document.getElementById('videoDescription').value;
     
     // Show progress
     document.getElementById('videoProgress').style.display = 'block';
-    document.getElementById('startVideoCreation').disabled = true;
+    document.getElementById('createVideoBtn').disabled = true;
     
     const videoData = {
         track_id: currentTrackForVideo.id,
         audio_url: currentTrackForVideo.audioUrl,
-        title: currentTrackForVideo.title,
+        image_url: videoWorkflowData.albumArt.image_url,
+        title: videoWorkflowData.metadata?.title || currentTrackForVideo.title,
         style: style,
         quality: quality,
-        description: description,
+        description: videoWorkflowData.metadata?.description || '',
         genre: currentTrackForVideo.genre,
-        is_instrumental: currentTrackForVideo.isInstrumental
+        is_instrumental: currentTrackForVideo.isInstrumental,
+        metadata: videoWorkflowData.metadata
     };
     
     fetch('/api/video/create', {
@@ -943,22 +1064,24 @@ function updateVideoProgress(progress, status) {
 }
 
 function showVideoComplete(result) {
+    videoWorkflowData.video = result;
+    
     document.getElementById('videoProgress').innerHTML = `
         <div class="alert alert-success">
             <h6><i class="fas fa-check-circle me-2"></i>Video Created Successfully!</h6>
-            <p class="mb-2">Your video is ready for download.</p>
+            <p class="mb-2">Your video is ready for download or upload to YouTube.</p>
             ${result.video_url ? `
             <a href="${result.video_url}" class="btn btn-success btn-sm me-2" target="_blank">
                 <i class="fas fa-download me-1"></i>Download Video
             </a>
             ` : ''}
-            <button class="btn btn-primary btn-sm" onclick="refreshGallery()">
-                <i class="fas fa-sync-alt me-1"></i>Refresh Gallery
+            <button class="btn btn-primary btn-sm" onclick="nextStep()">
+                <i class="fas fa-arrow-right me-1"></i>Continue to YouTube Upload
             </button>
         </div>
     `;
     
-    document.getElementById('startVideoCreation').disabled = false;
+    document.getElementById('createVideoBtn').disabled = false;
 }
 
 function showVideoError(error) {
@@ -969,7 +1092,133 @@ function showVideoError(error) {
         </div>
     `;
     
-    document.getElementById('startVideoCreation').disabled = false;
+    document.getElementById('createVideoBtn').disabled = false;
+}
+
+// YouTube Upload Function
+function uploadToYouTube() {
+    const selectedChannelInput = document.querySelector('input[name="selectedChannel"]:checked');
+    
+    if (!selectedChannelInput) {
+        Swal.fire('Error', 'Please select a YouTube channel', 'error');
+        return;
+    }
+    
+    if (!videoWorkflowData.video || !videoWorkflowData.video.video_url) {
+        Swal.fire('Error', 'Please create a video first', 'error');
+        return;
+    }
+    
+    const channelId = selectedChannelInput.value;
+    const selectedChannel = youtubeChannels.find(c => c.id == channelId);
+    const uploadSchedule = document.getElementById('uploadSchedule').value;
+    const scheduleTime = document.getElementById('scheduleTime').value;
+    
+    // Show upload progress
+    document.getElementById('uploadVideoBtn').disabled = true;
+    
+    // Prepare upload data
+    const uploadData = {
+        video_path: videoWorkflowData.video.video_url,
+        channel_id: channelId,
+        title: videoWorkflowData.metadata?.title || currentTrackForVideo.title,
+        description: videoWorkflowData.metadata?.description || '',
+        tags: videoWorkflowData.metadata?.tags || [],
+        privacy: 'public',
+        upload_immediately: uploadSchedule === 'immediate',
+        scheduled_time: uploadSchedule === 'scheduled' ? scheduleTime : null
+    };
+    
+    // Show progress modal or update existing one
+    Swal.fire({
+        title: 'Uploading to YouTube',
+        html: `
+            <div class="progress mb-3">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                     role="progressbar" style="width: 0%" id="uploadProgressBar"></div>
+            </div>
+            <p id="uploadStatus">Starting upload...</p>
+        `,
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        didOpen: () => {
+            // Start upload
+            fetch('/api/video/upload-youtube', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify(uploadData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Poll for upload progress
+                    pollUploadProgress(data.task_id);
+                } else {
+                    Swal.fire('Upload Failed', data.error || 'Failed to start upload', 'error');
+                    document.getElementById('uploadVideoBtn').disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire('Error', 'Network error occurred', 'error');
+                document.getElementById('uploadVideoBtn').disabled = false;
+            });
+        }
+    });
+}
+
+function pollUploadProgress(taskId) {
+    const pollInterval = setInterval(() => {
+        fetch(`/api/music/status/${taskId}`, { credentials: 'same-origin' })
+        .then(response => response.json())
+        .then(data => {
+            const progressBar = document.getElementById('uploadProgressBar');
+            const statusText = document.getElementById('uploadStatus');
+            
+            if (progressBar && statusText) {
+                progressBar.style.width = `${data.progress || 0}%`;
+                statusText.textContent = data.current_step || 'Processing...';
+            }
+            
+            if (data.status === 'completed') {
+                clearInterval(pollInterval);
+                Swal.fire({
+                    title: 'Upload Successful!',
+                    html: `
+                        <p>Your video has been uploaded to YouTube successfully.</p>
+                        ${data.result?.youtube_url ? `
+                        <a href="${data.result.youtube_url}" class="btn btn-primary" target="_blank">
+                            <i class="fab fa-youtube me-1"></i>View on YouTube
+                        </a>
+                        ` : ''}
+                    `,
+                    icon: 'success'
+                });
+                document.getElementById('uploadVideoBtn').disabled = false;
+                
+                // Refresh gallery to show updated data
+                setTimeout(() => {
+                    refreshGallery();
+                    // Close the video creation modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('videoCreationModal'));
+                    if (modal) {
+                        modal.hide();
+                    }
+                }, 2000);
+                
+            } else if (data.status === 'failed') {
+                clearInterval(pollInterval);
+                Swal.fire('Upload Failed', data.result?.error || 'Upload failed', 'error');
+                document.getElementById('uploadVideoBtn').disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error polling upload progress:', error);
+        });
+    }, 2000);
 }
 
 function extendTrack(trackId) {
@@ -1194,5 +1443,295 @@ function showEmptyState() {
 function hideEmptyState() {
     document.getElementById('emptyState').style.display = 'none';
 }
+
+// Video Creation Workflow Variables
+let currentVideoStep = 1;
+let maxVideoStep = 4;
+let videoWorkflowData = {};
+let youtubeChannels = [];
+
+// Step Navigation Functions
+function nextStep() {
+    if (currentVideoStep < maxVideoStep) {
+        // Validate current step before proceeding
+        if (validateCurrentStep()) {
+            hideCurrentStep();
+            currentVideoStep++;
+            showCurrentStep();
+            updateStepButtons();
+        }
+    }
+}
+
+function previousStep() {
+    if (currentVideoStep > 1) {
+        hideCurrentStep();
+        currentVideoStep--;
+        showCurrentStep();
+        updateStepButtons();
+    }
+}
+
+function showCurrentStep() {
+    document.getElementById(`step${currentVideoStep}`).style.display = 'block';
+    
+    // Load data for specific steps
+    if (currentVideoStep === 4) {
+        loadYouTubeChannels();
+    }
+}
+
+function hideCurrentStep() {
+    document.getElementById(`step${currentVideoStep}`).style.display = 'none';
+}
+
+function updateStepButtons() {
+    const prevBtn = document.getElementById('prevStep');
+    const nextBtn = document.getElementById('nextStep');
+    const createBtn = document.getElementById('createVideoBtn');
+    const uploadBtn = document.getElementById('uploadVideoBtn');
+    
+    prevBtn.style.display = currentVideoStep > 1 ? 'inline-block' : 'none';
+    
+    if (currentVideoStep === 3) {
+        nextBtn.style.display = 'none';
+        createBtn.style.display = 'inline-block';
+        uploadBtn.style.display = 'none';
+    } else if (currentVideoStep === 4) {
+        nextBtn.style.display = 'none';
+        createBtn.style.display = 'none';
+        uploadBtn.style.display = 'inline-block';
+    } else {
+        nextBtn.style.display = 'inline-block';
+        createBtn.style.display = 'none';
+        uploadBtn.style.display = 'none';
+    }
+}
+
+function validateCurrentStep() {
+    if (currentVideoStep === 1) {
+        return videoWorkflowData.albumArt && videoWorkflowData.albumArt.success;
+    } else if (currentVideoStep === 2) {
+        return videoWorkflowData.metadata && videoWorkflowData.metadata.title;
+    }
+    return true;
+}
+
+// Step 1: Album Art Generation
+function generateAlbumArt() {
+    const track = currentTrackForVideo;
+    const style = document.getElementById('albumArtStyle').value;
+    const customPrompt = document.getElementById('albumArtPrompt').value;
+    
+    // Build prompt for album art
+    let prompt = `16:9 aspect ratio album cover art for "${track.title}", ${track.genre} genre music, ${style} style`;
+    if (customPrompt) {
+        prompt += `, ${customPrompt}`;
+    }
+    
+    // Show loading in preview
+    const preview = document.getElementById('albumArtPreview');
+    preview.innerHTML = `
+        <div class="spinner-border text-primary mb-2" role="status"></div>
+        <p class="mb-0 small">Generating album art...</p>
+    `;
+    
+    // Call image generation API
+    fetch('/api/video/generate-image', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+            prompt: prompt,
+            aspect_ratio: '16:9',
+            style: style
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            videoWorkflowData.albumArt = data;
+            preview.innerHTML = `
+                <img src="${data.image_url}" class="img-fluid rounded" alt="Generated Album Art">
+                <p class="mb-0 small text-success mt-2">✅ Album art generated!</p>
+            `;
+        } else {
+            preview.innerHTML = `
+                <i class="fas fa-exclamation-triangle fa-2x text-danger mb-2"></i>
+                <p class="mb-0 small text-danger">Failed to generate album art</p>
+            `;
+            Swal.fire('Error', data.error || 'Failed to generate album art', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        preview.innerHTML = `
+            <i class="fas fa-exclamation-triangle fa-2x text-danger mb-2"></i>
+            <p class="mb-0 small text-danger">Connection error</p>
+        `;
+        Swal.fire('Error', 'Network error occurred', 'error');
+    });
+}
+
+// Step 2: Metadata Generation
+function generateMetadata() {
+    const track = currentTrackForVideo;
+    const audience = document.getElementById('targetAudience').value;
+    const lengthStyle = document.getElementById('videoLengthStyle').value;
+    
+    // Show loading
+    document.getElementById('previewTitle').textContent = 'Generating...';
+    document.getElementById('previewTags').textContent = 'Generating...';
+    document.getElementById('previewDescription').textContent = 'Generating...';
+    
+    // Call metadata generation API
+    fetch('/api/video/generate-metadata', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+            track_title: track.title,
+            genre: track.genre,
+            mood: track.mood,
+            is_instrumental: track.isInstrumental,
+            target_audience: audience,
+            length_style: lengthStyle,
+            prompt_used: track.promptUsed
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            videoWorkflowData.metadata = data.metadata;
+            document.getElementById('previewTitle').textContent = data.metadata.title;
+            document.getElementById('previewTags').textContent = data.metadata.tags.join(', ');
+            document.getElementById('previewDescription').textContent = data.metadata.description.substring(0, 100) + '...';
+        } else {
+            Swal.fire('Error', data.error || 'Failed to generate metadata', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire('Error', 'Network error occurred', 'error');
+    });
+}
+
+// Step 4: Load YouTube Channels
+function loadYouTubeChannels() {
+    const channelsList = document.getElementById('youtubeChannelsList');
+    
+    fetch('/api/youtube/channels/list', {
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            youtubeChannels = data.channels;
+            renderYouTubeChannels(data.channels);
+        } else {
+            channelsList.innerHTML = `
+                <div class="alert alert-warning">
+                    <h6>No YouTube Channels Found</h6>
+                    <p>You need to set up at least one YouTube channel to upload videos.</p>
+                    <a href="/youtube-channels" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-1"></i>Add YouTube Channel
+                    </a>
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        channelsList.innerHTML = `
+            <div class="alert alert-danger">
+                <h6>Error Loading Channels</h6>
+                <p>Failed to load YouTube channels. Please try again.</p>
+            </div>
+        `;
+    });
+}
+
+function renderYouTubeChannels(channels) {
+    const channelsList = document.getElementById('youtubeChannelsList');
+    
+    if (channels.length === 0) {
+        channelsList.innerHTML = `
+            <div class="alert alert-info">
+                <h6>No Channels Available</h6>
+                <p>Create a YouTube channel to upload videos.</p>
+                <a href="/youtube-channels" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus me-1"></i>Setup YouTube Channel
+                </a>
+            </div>
+        `;
+        return;
+    }
+    
+    const channelsHtml = channels.map(channel => `
+        <div class="form-check border rounded p-3 mb-3">
+            <input class="form-check-input" type="radio" name="selectedChannel" 
+                   id="channel_${channel.id}" value="${channel.id}">
+            <label class="form-check-label w-100" for="channel_${channel.id}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">${channel.channel_name}</h6>
+                        <small class="text-muted">${channel.style || 'General'} • ${channel.subscribers || 0} subscribers</small>
+                    </div>
+                    <div class="text-end">
+                        <small class="text-muted">Schedule: ${channel.upload_schedule || 'Daily'}</small>
+                    </div>
+                </div>
+            </label>
+        </div>
+    `).join('');
+    
+    channelsList.innerHTML = channelsHtml;
+}
+
+// Initialize video creation workflow
+function initializeVideoWorkflow() {
+    currentVideoStep = 1;
+    videoWorkflowData = {};
+    
+    // Reset form elements
+    document.getElementById('albumArtStyle').value = 'modern';
+    document.getElementById('albumArtPrompt').value = '';
+    document.getElementById('targetAudience').value = 'general';
+    document.getElementById('videoLengthStyle').value = 'medium';
+    document.getElementById('videoStyle').value = 'album-art';
+    document.getElementById('videoQuality').value = '1080p';
+    document.getElementById('uploadSchedule').value = 'immediate';
+    
+    // Show only first step
+    for (let i = 1; i <= maxVideoStep; i++) {
+        document.getElementById(`step${i}`).style.display = i === 1 ? 'block' : 'none';
+    }
+    
+    // Reset preview areas
+    document.getElementById('albumArtPreview').innerHTML = `
+        <i class="fas fa-image fa-2x text-muted mb-2"></i>
+        <p class="mb-0 small text-muted">Album art will appear here</p>
+    `;
+    document.getElementById('previewTitle').textContent = '-';
+    document.getElementById('previewTags').textContent = '-';
+    document.getElementById('previewDescription').textContent = '-';
+    
+    updateStepButtons();
+}
+
+// Upload schedule change handler
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadSchedule = document.getElementById('uploadSchedule');
+    const scheduleSection = document.getElementById('scheduleTimeSection');
+    
+    if (uploadSchedule && scheduleSection) {
+        uploadSchedule.addEventListener('change', function() {
+            scheduleSection.style.display = this.value === 'scheduled' ? 'block' : 'none';
+        });
+    }
+});
 </script>
 {% endblock %}
