@@ -4,10 +4,115 @@
 
 {% block extra_css %}
 <style>
+/* 50/50 Layout: Controls Left, Players Right */
+.suno-container .col-lg-6 {
+    padding: 0 15px;
+}
+
+.suno-container .col-lg-6:first-child {
+    padding-right: 25px;
+    border-right: 2px solid #e0e0e0;
+}
+
+.suno-container .col-lg-6:last-child {
+    padding-left: 25px;
+    min-height: 600px;
+}
+
+.tracks-container {
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    min-height: 400px;
+}
+
+/* Right column placeholder styling */
+.col-lg-6:last-child {
+    display: flex;
+    flex-direction: column;
+}
+
+.col-lg-6:last-child .tracks-container {
+    flex-grow: 1;
+}
+
+/* Add Generating Animation for Players */
+.generating-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: #fff8dc;
+    border: 2px dashed #ffc107;
+    border-radius: 12px;
+    margin-bottom: 15px;
+}
+
+.generating-text {
+    color: #ffc107;
+    font-weight: 600;
+    animation: pulse 1.5s infinite;
+}
+
+/* Track Loading States */
+.track-loading {
+    opacity: 0.7;
+}
+
+.track-loading .track-card {
+    background: #fffdf0;
+    border: 2px dashed #ffc107;
+}
+
+.track-loading .generating-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    color: #ffc107;
+    font-weight: 600;
+    animation: pulse 1.5s infinite;
+}
+
+.track-ready {
+    opacity: 1;
+}
+
+.track-ready .track-card {
+    background: #f8fff8;
+    border: 2px solid #28a745;
+    transition: all 0.3s ease;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+    .suno-container .col-lg-6:first-child {
+        border-right: none;
+        margin-bottom: 20px;
+        padding-right: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        padding-bottom: 20px;
+    }
+    
+    .suno-container .col-lg-6:last-child {
+        padding-left: 15px;
+    }
+    
+    .mode-selector {
+        justify-content: center;
+    }
+}
+
 /* Simplified Suno-Style Music Generator */
 .suno-container {
-    max-width: 900px;
-    margin: 0 auto;
+    max-width: 100%;
+    margin: 0;
     padding: 20px;
 }
 
@@ -22,19 +127,22 @@
 
 .mode-selector {
     display: flex;
-    gap: 20px;
-    justify-content: center;
+    gap: 15px;
+    justify-content: flex-start;
     margin: 20px 0;
+    flex-wrap: wrap;
 }
 
 .mode-card {
     background: rgba(255, 255, 255, 0.1);
     border: 2px solid rgba(255, 255, 255, 0.2);
     border-radius: 12px;
-    padding: 20px;
+    padding: 15px;
     cursor: pointer;
     transition: all 0.3s ease;
-    min-width: 180px;
+    flex: 1;
+    min-width: 120px;
+    text-align: center;
 }
 
 .mode-card:hover, .mode-card.active {
@@ -239,6 +347,29 @@
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
+
+/* Model Selection Bar */
+.model-selection-bar {
+    background: white;
+    border-radius: 12px;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid #667eea;
+}
+
+.model-selection-bar .form-select {
+    min-width: 300px;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-weight: 500;
+}
+
+.model-selection-bar .form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
 </style>
 {% endblock %}
 
@@ -250,7 +381,35 @@
         <p class="mb-0">Create professional music with AI. Choose your mode and describe your vision.</p>
     </div>
 
-    <!-- Mode Selection -->
+    <!-- Model Selection Bar -->
+    <div class="model-selection-bar">
+        <div class="row align-items-center">
+            <div class="col-auto">
+                <label class="form-label fw-bold text-dark mb-0">
+                    <i class="fas fa-microchip me-2"></i>Suno AI Model:
+                </label>
+            </div>
+            <div class="col-auto">
+                <select class="form-select" id="sunoModelSelect" onchange="updateModelInfo()">
+                    <option value="V4_5PLUS" selected>V4.5 PLUS - Premium quality (up to 8min)</option>
+                    <option value="V4_5">V4.5 - Superior genre blending (up to 8min)</option>
+                    <option value="V4">V4 - Best audio quality (up to 4min)</option>
+                    <option value="V3_5">V3.5 - Creative diversity (up to 4min)</option>
+                </select>
+            </div>
+            <div class="col">
+                <small class="text-muted" id="modelDescription">
+                    Premium quality with enhanced features and longest duration
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Layout: Controls Left, Players Right -->
+    <div class="row">
+        <!-- Left Column: All Controls -->
+        <div class="col-lg-6 col-md-6">
+            <!-- Mode Selection -->
     <div class="mode-selector">
         <div class="mode-card active" data-mode="simple" onclick="selectMode('simple')">
             <i class="fas fa-magic fa-2x mb-3"></i>
@@ -444,8 +603,12 @@
         </div>
     </div>
 
-    <!-- Generated Tracks -->
-    <div class="tracks-container" id="tracksContainer">
+        </div> <!-- End Left Column -->
+        
+        <!-- Right Column: Players -->
+        <div class="col-lg-6 col-md-6">
+            <!-- Generated Tracks -->
+            <div class="tracks-container" id="tracksContainer">
         <h4><i class="fas fa-headphones me-2"></i>Generated Tracks</h4>
         <p class="text-muted">Suno generates 2 versions for you to choose from</p>
         
@@ -723,6 +886,9 @@
         </div>
     </div>
 </template>
+
+        </div> <!-- End Right Column -->
+    </div> <!-- End Main Row -->
 {% endblock %}
 
 {% block extra_js %}
@@ -877,15 +1043,41 @@ function updateSpecializedPreview() {
     document.getElementById('specializedPreviewText').textContent = previewText;
 }
 
-// Character counting
+// Dynamic character counting based on selected model
+function updateCharacterLimits() {
+    const selectedModel = document.getElementById('sunoModelSelect').value;
+    const modelInfo = sunoModels[selectedModel];
+    
+    if (modelInfo) {
+        // Update simple mode limit display
+        const simplePrompt = document.getElementById('simplePrompt');
+        const simpleCount = simplePrompt.value.length;
+        document.getElementById('simpleCharCount').textContent = `${simpleCount}/${modelInfo.simplePromptLimit}`;
+        
+        // Update custom mode limit display
+        const customPrompt = document.getElementById('customPrompt');
+        const customCount = customPrompt.value.length;
+        document.getElementById('customCharCount').textContent = `${customCount}/${modelInfo.maxPromptLength}`;
+        
+        // Update placeholder text and maxlength attributes
+        simplePrompt.maxLength = modelInfo.simplePromptLimit;
+        customPrompt.maxLength = modelInfo.maxPromptLength;
+        
+        // Update label text
+        document.querySelector('label[for="simplePrompt"] + p + .d-flex small:first-child').innerHTML = 
+            `<i class="fas fa-info-circle me-1"></i>Simple mode - max ${modelInfo.simplePromptLimit} characters`;
+        document.querySelector('label[for="customPrompt"] + textarea + .d-flex small:first-child').textContent = 
+            `Advanced mode - up to ${modelInfo.maxPromptLength} characters`;
+    }
+}
+
+// Character counting with dynamic limits
 document.getElementById('simplePrompt').addEventListener('input', function() {
-    const count = this.value.length;
-    document.getElementById('simpleCharCount').textContent = `${count}/400`;
+    updateCharacterLimits();
 });
 
 document.getElementById('customPrompt').addEventListener('input', function() {
-    const count = this.value.length;
-    document.getElementById('customCharCount').textContent = `${count}/3000`;
+    updateCharacterLimits();
 });
 
 // Specialized category preview update
@@ -928,10 +1120,13 @@ function startGeneration() {
     status.style.display = 'block';
     
     // Prepare data
+    const selectedModel = document.getElementById('sunoModelSelect').value || 'V4_5PLUS';
     const generationData = {
         mode: currentMode,
-        suno_model: window.currentSunoModel || 'V4' // Dynamic from settings
+        suno_model: selectedModel // From model selector
     };
+    
+    console.log(`🎯 Sending generation request with model: ${selectedModel}`);
     
     if (currentMode === 'simple') {
         generationData.prompt = document.getElementById('simplePrompt').value;
@@ -1664,11 +1859,61 @@ function showError(message) {
     alert(`Error: ${message}`);
 }
 
-// Load Suno model from existing API config system
-function loadSunoModel() {
-    // Default model
-    window.currentSunoModel = 'V4';
-    console.log('🔧 Using default Suno model: V4 (configure in API Config)');
+// Model descriptions and validation
+const sunoModels = {
+    'V4_5PLUS': {
+        name: 'V4.5 PLUS - Premium quality',
+        description: 'Premium quality with enhanced features and longest duration',
+        maxDuration: 8,
+        maxPromptLength: 5000,
+        maxStyleLength: 1000,
+        simplePromptLimit: 400
+    },
+    'V4_5': {
+        name: 'V4.5 - Superior genre blending',
+        description: 'Superior genre blending with smarter prompts and faster output',
+        maxDuration: 8,
+        maxPromptLength: 5000,
+        maxStyleLength: 1000,
+        simplePromptLimit: 400
+    },
+    'V4': {
+        name: 'V4 - Best audio quality',
+        description: 'Best audio quality with refined song structure',
+        maxDuration: 4,
+        maxPromptLength: 3000,
+        maxStyleLength: 200,
+        simplePromptLimit: 400
+    },
+    'V3_5': {
+        name: 'V3.5 - Creative diversity',
+        description: 'Solid arrangements with creative diversity',
+        maxDuration: 4,
+        maxPromptLength: 3000,
+        maxStyleLength: 200,
+        simplePromptLimit: 400
+    }
+};
+
+// Update model information when selection changes
+function updateModelInfo() {
+    const selectedModel = document.getElementById('sunoModelSelect').value;
+    const modelInfo = sunoModels[selectedModel];
+    
+    if (modelInfo) {
+        document.getElementById('modelDescription').textContent = modelInfo.description;
+        console.log(`🤖 Selected Suno Model: ${modelInfo.name} (up to ${modelInfo.maxDuration}min)`);
+        
+        // Update character limits when model changes
+        updateCharacterLimits();
+    }
+}
+
+// Initialize model selection on page load
+function initializeModelSelection() {
+    // Set default model
+    document.getElementById('sunoModelSelect').value = 'V4_5PLUS';
+    updateModelInfo();
 }
 
 
@@ -2172,7 +2417,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
-    loadSunoModel();
+    // Initialize model selection first
+    initializeModelSelection();
     selectMode('simple');
     
     // Add video creation buttons to existing tracks

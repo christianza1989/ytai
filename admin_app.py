@@ -401,9 +401,9 @@ def api_config():
 @app.route('/generator')
 @require_auth
 def generator():
-    """Compact Layout Music Generator with Suno AI"""
+    """Simplified Suno-Style Music Generator"""
     import time
-    return render_template('music_generator_compact.html', 
+    return render_template('music_generator_simplified.html', 
                          api_status=system_state.api_status,
                          cache_bust=int(time.time()))
 
@@ -2846,8 +2846,8 @@ def process_music_generation(task_id, data):
             suno_request['title'] = song_title
             update_progress(30, "🏷️ Setting song title...", f"Title: {song_title}")
         
-        # Add model selection - use from environment (API Config) or fallback
-        suno_request['model'] = os.getenv('SUNO_MODEL', data.get('suno_model', 'V4'))
+        # Add model selection - prioritize frontend selection over environment
+        suno_request['model'] = data.get('suno_model') or os.getenv('SUNO_MODEL', 'V4_5PLUS')
         update_progress(35, f"⚙️ Using Suno model: {suno_request['model']}...", "Model configuration set")
         
         # REAL SUNO API INTEGRATION
@@ -2891,7 +2891,7 @@ def process_music_generation(task_id, data):
         
         # Prepare parameters for Suno API
         suno_params = {
-            'model': os.getenv('SUNO_MODEL', suno_request.get('model', 'V4')),
+            'model': suno_request['model'],  # Use model from frontend selection
             'instrumental': suno_request.get('make_instrumental', False),
         }
         
@@ -3324,7 +3324,7 @@ def handle_batch_generation(task_id, data, suno, suno_request, update_progress):
         
         # Prepare Suno parameters for this batch
         suno_params = {
-            'model': os.getenv('SUNO_MODEL', 'V4'),
+            'model': suno_request['model'],  # Use model from frontend selection
             'instrumental': suno_request.get('make_instrumental', True),
         }
         
@@ -4454,19 +4454,84 @@ def api_upload_to_youtube():
                 system_state.generation_tasks[task_id]['progress'] = 50
                 system_state.generation_tasks[task_id]['current_step'] = 'Uploading to YouTube...'
                 
-                # For now, simulate upload (replace with actual YouTube client when ready)
-                import time
-                time.sleep(2)
+                # Get channel credentials from database
+                from core.database.youtube_channels_db import YouTubeChannelsDB
+                db = YouTubeChannelsDB()
+                channel = db.get_channel(channel_id)
                 
-                system_state.generation_tasks[task_id]['progress'] = 100
-                system_state.generation_tasks[task_id]['current_step'] = 'Upload completed!'
-                system_state.generation_tasks[task_id]['status'] = 'completed'
-                system_state.generation_tasks[task_id]['result'] = {
-                    'success': True,
-                    'video_id': f'mock_video_{int(time.time())}',
-                    'video_url': f'https://youtube.com/watch?v=mock_{int(time.time())}',
-                    'metadata': metadata_response
-                }
+                if not channel:
+                    raise Exception(f"Channel not found: {channel_id}")
+                
+                # Verify channel has required API credentials
+                if not channel.get('api_key') or not channel.get('client_id') or not channel.get('client_secret'):
+                    raise Exception(f"Channel {channel['channel_name']} is missing YouTube API credentials. Please configure them in Channel Settings.")
+                
+                system_state.generation_tasks[task_id]['progress'] = 60
+                system_state.generation_tasks[task_id]['current_step'] = 'Initializing YouTube API...'
+                
+                # Parse metadata response
+                try:
+                    import json
+                    metadata = json.loads(metadata_response) if isinstance(metadata_response, str) else metadata_response
+                except:
+                    metadata = {
+                        'title': track_data.get('title', 'Generated Music'),
+                        'description': f"AI generated music track\n\nGenerated on: {datetime.now().strftime('%Y-%m-%d %H:%M')}\nChannel: {channel['channel_name']}",
+                        'tags': ['AI', 'generated', 'music', 'suno']
+                    }
+                
+                # Create YouTube client with channel credentials
+                from core.services.youtube_client import YouTubeClient
+                
+                # Temporarily set environment variables for this channel
+                import os
+                original_api_key = os.environ.get('YOUTUBE_API_KEY')
+                original_channel_id = os.environ.get('YOUTUBE_CHANNEL_ID')
+                
+                os.environ['YOUTUBE_API_KEY'] = channel['api_key']
+                os.environ['YOUTUBE_CHANNEL_ID'] = channel['youtube_channel_id'] or channel_id
+                
+                try:
+                    youtube_client = YouTubeClient()
+                    
+                    system_state.generation_tasks[task_id]['progress'] = 80
+                    system_state.generation_tasks[task_id]['current_step'] = f'Uploading to {channel["channel_name"]}...'
+                    
+                    # Upload video to YouTube
+                    video_id = youtube_client.upload_video(
+                        video_path=video_path,
+                        title=metadata.get('title', track_data.get('title', 'Generated Music')),
+                        description=metadata.get('description', f"AI generated music - {track_data.get('title', 'Untitled')}"),
+                        tags=metadata.get('tags', ['AI', 'music', 'generated']),
+                        privacy_status='public'  # or get from channel settings
+                    )
+                    
+                    if video_id:
+                        video_url = f'https://www.youtube.com/watch?v={video_id}'
+                        system_state.generation_tasks[task_id]['progress'] = 100
+                        system_state.generation_tasks[task_id]['current_step'] = f'Successfully uploaded! Video ID: {video_id}'
+                        system_state.generation_tasks[task_id]['status'] = 'completed'
+                        system_state.generation_tasks[task_id]['result'] = {
+                            'success': True,
+                            'video_id': video_id,
+                            'video_url': video_url,
+                            'metadata': metadata,
+                            'channel_name': channel['channel_name']
+                        }
+                    else:
+                        raise Exception("Upload failed - no video ID returned")
+                        
+                finally:
+                    # Restore original environment variables
+                    if original_api_key:
+                        os.environ['YOUTUBE_API_KEY'] = original_api_key
+                    elif 'YOUTUBE_API_KEY' in os.environ:
+                        del os.environ['YOUTUBE_API_KEY']
+                        
+                    if original_channel_id:
+                        os.environ['YOUTUBE_CHANNEL_ID'] = original_channel_id
+                    elif 'YOUTUBE_CHANNEL_ID' in os.environ:
+                        del os.environ['YOUTUBE_CHANNEL_ID']
                 
             except Exception as e:
                 system_state.generation_tasks[task_id]['status'] = 'failed'
@@ -5208,7 +5273,7 @@ def api_generate_channel_content(channel_id):
                         
                         # Build Suno API parameters
                         suno_params = {
-                            'model': music_data['suno_model'],
+                            'model': music_data.get('suno_model', 'V4_5PLUS'),  # Use model from frontend or default
                             'instrumental': music_data['make_instrumental']
                         }
                         
