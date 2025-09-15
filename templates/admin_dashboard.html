@@ -154,26 +154,26 @@
                     </div>
                 </div>
 
-                <!-- Nano-Banana Image Generation -->
+                <!-- Ideogram 3.0 Image Generation -->
                 <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
                     <div>
                         <h6 class="mb-1">
                             <i class="fas fa-image text-success me-2"></i>
-                            🍌 Nano-Banana
+                            🎨 Ideogram 3.0
                         </h6>
-                        <small class="text-muted">Gemini 2.5 Flash Image Generation</small>
+                        <small class="text-muted">Professional AI Image Generation</small>
                     </div>
                     <div class="text-end">
-                        {% set nano_banana_status = api_status.nano_banana %}
+                        {% set ideogram_status = api_status.ideogram %}
                         <span class="status-badge 
-                            {% if nano_banana_status.status == 'connected' %}status-connected
-                            {% elif nano_banana_status.status == 'error' %}status-error
+                            {% if ideogram_status.status == 'connected' %}status-connected
+                            {% elif ideogram_status.status == 'error' %}status-error
                             {% else %}status-warning{% endif %}">
-                            <i class="fas fa-{{ 'check' if nano_banana_status.status == 'connected' else 'times' if nano_banana_status.status == 'error' else 'exclamation' }} me-1"></i>
-                            {{ nano_banana_status.status.title() }}
+                            <i class="fas fa-{{ 'check' if ideogram_status.status == 'connected' else 'times' if ideogram_status.status == 'error' else 'exclamation' }} me-1"></i>
+                            {{ ideogram_status.status.title() }}
                         </span>
-                        {% if nano_banana_status.error %}
-                            <div class="small text-danger mt-1">{{ nano_banana_status.error }}</div>
+                        {% if ideogram_status.error %}
+                            <div class="small text-danger mt-1">{{ ideogram_status.error }}</div>
                         {% endif %}
                     </div>
                 </div>

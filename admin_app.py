@@ -208,14 +208,14 @@ class SystemState:
         except Exception as e:
             status['gemini'] = {'status': 'error', 'model': None, 'error': str(e)}
         
-        # Gemini Nano-Banana (Image Generation)
+        # Ideogram 3.0 (Image Generation)
         try:
-            if os.getenv('GEMINI_API_KEY') and os.getenv('GEMINI_API_KEY') != 'your_gemini_api_key_here':
-                status['nano_banana'] = {'status': 'connected', 'model': 'gemini-2.5-flash-image-preview', 'error': None}
+            if os.getenv('IDEOGRAM_API_KEY') and os.getenv('IDEOGRAM_API_KEY') != 'your_ideogram_api_key_here':
+                status['ideogram'] = {'status': 'connected', 'model': 'ideogram-v3', 'error': None}
             else:
-                status['nano_banana'] = {'status': 'not_configured', 'error': 'Gemini API key required for image generation'}
+                status['ideogram'] = {'status': 'not_configured', 'error': 'Ideogram API key not configured'}
         except Exception as e:
-            status['nano_banana'] = {'status': 'error', 'error': str(e)}
+            status['ideogram'] = {'status': 'error', 'error': str(e)}
         
         self.api_status = status
         return status
@@ -372,20 +372,25 @@ def api_config():
     # Get current env values (masked for display in read-only mode)
     env_config = {}
     for key in ['SUNO_API_KEY', 'SUNO_MODEL', 'GEMINI_API_KEY', 'GEMINI_MODEL', 
+                'IDEOGRAM_API_KEY', 'IDEOGRAM_RENDERING_SPEED', 'IDEOGRAM_STYLE_TYPE',
                 'YOUTUBE_API_KEY', 'YOUTUBE_CLIENT_ID', 'YOUTUBE_CLIENT_SECRET']:
         value = os.getenv(key, '')
         if value and value != f'your_{key.lower()}_here':
             # For display purposes, mask the key but store full value in data attribute
-            if key in ['SUNO_API_KEY', 'GEMINI_API_KEY', 'YOUTUBE_API_KEY', 'YOUTUBE_CLIENT_SECRET'] and len(value) > 12:
+            if key in ['SUNO_API_KEY', 'GEMINI_API_KEY', 'IDEOGRAM_API_KEY', 'YOUTUBE_API_KEY', 'YOUTUBE_CLIENT_SECRET'] and len(value) > 12:
                 env_config[key] = value[:8] + '...' + value[-4:]
             else:
                 env_config[key] = value  # Models and short keys shown fully
         else:
-            # Set defaults for models
+            # Set defaults for models and settings
             if key == 'SUNO_MODEL':
                 env_config[key] = 'V4'
             elif key == 'GEMINI_MODEL':
                 env_config[key] = 'gemini-2.5-flash'
+            elif key == 'IDEOGRAM_RENDERING_SPEED':
+                env_config[key] = 'TURBO'
+            elif key == 'IDEOGRAM_STYLE_TYPE':
+                env_config[key] = 'GENERAL'
             else:
                 env_config[key] = 'not_configured'
     
@@ -3620,6 +3625,18 @@ def api_save_config():
             os.environ['GEMINI_MODEL'] = data['gemini_model']
             print(f"✅ Updated GEMINI_MODEL in memory: {data['gemini_model']}")
             
+        if 'ideogram_api_key' in data and data['ideogram_api_key']:
+            os.environ['IDEOGRAM_API_KEY'] = data['ideogram_api_key']
+            print(f"✅ Updated IDEOGRAM_API_KEY in memory: {data['ideogram_api_key'][:8]}...")
+            
+        if 'ideogram_rendering_speed' in data and data['ideogram_rendering_speed']:
+            os.environ['IDEOGRAM_RENDERING_SPEED'] = data['ideogram_rendering_speed']
+            print(f"✅ Updated IDEOGRAM_RENDERING_SPEED in memory: {data['ideogram_rendering_speed']}")
+            
+        if 'ideogram_style_type' in data and data['ideogram_style_type']:
+            os.environ['IDEOGRAM_STYLE_TYPE'] = data['ideogram_style_type']
+            print(f"✅ Updated IDEOGRAM_STYLE_TYPE in memory: {data['ideogram_style_type']}")
+            
         if 'youtube_api_key' in data and data['youtube_api_key']:
             os.environ['YOUTUBE_API_KEY'] = data['youtube_api_key']
             print(f"✅ Updated YOUTUBE_API_KEY in memory: {data['youtube_api_key'][:8]}...")
@@ -3647,6 +3664,9 @@ def api_save_config():
             'SUNO_MODEL': data.get('suno_model'),
             'GEMINI_API_KEY': data.get('gemini_api_key'),
             'GEMINI_MODEL': data.get('gemini_model'),
+            'IDEOGRAM_API_KEY': data.get('ideogram_api_key'),
+            'IDEOGRAM_RENDERING_SPEED': data.get('ideogram_rendering_speed'),
+            'IDEOGRAM_STYLE_TYPE': data.get('ideogram_style_type'),
             'YOUTUBE_API_KEY': data.get('youtube_api_key'),
             'YOUTUBE_CLIENT_ID': data.get('youtube_client_id'),
             'YOUTUBE_CLIENT_SECRET': data.get('youtube_client_secret')
@@ -3775,6 +3795,51 @@ def api_test_config():
                     os.environ['GEMINI_API_KEY'] = original_key
                 if original_model:
                     os.environ['GEMINI_MODEL'] = original_model
+                    
+        elif service == 'ideogram':
+            api_key = data.get('api_key')
+            
+            if not api_key:
+                return jsonify({'success': False, 'error': 'Ideogram API key required'}), 400
+                
+            # Temporarily set the API key for testing
+            original_key = os.getenv('IDEOGRAM_API_KEY')
+            os.environ['IDEOGRAM_API_KEY'] = api_key
+            
+            try:
+                from core.services.ideogram_client import IdeogramClient
+                ideogram = IdeogramClient()
+                
+                # Test with a simple prompt
+                result = ideogram.generate_image(
+                    prompt="Simple test image of a red circle",
+                    aspect_ratio="1:1",
+                    rendering_speed="TURBO",
+                    style_type="GENERAL"
+                )
+                
+                if result.get('success'):
+                    return jsonify({
+                        'success': True,
+                        'message': 'Ideogram 3.0 API connection successful!',
+                        'model': 'ideogram-v3',
+                        'image_url': result.get('image_url')
+                    })
+                else:
+                    return jsonify({
+                        'success': False,
+                        'error': f'Ideogram test failed: {result.get("error", "Unknown error")}'
+                    })
+                    
+            except Exception as e:
+                return jsonify({
+                    'success': False,
+                    'error': f'Ideogram API test failed: {str(e)}'
+                })
+            finally:
+                # Restore original key
+                if original_key:
+                    os.environ['IDEOGRAM_API_KEY'] = original_key
         
         else:
             return jsonify({'success': False, 'error': 'Invalid service'}), 400
@@ -4116,22 +4181,42 @@ def api_create_video():
                 system_state.generation_tasks[task_id]['progress'] = 10
                 system_state.generation_tasks[task_id]['current_step'] = 'Downloading audio file...'
                 
-                # Download audio and image files to temp
+                # Handle audio and image files (demo mode support)
                 with tempfile.TemporaryDirectory() as temp_dir:
-                    # Download audio
-                    audio_response = requests.get(audio_url)
-                    audio_path = os.path.join(temp_dir, 'audio.mp3')
-                    with open(audio_path, 'wb') as f:
-                        f.write(audio_response.content)
+                    
+                    # Handle audio file
+                    if audio_url and os.path.exists(audio_url):
+                        # Local file path
+                        audio_path = audio_url
+                    elif not audio_url or 'demo' in audio_url or 'picsum' in audio_url:
+                        # Demo mode - use local demo audio
+                        demo_audio = 'demo_assets/demo_audio.mp3'
+                        if os.path.exists(demo_audio):
+                            audio_path = os.path.abspath(demo_audio)
+                        else:
+                            raise Exception("Demo audio file not found")
+                    else:
+                        # Download real audio
+                        audio_response = requests.get(audio_url, timeout=30)
+                        audio_response.raise_for_status()
+                        audio_path = os.path.join(temp_dir, 'audio.mp3')
+                        with open(audio_path, 'wb') as f:
+                            f.write(audio_response.content)
                     
                     system_state.generation_tasks[task_id]['progress'] = 30
-                    system_state.generation_tasks[task_id]['current_step'] = 'Downloading image file...'
+                    system_state.generation_tasks[task_id]['current_step'] = 'Processing image file...'
                     
-                    # Download image
-                    image_response = requests.get(image_url)
-                    image_path = os.path.join(temp_dir, 'image.png')
-                    with open(image_path, 'wb') as f:
-                        f.write(image_response.content)
+                    # Handle image file
+                    if image_url and os.path.exists(image_url):
+                        # Local file path
+                        image_path = image_url
+                    else:
+                        # Download image (works for both demo and real URLs)
+                        image_response = requests.get(image_url, timeout=30)
+                        image_response.raise_for_status()
+                        image_path = os.path.join(temp_dir, 'image.png')
+                        with open(image_path, 'wb') as f:
+                            f.write(image_response.content)
                     
                     system_state.generation_tasks[task_id]['progress'] = 50
                     system_state.generation_tasks[task_id]['current_step'] = 'Creating video...'
@@ -4153,14 +4238,25 @@ def api_create_video():
                         safe_title = safe_title.replace(' ', '_')
                         video_file = f"{output_dir}/{safe_title}.mp4"
                         
-                        system_state.generation_tasks[task_id]['progress'] = 100
-                        system_state.generation_tasks[task_id]['current_step'] = 'Video creation completed!'
-                        system_state.generation_tasks[task_id]['status'] = 'completed'
-                        system_state.generation_tasks[task_id]['result'] = {
-                            'success': True,
-                            'video_path': video_file,
-                            'video_url': f'/api/files/videos/{safe_title}.mp4'
-                        }
+                        # Get video file information
+                        if os.path.exists(video_file):
+                            file_size_bytes = os.path.getsize(video_file)
+                            file_size_mb = file_size_bytes / (1024 * 1024)
+                            
+                            system_state.generation_tasks[task_id]['progress'] = 100
+                            system_state.generation_tasks[task_id]['current_step'] = f'Video creation completed! ({file_size_mb:.1f} MB)'
+                            system_state.generation_tasks[task_id]['status'] = 'completed'
+                            system_state.generation_tasks[task_id]['result'] = {
+                                'success': True,
+                                'video_path': video_file,
+                                'video_url': f'/api/files/videos/{safe_title}.mp4',
+                                'file_size_bytes': file_size_bytes,
+                                'file_size_mb': round(file_size_mb, 1),
+                                'audio_source': 'demo' if 'demo_assets' in audio_path else 'downloaded',
+                                'image_source': 'downloaded'
+                            }
+                        else:
+                            raise Exception("Video file was not created")
                     else:
                         raise Exception("Video creation failed")
                         
@@ -4241,16 +4337,16 @@ Return ONLY the JSON object, no extra text.
 """
         
         # Generate metadata with Gemini
-        response = gemini_client.generate_creative_content(metadata_prompt)
+        metadata_text = gemini_client.generate_content(metadata_prompt)
         
-        if not response or not response.get('success'):
+        if not metadata_text:
             return jsonify({
                 'success': False,
                 'error': 'Failed to generate metadata with AI'
             }), 500
         
         # Parse the generated content
-        metadata_text = response.get('content', '').strip()
+        metadata_text = metadata_text.strip()
         
         # Clean JSON if wrapped in markdown
         if metadata_text.startswith('```json'):
@@ -4345,7 +4441,7 @@ def api_upload_to_youtube():
                 }}
                 """
                 
-                metadata_response = gemini_client.generate_creative_content(prompt)
+                metadata_response = gemini_client.generate_content(prompt)
                 
                 system_state.generation_tasks[task_id]['progress'] = 50
                 system_state.generation_tasks[task_id]['current_step'] = 'Uploading to YouTube...'
@@ -5949,6 +6045,14 @@ def api_queue_tracks():
         }), 500
 
 if __name__ == '__main__':
+    import argparse
+    
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='Professional Autonominis Muzikantas Admin Interface')
+    parser.add_argument('--port', type=int, default=3000, help='Port to run the server on (default: 3000)')
+    parser.add_argument('--host', default='0.0.0.0', help='Host to bind to (default: 0.0.0.0)')
+    args = parser.parse_args()
+    
     # Create required directories
     os.makedirs('templates', exist_ok=True)
     os.makedirs('static', exist_ok=True)
@@ -5966,6 +6070,6 @@ if __name__ == '__main__':
         print(f"⚠️ Could not start image monitor: {e}")
     
     print("🔐 Default admin password: admin123")
-    print("🌐 Access: http://localhost:5001")
+    print(f"🌐 Access: http://localhost:{args.port}")
     
-    app.run(host='0.0.0.0', port=5001, debug=False)
+    app.run(host=args.host, port=args.port, debug=False)

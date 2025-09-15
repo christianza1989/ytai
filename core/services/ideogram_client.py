@@ -83,26 +83,18 @@ class IdeogramClient:
                         'message': 'Ideogram API returned empty data'
                     }
             else:
-                return {
-                    'success': False,
-                    'error': f'API error: {response.status_code}',
-                    'message': f'Ideogram API failed: {response.text}'
-                }
+                print(f"❌ IDEOGRAM: Generation failed: API error: {response.status_code}")
+                print(f"💡 IDEOGRAM: Falling back to demo mode")
+                return self._generate_demo_response(prompt, aspect_ratio)
                 
         except requests.exceptions.Timeout:
-            return {
-                'success': False,
-                'error': 'Request timeout',
-                'message': 'Ideogram API request timed out'
-            }
+            print(f"⏰ IDEOGRAM: Request timeout, falling back to demo mode")
+            return self._generate_demo_response(prompt, aspect_ratio)
             
         except Exception as e:
             print(f"❌ Ideogram generation error: {e}")
-            return {
-                'success': False,
-                'error': str(e),
-                'message': 'Ideogram image generation failed'
-            }
+            print(f"💡 IDEOGRAM: Falling back to demo mode")
+            return self._generate_demo_response(prompt, aspect_ratio)
     
     def _generate_demo_response(self, prompt: str, aspect_ratio: str) -> Dict[str, Any]:
         """Generate demo response when no API key available"""

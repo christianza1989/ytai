@@ -64,18 +64,18 @@
     </div>
     
     <div class="col-md-4 col-sm-6 mb-3">
-        <div class="card {% if api_status.nano_banana.status == 'connected' %}border-success{% elif api_status.nano_banana.status == 'error' %}border-danger{% else %}border-warning{% endif %}">
+        <div class="card {% if api_status.ideogram.status == 'connected' %}border-success{% elif api_status.ideogram.status == 'error' %}border-danger{% else %}border-warning{% endif %}">
             <div class="card-body text-center">
-                <i class="fas fa-image fa-2x {% if api_status.nano_banana.status == 'connected' %}text-success{% elif api_status.nano_banana.status == 'error' %}text-danger{% else %}text-warning{% endif %} mb-2"></i>
-                <h6>🍌 Nano-Banana</h6>
+                <i class="fas fa-image fa-2x {% if api_status.ideogram.status == 'connected' %}text-success{% elif api_status.ideogram.status == 'error' %}text-danger{% else %}text-warning{% endif %} mb-2"></i>
+                <h6>🎨 Ideogram 3.0</h6>
                 <span class="status-badge 
-                    {% if api_status.nano_banana.status == 'connected' %}status-connected
-                    {% elif api_status.nano_banana.status == 'error' %}status-error
+                    {% if api_status.ideogram.status == 'connected' %}status-connected
+                    {% elif api_status.ideogram.status == 'error' %}status-error
                     {% else %}status-warning{% endif %}">
-                    {{ api_status.nano_banana.status.title() }}
+                    {{ api_status.ideogram.status.title() }}
                 </span>
-                {% if api_status.nano_banana.status == 'connected' %}
-                    <div class="small text-success mt-2">{{ api_status.nano_banana.model }}</div>
+                {% if api_status.ideogram.status == 'connected' %}
+                    <div class="small text-success mt-2">{{ api_status.ideogram.model }}</div>
                 {% endif %}
             </div>
         </div>
@@ -242,55 +242,106 @@
 
 <!-- Second Row -->
 <div class="row">
-    <!-- Gemini Nano-Banana Image Configuration -->
+    <!-- Ideogram 3.0 Image Configuration -->
     <div class="col-lg-6 mb-4">
         <div class="card">
             <div class="card-header">
                 <i class="fas fa-image text-success me-2"></i>
-                🍌 Nano-Banana Image Generation
+                🎨 Ideogram 3.0 Image Generation
             </div>
             <div class="card-body">
-                <div class="alert alert-success">
-                    <i class="fas fa-magic me-2"></i>
-                    <strong>🚀 Powered by Gemini 2.5 Flash Image!</strong><br>
-                    Uses your existing Gemini API key - no additional setup needed!<br>
-                    <small>✨ Features: Character consistency, multi-image fusion, prompt-based editing, world knowledge integration</small>
-                </div>
-                
-                <div class="mb-3">
-                    <label class="form-label">Model Details</label>
-                    <div class="p-3 bg-light rounded">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <strong>Model:</strong> gemini-2.5-flash-image-preview<br>
-                                <strong>Resolution:</strong> 1024x1024 pixels<br>
-                                <strong>Cost:</strong> $0.039 per image
-                            </div>
-                            <div class="col-md-6">
-                                <strong>Features:</strong><br>
-                                • Character consistency<br>
-                                • Multi-image fusion<br>
-                                • Prompt-based editing<br>
-                                • World knowledge integration
+                <form id="ideogramConfigForm">
+                    <div class="mb-3">
+                        <label for="ideogramApiKey" class="form-label">Ideogram API Key</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="ideogramApiKey" 
+                                   placeholder="Enter your Ideogram API key"
+                                   {% if env_config.IDEOGRAM_API_KEY != 'not_configured' %}
+                                   data-configured="true" 
+                                   data-masked-value="{{ env_config.IDEOGRAM_API_KEY }}"
+                                   value="{{ env_config.IDEOGRAM_API_KEY }}"
+                                   readonly
+                                   {% else %}
+                                   value=""
+                                   {% endif %}>
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('ideogramApiKey')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            {% if env_config.IDEOGRAM_API_KEY != 'not_configured' %}
+                            <button class="btn btn-outline-primary" type="button" onclick="editApiKey('ideogramApiKey')">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            {% endif %}
+                        </div>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Get your API key from <a href="https://ideogram.ai/api" target="_blank">Ideogram API Console</a>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="ideogramRenderingSpeed" class="form-label">Rendering Speed</label>
+                        <select class="form-select" id="ideogramRenderingSpeed">
+                            <option value="TURBO" {% if env_config.IDEOGRAM_RENDERING_SPEED == 'TURBO' or not env_config.IDEOGRAM_RENDERING_SPEED %}selected{% endif %}>TURBO - Fast generation (recommended) ⚡</option>
+                            <option value="STANDARD" {% if env_config.IDEOGRAM_RENDERING_SPEED == 'STANDARD' %}selected{% endif %}>STANDARD - Balanced quality and speed 🎯</option>
+                            <option value="SLOW" {% if env_config.IDEOGRAM_RENDERING_SPEED == 'SLOW' %}selected{% endif %}>SLOW - Best quality, slower generation ✨</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="ideogramStyleType" class="form-label">Style Type</label>
+                        <select class="form-select" id="ideogramStyleType">
+                            <option value="GENERAL" {% if env_config.IDEOGRAM_STYLE_TYPE == 'GENERAL' or not env_config.IDEOGRAM_STYLE_TYPE %}selected{% endif %}>GENERAL - Versatile style (default) 🎨</option>
+                            <option value="REALISTIC" {% if env_config.IDEOGRAM_STYLE_TYPE == 'REALISTIC' %}selected{% endif %}>REALISTIC - Photorealistic images 📸</option>
+                            <option value="DESIGN" {% if env_config.IDEOGRAM_STYLE_TYPE == 'DESIGN' %}selected{% endif %}>DESIGN - Graphic design style 🎯</option>
+                            <option value="RENDER_3D" {% if env_config.IDEOGRAM_STYLE_TYPE == 'RENDER_3D' %}selected{% endif %}>RENDER_3D - 3D rendered style 🔮</option>
+                            <option value="ANIME" {% if env_config.IDEOGRAM_STYLE_TYPE == 'ANIME' %}selected{% endif %}>ANIME - Anime/manga style 🌸</option>
+                        </select>
+                    </div>
+                    
+                    <div class="alert alert-success">
+                        <i class="fas fa-magic me-2"></i>
+                        <strong>🚀 Ideogram 3.0 - Professional AI Image Generation</strong><br>
+                        High-quality, consistent results with advanced prompt understanding<br>
+                        <small>✨ Features: Text rendering, style consistency, aspect ratio control, professional quality</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Model Details</label>
+                        <div class="p-3 bg-light rounded">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Model:</strong> ideogram-v3<br>
+                                    <strong>Resolution:</strong> Up to 1024x1024<br>
+                                    <strong>Aspect Ratios:</strong> 16:9, 1:1, 9:16
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Features:</strong><br>
+                                    • Superior text rendering<br>
+                                    • Style consistency<br>
+                                    • Advanced prompt understanding<br>
+                                    • Professional quality output
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="button" class="btn btn-outline-success" onclick="testConnection('ideogram')">
+                            <i class="fas fa-magic me-1"></i>
+                            Test Ideogram
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save me-1"></i>
+                            Save Configuration
+                        </button>
+                    </div>
+                </form>
                 
-                <div class="alert alert-info">
-                    <i class="fas fa-lightbulb me-2"></i>
-                    <strong>How it works:</strong> Nano-banana automatically uses your Gemini API key for image generation. 
-                    Just ensure your Gemini API is configured above and you're ready to generate professional album covers!
-                </div>
-                
-                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                    <button type="button" class="btn btn-outline-success" onclick="testNanaBanana()">
-                        <i class="fas fa-magic me-1"></i>
-                        Test Nano-Banana
-                    </button>
-                    <a href="https://ai.google.dev/gemini-api/docs/vision" target="_blank" class="btn btn-success">
+                <div class="mt-3">
+                    <a href="https://ideogram.ai/api/docs" target="_blank" class="btn btn-outline-success btn-sm">
                         <i class="fas fa-external-link-alt me-1"></i>
-                        Documentation
+                        API Documentation
                     </a>
                 </div>
             </div>
@@ -385,14 +436,14 @@
                         </a>
                     </div>
                     <div class="col-md-4">
-                        <h6><i class="fas fa-image text-success me-2"></i>🍌 Nano-Banana</h6>
+                        <h6><i class="fas fa-image text-success me-2"></i>🎨 Ideogram 3.0</h6>
                         <ul class="list-unstyled">
-                            <li><strong>Purpose:</strong> AI Image generation & editing</li>
-                            <li><strong>Cost:</strong> $0.039 per image</li>
-                            <li><strong>Features:</strong> Character consistency, fusion</li>
-                            <li><strong>Model:</strong> gemini-2.5-flash-image</li>
+                            <li><strong>Purpose:</strong> Professional AI image generation</li>
+                            <li><strong>Features:</strong> Text rendering, style consistency</li>
+                            <li><strong>Model:</strong> ideogram-v3</li>
+                            <li><strong>Quality:</strong> Superior prompt understanding</li>
                         </ul>
-                        <a href="https://ai.google.dev/gemini-api/docs/vision" target="_blank" class="btn btn-outline-success btn-sm">
+                        <a href="https://ideogram.ai/api/docs" target="_blank" class="btn btn-outline-success btn-sm">
                             <i class="fas fa-external-link-alt me-1"></i>
                             Documentation
                         </a>
@@ -404,7 +455,7 @@
                     <ul class="mb-0">
                         <li>Start with test mode to familiarize yourself with the system</li>
                         <li>Configure Suno and Gemini APIs for full functionality</li>
-                        <li>Nano-banana image generation uses your Gemini API key</li>
+                        <li>Ideogram 3.0 provides superior text rendering and style consistency</li>
                         <li>Monitor your usage to avoid unexpected costs</li>
                         <li>Keep your API keys secure and never share them</li>
                     </ul>
@@ -463,17 +514,14 @@
             testData.model = model;
             
 
-        } else if (service === 'nano_banana') {
-            // Nano-banana uses Gemini API key
-            const geminiKey = document.getElementById('geminiApiKey').value.trim();
-            if (!geminiKey) {
+        } else if (service === 'ideogram') {
+            const apiKey = document.getElementById('ideogramApiKey').value.trim();
+            if (!apiKey) {
                 hideLoading(button, originalText);
-                showToast('Nano-banana requires Gemini API key. Please configure Gemini first.', 'warning');
+                showToast('Please enter Ideogram API key first', 'warning');
                 return;
             }
-            hideLoading(button, originalText);
-            showToast('Nano-banana ready! Uses your Gemini API key.', 'success');
-            return;
+            testData.api_key = apiKey;
         }
         
         // Test the API connection
@@ -503,7 +551,7 @@
     }
     
     function testAllConnections() {
-        const services = ['suno', 'gemini', 'nano_banana'];
+        const services = ['suno', 'gemini', 'ideogram'];
         let tested = 0;
         
         Swal.fire({
@@ -538,8 +586,10 @@
         saveConfiguration('gemini');
     });
     
-
-    // Nano-banana uses Gemini API key - no separate form needed
+    document.getElementById('ideogramConfigForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveConfiguration('ideogram');
+    });
     
     document.getElementById('advancedConfigForm').addEventListener('submit', function(e) {
         e.preventDefault();
@@ -585,7 +635,23 @@
                 gemini_model: geminiModel
             };
             
-
+        } else if (service === 'ideogram') {
+            const ideogramKey = document.getElementById('ideogramApiKey').value.trim();
+            const renderingSpeed = document.getElementById('ideogramRenderingSpeed').value;
+            const styleType = document.getElementById('ideogramStyleType').value;
+            
+            if (!ideogramKey) {
+                hideLoading(button, originalText);
+                showToast('Please enter Ideogram API key', 'warning');
+                return;
+            }
+            
+            configData = {
+                ideogram_api_key: ideogramKey,
+                ideogram_rendering_speed: renderingSpeed,
+                ideogram_style_type: styleType
+            };
+            
         } else if (service === 'advanced') {
             // Handle advanced settings
             hideLoading(button, originalText);
@@ -667,37 +733,7 @@
     const temperatureSlider = document.getElementById('geminiTemp');
     temperatureSlider.title = `Temperature: ${temperatureSlider.value}`;
     
-    // Nano-banana test function
-    function testNanaBanana() {
-        const geminiKey = document.getElementById('geminiApiKey').value;
-        if (!geminiKey || geminiKey === 'configured') {
-            Swal.fire({
-                icon: 'warning',
-                title: '🍌 Nano-banana Test',
-                text: 'Please configure your Gemini API key first to test image generation.',
-                confirmButtonText: 'Configure Gemini'
-            });
-            return;
-        }
-        
-        Swal.fire({
-            icon: 'success',
-            title: '🍌 Nano-banana Ready!',
-            html: `
-                <div class="alert alert-success">
-                    <strong>✅ Gemini 2.5 Flash Image is ready!</strong><br>
-                    Your existing Gemini API key will be used for:<br><br>
-                    🎨 Professional album cover generation<br>
-                    🖼️ YouTube thumbnail creation<br>
-                    ✨ Character consistency<br>
-                    🔀 Multi-image fusion<br>
-                    📝 Prompt-based editing
-                </div>
-                <p><small>💰 Cost: $0.039 per image (Gemini 2.5 Flash Image - nano-banana model)</small></p>
-            `,
-            confirmButtonText: 'Awesome! 🚀'
-        });
-    }
+
     
     // Function to edit API key
     function editApiKey(inputId) {
@@ -725,12 +761,23 @@
         }
         
         // Determine service type and save
-        const service = inputId.includes('suno') ? 'suno' : 'gemini';
+        let service;
+        if (inputId.includes('suno')) {
+            service = 'suno';
+        } else if (inputId.includes('ideogram')) {
+            service = 'ideogram';
+        } else {
+            service = 'gemini';
+        }
         
         // Prepare config data
         let configData = {};
         if (service === 'suno') {
             configData.suno_api_key = newKey;
+        } else if (service === 'ideogram') {
+            configData.ideogram_api_key = newKey;
+            configData.ideogram_rendering_speed = document.getElementById('ideogramRenderingSpeed').value;
+            configData.ideogram_style_type = document.getElementById('ideogramStyleType').value;
         } else {
             configData.gemini_api_key = newKey;
             configData.gemini_model = document.getElementById('geminiModel').value;

@@ -224,6 +224,11 @@ class GeminiClient:
     def generate_content(self, prompt: str) -> Optional[str]:
         """Generate content using Gemini AI with a custom prompt"""
         try:
+            # Check if API key is configured
+            if not self.api_key or self.api_key == 'your-gemini-api-key-here':
+                print("⚠️ Gemini API key not configured - using demo mode")
+                return self._generate_demo_content(prompt)
+            
             response = self.model.generate_content(prompt)
             response_text = response.text.strip()
 
@@ -241,7 +246,26 @@ class GeminiClient:
 
         except Exception as e:
             print(f"Failed to generate content: {e}")
-            return None
+            print("💡 Falling back to demo mode")
+            return self._generate_demo_content(prompt)
+    
+    def _generate_demo_content(self, prompt: str) -> str:
+        """Generate demo content when API key is not available"""
+        
+        # Check if this is a metadata generation request
+        if "youtube metadata" in prompt.lower() or "seo-optimized" in prompt.lower():
+            return '''
+            {
+                "title": "AI Generated Music Track - Electronic Vibes",
+                "description": "Experience this amazing AI-generated electronic music track! Perfect for studying, working, or relaxing. This track combines modern electronic elements with atmospheric soundscapes to create an immersive listening experience.\\n\\n🎵 Track Features:\\n- Genre: Electronic\\n- Mood: Uplifting & Energetic\\n- Duration: 3-4 minutes\\n- AI Generated with advanced algorithms\\n\\n📱 Follow us for more AI music:\\n- Subscribe for weekly releases\\n- Turn on notifications\\n- Share with friends who love electronic music\\n\\n#AIMusic #Electronic #GeneratedMusic #StudyMusic #ChillBeats",
+                "tags": ["AI music", "electronic", "generated music", "study music", "chill beats", "atmospheric", "ambient", "synthetic", "digital music", "algorithm", "artificial intelligence", "modern music", "instrumental", "background music", "focus music"],
+                "category": "Music",
+                "thumbnail_text": "AI ELECTRONIC"
+            }
+            '''
+        
+        # General content generation
+        return "Demo content generated. Configure Gemini API key for real AI content generation."
 
     def refine_content_strategy(self, historical_data: list) -> Dict[str, Any]:
         """Analyze historical performance and refine content strategy"""

@@ -473,7 +473,7 @@
                                         <div class="form-check form-switch">
                                             <input class="form-check-input" type="checkbox" id="autoThumbnails" name="auto_thumbnails" checked>
                                             <label class="form-check-label" for="autoThumbnails">
-                                                <strong>Auto-Generate 16:9 Thumbnails (Nano-Banana)</strong>
+                                                <strong>Auto-Generate 16:9 Thumbnails (Ideogram 3.0)</strong>
                                             </label>
                                         </div>
                                     </div>
@@ -1495,7 +1495,7 @@ function generateThumbnail(channelId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showToast('🖼️ Thumbnail generation started with Nano-Banana!', 'info');
+            showToast('🖼️ Thumbnail generation started with Ideogram 3.0!', 'info');
             if (data.task_id) {
                 setTimeout(() => {
                     window.location.href = `/batch`;
@@ -1669,7 +1669,7 @@ function bulkGenerateMusic() {
 }
 
 function bulkGenerateThumbnails() {
-    showToast(`🖼️ Generating thumbnails with Nano-Banana for ${selectedChannels.length} channels...`, 'info');
+    showToast(`🖼️ Generating thumbnails with Ideogram 3.0 for ${selectedChannels.length} channels...`, 'info');
     bootstrap.Modal.getInstance(document.getElementById('bulkModal')).hide();
 }
 
