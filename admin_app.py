@@ -1106,6 +1106,50 @@ def api_automation_status():
             'message': f'Error getting automation status: {str(e)}'
         }), 500
 
+@app.route('/api/music/gallery')
+@require_auth
+def api_music_gallery():
+    """Get music gallery data from persistent storage"""
+    try:
+        import json
+        from pathlib import Path
+        
+        gallery_file = Path("data/music_gallery.json")
+        
+        # Load existing gallery
+        if gallery_file.exists():
+            with open(gallery_file, 'r') as f:
+                gallery = json.load(f)
+        else:
+            gallery = []
+        
+        # Calculate statistics
+        stats = {
+            'total_tracks': len(gallery),
+            'total_models': len(set(track.get('model_used', 'Unknown') for track in gallery)),
+            'recent_tracks': len([t for t in gallery if t.get('created_at', '') > (datetime.now() - timedelta(days=7)).isoformat()]),
+            'total_duration': sum([
+                int(track.get('duration', '0').replace('s', '').replace('m', '').replace(':', '').replace('.', '')) if track.get('duration', '0') != 'Unknown' else 0 
+                for track in gallery
+            ])
+        }
+        
+        return jsonify({
+            'success': True,
+            'tracks': gallery,
+            'statistics': stats,
+            'total_count': len(gallery)
+        })
+        
+    except Exception as e:
+        print(f"❌ Error loading music gallery: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'tracks': [],
+            'statistics': {'total_tracks': 0, 'total_models': 0, 'recent_tracks': 0, 'total_duration': 0}
+        }), 500
+
 @app.route('/api/youtube/channels/statistics')
 @require_auth
 def api_youtube_channels_statistics():
@@ -2845,6 +2889,9 @@ def process_music_generation(task_id, data):
         if song_title:
             suno_request['title'] = song_title
             update_progress(30, "🏷️ Setting song title...", f"Title: {song_title}")
+        else:
+            # If no title provided, let Suno auto-generate based on style
+            update_progress(30, "🤖 Auto-generating title...", "Suno will create title from style")
         
         # Add model selection - prioritize frontend selection over environment
         suno_request['model'] = data.get('suno_model') or os.getenv('SUNO_MODEL', 'V4_5PLUS')
@@ -2992,7 +3039,7 @@ def process_music_generation(task_id, data):
         for i, clip in enumerate(audio_clips):
             processed_clip = {
                 'clip_number': i + 1,
-                'title': clip.get('title', data.get('song_title', f"Generated Track {i + 1}")),
+                'title': clip.get('title') or generate_smart_title(data, i + 1),
                 'audio_url': clip.get('streamAudioUrl') or clip.get('audioUrl') or clip.get('sourceStreamAudioUrl'),
                 'video_url': clip.get('imageUrl') or clip.get('sourceImageUrl'),
                 'duration': clip.get('duration', 'Unknown'),
@@ -3007,7 +3054,7 @@ def process_music_generation(task_id, data):
         primary_clip = audio_clips[0]
         result = {
             'success': True,
-            'title': primary_clip.get('title', data.get('song_title', f"Generated {data.get('genre_specific', 'Track')}")),
+            'title': primary_clip.get('title') or generate_smart_title(data, 1),
             'audio_url': primary_clip.get('streamAudioUrl') or primary_clip.get('audioUrl') or primary_clip.get('sourceStreamAudioUrl'),
             'video_url': primary_clip.get('imageUrl') or primary_clip.get('sourceImageUrl'),
             'duration': primary_clip.get('duration', 'Unknown'),
@@ -3035,6 +3082,39 @@ def process_music_generation(task_id, data):
         
         update_progress(95, "✅ Music generation completed!", "Finalizing output")
         time.sleep(0.5)
+        
+        # Save all generated tracks to music gallery
+        try:
+            for i, processed_clip in enumerate(processed_clips):
+                # Enhance track data with generation metadata
+                track_data = {
+                    'title': processed_clip['title'],
+                    'audio_url': processed_clip['audio_url'],
+                    'video_url': processed_clip['video_url'],
+                    'image_url': processed_clip['video_url'],  # Suno uses video_url for images
+                    'duration': processed_clip['duration'],
+                    'model_used': processed_clip['model_name'],
+                    'suno_clip_id': processed_clip['suno_clip_id'],
+                    'tags': processed_clip['tags'],
+                    'style': f"{data.get('genre_category', '')} - {data.get('genre_specific', '')}".strip(' -'),
+                    'prompt_used': processed_clip['prompt'] or music_prompt,
+                    'is_instrumental': suno_request['make_instrumental'],
+                    'generation_metadata': {
+                        'task_id': task_id,
+                        'genre_category': data.get('genre_category'),
+                        'genre_specific': data.get('genre_specific'),
+                        'mood': data.get('mood'),
+                        'tempo': data.get('tempo'),
+                        'music_type': data.get('music_type')
+                    }
+                }
+                save_to_music_gallery(track_data)
+                
+            update_progress(97, f"💾 Saved {len(processed_clips)} tracks to music gallery", "Gallery updated")
+            
+        except Exception as gallery_error:
+            print(f"⚠️ Warning: Could not save to music gallery: {gallery_error}")
+            # Don't fail the whole generation if gallery save fails
         
         # Mark as completed with persistence
         system_state.update_generation_task(task_id, {
@@ -3140,6 +3220,133 @@ def wait_for_completion_with_progressive_updates(suno, task_id, task, update_pro
     
     raise Exception(f'Generation timeout after {max_wait_time} seconds')
 
+def save_to_music_gallery(track_data):
+    """Save generated track to music gallery"""
+    try:
+        import json
+        from pathlib import Path
+        
+        gallery_file = Path("data/music_gallery.json")
+        
+        # Load existing gallery
+        if gallery_file.exists():
+            with open(gallery_file, 'r') as f:
+                gallery = json.load(f)
+        else:
+            gallery = []
+        
+        # Add timestamp and ID
+        track_entry = {
+            'id': f"track_{int(time.time())}_{len(gallery) + 1}",
+            'created_at': datetime.now().isoformat(),
+            'title': track_data.get('title', 'Generated Track'),
+            'audio_url': track_data.get('audio_url'),
+            'image_url': track_data.get('video_url') or track_data.get('image_url'),
+            'duration': track_data.get('duration', 'Unknown'),
+            'model_used': track_data.get('model_used', 'Unknown'),
+            'suno_clip_id': track_data.get('suno_clip_id'),
+            'tags': track_data.get('tags', ''),
+            'style': track_data.get('style', ''),
+            'prompt_used': track_data.get('prompt_used', ''),
+            'is_instrumental': track_data.get('is_instrumental', False)
+        }
+        
+        # Add to gallery (newest first)
+        gallery.insert(0, track_entry)
+        
+        # Keep only last 100 tracks
+        gallery = gallery[:100]
+        
+        # Save back to file
+        with open(gallery_file, 'w') as f:
+            json.dump(gallery, f, indent=2)
+        
+        print(f"💾 Saved track to gallery: {track_entry['title']}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Failed to save to gallery: {e}")
+        return False
+
+def generate_smart_title(data, clip_number=1):
+    """Generate meaningful song titles when Suno doesn't provide them"""
+    import random
+    
+    # If there's a custom song title, use it
+    if data.get('song_title') and data.get('song_title').strip():
+        return f"{data['song_title'].strip()}"
+    
+    # Get style information
+    genre_category = data.get('genre_category', '').strip()
+    genre_specific = data.get('genre_specific', '').strip()
+    mood = data.get('mood', '').strip()
+    tempo = data.get('tempo', '').strip()
+    
+    # Title generation templates based on mode
+    mode = data.get('mode', '')
+    
+    if mode == 'custom':
+        # For custom mode, try to extract meaningful words from prompt
+        prompt = data.get('prompt', '').strip()
+        if prompt:
+            # Extract first few meaningful words from prompt
+            words = [w for w in prompt.split()[:4] if len(w) > 2 and w.lower() not in ['the', 'and', 'for', 'with', 'create', 'make', 'generate']]
+            if words:
+                return ' '.join(words).title()
+    
+    # Genre-based title generation
+    title_templates = {
+        'electronic': [
+            f"{genre_specific} Dreams", f"Electric {mood}", f"Digital {genre_specific}",
+            f"Neon {mood}", f"{tempo} Nights", f"Cyber {genre_specific}"
+        ],
+        'rock': [
+            f"{genre_specific} Storm", f"Thunder {mood}", f"Electric {genre_specific}",
+            f"Rock {mood}", f"{tempo} Drive", f"Metal {genre_specific}"
+        ],
+        'pop': [
+            f"{genre_specific} Vibes", f"Pop {mood}", f"Bright {genre_specific}",
+            f"Summer {mood}", f"{tempo} Beat", f"Catchy {genre_specific}"
+        ],
+        'jazz': [
+            f"{genre_specific} Blues", f"Smooth {mood}", f"Jazz {genre_specific}",
+            f"Cool {mood}", f"{tempo} Session", f"Vintage {genre_specific}"
+        ],
+        'classical': [
+            f"{genre_specific} Symphony", f"Classical {mood}", f"Orchestral {genre_specific}",
+            f"Grand {mood}", f"{tempo} Movement", f"Elegant {genre_specific}"
+        ],
+        'ambient': [
+            f"{genre_specific} Space", f"Ambient {mood}", f"Ethereal {genre_specific}",
+            f"Dreamy {mood}", f"{tempo} Flow", f"Peaceful {genre_specific}"
+        ]
+    }
+    
+    # Select template based on genre
+    templates = title_templates.get(genre_category.lower(), [
+        f"{genre_specific} Track", f"{mood} Song", f"{tempo} Music",
+        f"New {genre_specific}", f"{mood} Vibes", f"Creative {genre_specific}"
+    ])
+    
+    # Filter out empty parts and select random template
+    clean_templates = [t for t in templates if all(part.strip() for part in t.split())]
+    
+    if clean_templates:
+        base_title = random.choice(clean_templates)
+        # Clean up title
+        title = base_title.replace('  ', ' ').strip()
+        if clip_number > 1:
+            title += f" (Version {clip_number})"
+        return title
+    
+    # Final fallback with better naming
+    if genre_specific:
+        return f"{genre_specific.title()} Creation{f' {clip_number}' if clip_number > 1 else ''}"
+    elif genre_category:
+        return f"{genre_category.title()} Track{f' {clip_number}' if clip_number > 1 else ''}"
+    else:
+        return f"Musical Creation{f' {clip_number}' if clip_number > 1 else ''}"
+
 def build_suno_prompt(data):
     """Build comprehensive Suno AI prompt from user selections"""
     prompt_parts = []
@@ -3157,8 +3364,19 @@ def build_suno_prompt(data):
             # Use the specialized prompt directly
             return data.get('prompt', 'Create specialized background music')
         elif data.get('mode') == 'custom':
-            # For custom mode, use the prompt directly
-            return data.get('prompt', 'Create a beautiful musical piece')
+            # For custom mode, combine style and prompt
+            style = data.get('style', '')
+            prompt = data.get('prompt', '')
+            
+            # Build comprehensive prompt for custom mode
+            if style and prompt:
+                return f"{style}: {prompt}"
+            elif style:
+                return f"Create {style} music"
+            elif prompt:
+                return prompt
+            else:
+                return "Create a beautiful musical piece"
     
     # Advanced mode - build from components
     # Add genre information

@@ -464,41 +464,59 @@ function initializeAudioContext() {
 function loadMusicGallery() {
     showLoadingState();
     
-    // Load all generation data
-    Promise.all([
-        fetch('/api/system/status', { credentials: 'same-origin' }),
-        // Add more data sources as needed
-    ])
-    .then(responses => Promise.all(responses.map(r => r.json())))
-    .then(([systemData]) => {
-        const tasks = systemData.generation_tasks || {};
-        const completedTracks = [];
-        
-        // Process completed tasks
-        Object.values(tasks).forEach(task => {
-            if (task.status === 'completed' && task.result) {
-                if (task.result.tracks && Array.isArray(task.result.tracks)) {
-                    // Handle multiple tracks from batch generation
-                    task.result.tracks.forEach((track, index) => {
-                        completedTracks.push(createTrackObject(task, track, index));
-                    });
-                } else if (task.result.audio_url || task.result.success) {
-                    // Handle single track
-                    completedTracks.push(createTrackObject(task, task.result));
+    // Load persistent music gallery data
+    fetch('/api/music/gallery', { credentials: 'same-origin' })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const tracks = data.tracks || [];
+            const completedTracks = [];
+            
+            // Convert persistent gallery format to display format
+            tracks.forEach((track, index) => {
+                const trackObj = {
+                    id: track.id || `track_${index}`,
+                    title: track.title || 'Untitled Track',
+                    audioUrl: track.audio_url,
+                    imageUrl: track.image_url || track.video_url,
+                    videoUrl: track.video_url,
+                    duration: track.duration || 'Unknown',
+                    modelUsed: track.model_used || 'Unknown',
+                    sunoClipId: track.suno_clip_id,
+                    tags: track.tags || '',
+                    style: track.style || '',
+                    promptUsed: track.prompt_used || '',
+                    isInstrumental: track.is_instrumental || false,
+                    createdAt: track.created_at,
+                    metadata: track.generation_metadata || {}
+                };
+                
+                // Only add tracks with valid audio URLs
+                if (trackObj.audioUrl) {
+                    completedTracks.push(trackObj);
                 }
+            });
+            
+            // Sort by creation date (newest first)
+            completedTracks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            
+            allTracks = completedTracks;
+            
+            // Update statistics from server data or calculate from tracks
+            if (data.statistics) {
+                updateStatisticsFromServer(data.statistics);
+            } else {
+                updateStatistics();
             }
-        });
-        
-        // Sort by creation date (newest first)
-        completedTracks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        
-        allTracks = completedTracks;
-        updateStatistics();
-        renderTracks(allTracks);
-        hideLoadingState();
-        
-        if (completedTracks.length === 0) {
-            showEmptyState();
+            
+            renderTracks(allTracks);
+            hideLoadingState();
+            
+            if (completedTracks.length === 0) {
+                showEmptyState();
+            }
+        } else {
+            throw new Error(data.error || 'Failed to load gallery');
         }
     })
     .catch(error => {
@@ -584,6 +602,27 @@ function updateStatistics() {
     // Update genre filter options
     const genreSelect = document.getElementById('filterGenre');
     const currentGenres = [...new Set(allTracks.map(track => track.genre))].sort();
+    
+    genreSelect.innerHTML = '<option value="">All Genres</option>';
+    currentGenres.forEach(genre => {
+        const option = document.createElement('option');
+        option.value = genre;
+        option.textContent = genre;
+        genreSelect.appendChild(option);
+    });
+}
+
+function updateStatisticsFromServer(serverStats) {
+    // Use server-calculated statistics for better performance
+    document.getElementById('totalTracks').textContent = serverStats.total_tracks || 0;
+    document.getElementById('totalDuration').textContent = formatDuration(serverStats.total_duration || 0);
+    document.getElementById('todayTracks').textContent = serverStats.recent_tracks || 0;
+    document.getElementById('uniqueGenres').textContent = serverStats.total_models || 0; // Using models as genre proxy
+    document.getElementById('trackCount').textContent = `${serverStats.total_tracks || 0} Track${(serverStats.total_tracks || 0) !== 1 ? 's' : ''}`;
+    
+    // Still update genre filter from tracks data
+    const genreSelect = document.getElementById('filterGenre');
+    const currentGenres = [...new Set(allTracks.map(track => track.style || track.genre))].filter(Boolean).sort();
     
     genreSelect.innerHTML = '<option value="">All Genres</option>';
     currentGenres.forEach(genre => {
