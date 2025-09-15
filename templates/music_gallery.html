@@ -1551,18 +1551,31 @@ function generateAlbumArt() {
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success) {
-            videoWorkflowData.albumArt = data;
+        if (data.success && data.image_url) {
+            // Success with image URL
+            videoWorkflowData.albumArt = {
+                success: true,
+                image_url: data.image_url,
+                image_id: data.image_id,
+                status: 'completed'
+            };
+            
             preview.innerHTML = `
                 <img src="${data.image_url}" class="img-fluid rounded" alt="Generated Album Art">
-                <p class="mb-0 small text-success mt-2">✅ Album art generated!</p>
+                <p class="mb-0 small text-success mt-2">✅ Album art generated successfully!</p>
+                <p class="mb-0 small text-muted">Using ${data.model_used || 'AI'} model</p>
             `;
+            
+            // Automatically show next step
+            showNextStep();
         } else {
             preview.innerHTML = `
                 <i class="fas fa-exclamation-triangle fa-2x text-danger mb-2"></i>
-                <p class="mb-0 small text-danger">Failed to generate album art</p>
+                <p class="mb-0 small text-danger">Generation failed: ${data.error || 'Unknown error'}</p>
+                <button class="btn btn-sm btn-outline-primary mt-2" onclick="generateAlbumArt()">
+                    Try Again
+                </button>
             `;
-            Swal.fire('Error', data.error || 'Failed to generate album art', 'error');
         }
     })
     .catch(error => {
@@ -1573,6 +1586,23 @@ function generateAlbumArt() {
         `;
         Swal.fire('Error', 'Network error occurred', 'error');
     });
+}
+
+// Show next step in video workflow
+function showNextStep() {
+    // Show step 2 after album art is generated
+    const step2 = document.getElementById('step2');
+    if (step2) {
+        step2.style.display = 'block';
+        
+        // Scroll to step 2
+        step2.scrollIntoView({ 
+            behavior: 'smooth',
+            block: 'start'
+        });
+        
+        console.log('✅ Showing Step 2: Generate Metadata');
+    }
 }
 
 // Step 2: Metadata Generation

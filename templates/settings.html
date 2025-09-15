@@ -752,12 +752,12 @@
                         <form id="thumbnailSettingsForm">
                             <div class="row">
                                 <div class="col-lg-6 mb-4">
-                                    <h5><i class="fas fa-image text-primary me-2"></i>🍌 Nano-Banana Generation</h5>
+                                    <h5><i class="fas fa-image text-primary me-2"></i>🎨 Ideogram 3.0 Generation</h5>
                                     <hr>
                                     
-                                    <div class="alert alert-info">
-                                        <i class="fas fa-info-circle me-2"></i>
-                                        Using <strong>Gemini 2.5 Flash Image</strong> for professional thumbnail generation
+                                    <div class="alert alert-success">
+                                        <i class="fas fa-magic me-2"></i>
+                                        Using <strong>Ideogram 3.0</strong> for professional album art and thumbnail generation
                                     </div>
                                     
                                     <div class="mb-3">
@@ -787,11 +787,21 @@
                                     </div>
                                     
                                     <div class="mb-3">
-                                        <label for="thumbnailQuality" class="form-label">Quality</label>
+                                        <label for="thumbnailQuality" class="form-label">Rendering Speed</label>
                                         <select class="form-select" id="thumbnailQuality">
-                                            <option value="standard">Standard</option>
-                                            <option value="high" selected>High Quality</option>
-                                            <option value="premium">Premium (Slower)</option>
+                                            <option value="TURBO" selected>Turbo (Fastest)</option>
+                                            <option value="DEFAULT">Default (Balanced)</option>
+                                            <option value="QUALITY">Quality (Best Result)</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="styleType" class="form-label">Style Type</label>
+                                        <select class="form-select" id="styleType">
+                                            <option value="GENERAL" selected>General</option>
+                                            <option value="REALISTIC">Realistic</option>
+                                            <option value="DESIGN">Design</option>
+                                            <option value="FICTION">Fiction</option>
                                         </select>
                                     </div>
                                     
@@ -1786,7 +1796,7 @@ Subscribe for more amazing tracks: {subscribe_link}
                 title: 'Thumbnail Preview',
                 html: `
                     <div class="text-start">
-                        <h6 class="mb-3">🍌 Nano-Banana Generated Preview:</h6>
+                        <h6 class="mb-3">🎨 Ideogram 3.0 Generated Preview:</h6>
                         <div class="bg-light p-3 rounded mb-3" style="aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, ${settings.primaryColor}, ${settings.secondaryColor});">
                             <div class="text-white text-center">
                                 <h5 class="mb-1" style="font-weight: bold;">${settings.includeTitle ? 'Lo-Fi Hip Hop Beat' : 'Music Track'}</h5>
@@ -1850,7 +1860,7 @@ Subscribe for more amazing tracks: {subscribe_link}
         }
         
         if (includeCredits) {
-            preview += "\n\n🤖 Generated with AI\n💫 Nano-Banana (Gemini 2.5 Flash Image)";
+            preview += "\n\n🤖 Generated with AI\n🎨 Ideogram 3.0 (Professional Image Generation)";
         }
         
         if (includeSocialLinks) {
@@ -1922,7 +1932,7 @@ Subscribe for more amazing tracks: {subscribe_link}
             }
             
             if (settings.autoThumbnails) {
-                testResults += '<li><i class="fas fa-check text-success me-2"></i>Auto Thumbnails (Nano-Banana): Ready</li>';
+                testResults += '<li><i class="fas fa-check text-success me-2"></i>Auto Thumbnails (Ideogram 3.0): Ready</li>';
             } else {
                 testResults += '<li><i class="fas fa-exclamation text-warning me-2"></i>Auto Thumbnails: Manual mode</li>';
             }
