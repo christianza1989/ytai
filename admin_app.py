@@ -401,9 +401,9 @@ def api_config():
 @app.route('/generator')
 @require_auth
 def generator():
-    """Simplified Suno-Style Music Generator"""
+    """Compact Layout Music Generator with Suno AI"""
     import time
-    return render_template('music_generator_simplified.html', 
+    return render_template('music_generator_compact.html', 
                          api_status=system_state.api_status,
                          cache_bust=int(time.time()))
 
@@ -2545,7 +2545,7 @@ def api_music_generate():
     try:
         data = request.get_json() or {}
         
-        # Validate required fields - support both simple and custom modes
+        # Validate required fields - support multiple modes
         if data.get('mode') == 'simple':
             # Simple mode validation
             if not data.get('prompt'):
@@ -2559,6 +2559,14 @@ def api_music_generate():
                 return jsonify({
                     'success': False,
                     'error': 'Style is required for custom mode'
+                }), 400
+        # Compact layout mode (new interface)
+        elif 'prompt' in data and 'model' in data:
+            # Compact layout validation - only prompt required
+            if not data.get('prompt'):
+                return jsonify({
+                    'success': False,
+                    'error': 'Prompt is required'
                 }), 400
         # For legacy advanced generator (old interface)
         elif not data.get('mode') and (not data.get('music_type') or not data.get('genre_category')):

@@ -1,0 +1,706 @@
+{% extends "admin_base.html" %}
+
+{% block title %}🎵 Music Generator - Compact Layout{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Compact Music Generator Layout */
+.compact-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Left Panel - Controls */
+.controls-panel {
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    height: fit-content;
+    position: sticky;
+    top: 20px;
+}
+
+/* Right Panel - Players */
+.players-panel {
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    min-height: 600px;
+}
+
+/* Header Gradient */
+.section-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px 20px;
+    margin: -25px -25px 20px -25px;
+    border-radius: 16px 16px 0 0;
+    text-align: center;
+}
+
+/* Model Selection Cards */
+.model-card {
+    background: #f8f9ff;
+    border: 2px solid #e1e8ed;
+    border-radius: 12px;
+    padding: 15px;
+    margin: 10px 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.model-card:hover {
+    border-color: #667eea;
+    background: #f0f4ff;
+}
+
+.model-card.selected {
+    border-color: #667eea;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+/* Form Controls */
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 2px solid #e1e8ed;
+    padding: 12px 15px;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Generate Button */
+.btn-generate {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    padding: 15px 30px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.btn-generate:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.btn-generate:disabled {
+    background: #6c757d;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Music Player Cards */
+.player-card {
+    background: #f8f9ff;
+    border: 2px solid #e1e8ed;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+    opacity: 0.6;
+}
+
+.player-card.active {
+    opacity: 1;
+    border-color: #28a745;
+    background: #f8fff8;
+}
+
+.player-card.generating {
+    border-color: #ffc107;
+    background: #fffdf0;
+}
+
+/* Generating Animation */
+.generating-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: #ffc107;
+}
+
+.pulse {
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+/* Audio Player Styling */
+.audio-player {
+    width: 100%;
+    margin: 15px 0;
+}
+
+.audio-player audio {
+    width: 100%;
+    border-radius: 8px;
+}
+
+/* Track Info */
+.track-info {
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 8px;
+    padding: 15px;
+    margin: 10px 0;
+}
+
+.track-title {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.track-meta {
+    color: #666;
+    font-size: 14px;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.action-buttons .btn {
+    flex: 1;
+    border-radius: 8px;
+    padding: 8px 15px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .compact-container .row {
+        margin: 0;
+    }
+    
+    .controls-panel,
+    .players-panel {
+        margin-bottom: 20px;
+    }
+    
+    .controls-panel {
+        position: static;
+    }
+}
+
+/* Custom Switches */
+.form-switch .form-check-input {
+    width: 3em;
+    height: 1.5em;
+}
+
+.form-switch .form-check-input:checked {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="compact-container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-music text-primary me-2"></i>
+                AI Music Generator
+                <span class="badge bg-primary ms-2">Compact Layout</span>
+            </h1>
+            <p class="text-muted">Generate professional music with Suno AI - Controls on left, Players on right</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column - Controls -->
+        <div class="col-lg-4 col-md-5">
+            <div class="controls-panel">
+                <div class="section-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-sliders-h me-2"></i>
+                        Generation Controls
+                    </h5>
+                </div>
+
+                <!-- Model Selection -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-robot me-1"></i>
+                        Suno AI Model
+                    </label>
+                    <div id="modelSelector">
+                        <div class="model-card" data-model="V4_5">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>V4.5</strong> <span class="badge bg-warning text-dark">Latest</span>
+                                    <div class="small">Superior genre blending, up to 8 min</div>
+                                </div>
+                                <i class="fas fa-crown"></i>
+                            </div>
+                        </div>
+                        <div class="model-card selected" data-model="V4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>V4</strong> <span class="badge bg-success">Recommended</span>
+                                    <div class="small">Best audio quality, up to 4 min</div>
+                                </div>
+                                <i class="fas fa-star"></i>
+                            </div>
+                        </div>
+                        <div class="model-card" data-model="V3_5">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>V3.5</strong> <span class="badge bg-info">Solid</span>
+                                    <div class="small">Creative diversity, up to 4 min</div>
+                                </div>
+                                <i class="fas fa-music"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Prompt -->
+                <div class="mb-3">
+                    <label for="mainPrompt" class="form-label fw-bold">
+                        <i class="fas fa-edit me-1"></i>
+                        Song Description
+                    </label>
+                    <textarea 
+                        id="mainPrompt" 
+                        class="form-control" 
+                        rows="4" 
+                        maxlength="400"
+                        placeholder="Describe your song: genre, mood, instruments, style... (up to 400 characters)">Electronic synthwave track with retro 80s vibes, pulsing bass, atmospheric pads, and nostalgic melodies</textarea>
+                    <div class="form-text">
+                        <span id="promptLength">82</span>/400 characters
+                    </div>
+                </div>
+
+                <!-- Quick Options -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-toggle-on me-1"></i>
+                        Quick Options
+                    </label>
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" id="instrumentalMode" checked>
+                        <label class="form-check-label" for="instrumentalMode">
+                            <i class="fas fa-volume-up me-1"></i>
+                            Instrumental (no vocals)
+                        </label>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="customMode">
+                        <label class="form-check-label" for="customMode">
+                            <i class="fas fa-cogs me-1"></i>
+                            Advanced settings
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Advanced Options (Hidden by default) -->
+                <div id="advancedOptions" style="display: none;">
+                    <div class="mb-3">
+                        <label for="songTitle" class="form-label">Song Title</label>
+                        <input type="text" id="songTitle" class="form-control" placeholder="Leave empty for auto-generation">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="songStyle" class="form-label">Musical Style</label>
+                        <input type="text" id="songStyle" class="form-control" placeholder="e.g., Pop, Rock, Jazz, Classical">
+                    </div>
+                </div>
+
+                <!-- Generate Button -->
+                <div class="d-grid">
+                    <button id="generateBtn" class="btn btn-generate" onclick="generateMusic()">
+                        <i class="fas fa-magic me-2"></i>
+                        Generate Music
+                        <span id="generateSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
+                    </button>
+                </div>
+
+                <!-- Generation Info -->
+                <div class="mt-3">
+                    <div class="alert alert-info" style="display: none;" id="generationInfo">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <span id="generationMessage">Ready to generate music!</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Players -->
+        <div class="col-lg-8 col-md-7">
+            <div class="players-panel">
+                <div class="section-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-headphones me-2"></i>
+                        Generated Music Players
+                        <span class="badge bg-light text-dark ms-2" id="playerCount">0 tracks</span>
+                    </h5>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="text-center py-5">
+                    <i class="fas fa-music fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No music generated yet</h5>
+                    <p class="text-muted">Use the controls on the left to generate your first track!</p>
+                </div>
+
+                <!-- Players Container -->
+                <div id="playersContainer">
+                    <!-- Players will be dynamically added here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Global variables
+let selectedModel = 'V4';
+let generationTasks = [];
+let playerCount = 0;
+
+// Initialize page
+$(document).ready(function() {
+    initializeModelSelector();
+    initializePromptCounter();
+    initializeAdvancedMode();
+    updatePlayerCount();
+});
+
+// Model Selection
+function initializeModelSelector() {
+    $('.model-card').click(function() {
+        $('.model-card').removeClass('selected');
+        $(this).addClass('selected');
+        selectedModel = $(this).data('model');
+        console.log('Selected model:', selectedModel);
+    });
+}
+
+// Prompt Character Counter
+function initializePromptCounter() {
+    $('#mainPrompt').on('input', function() {
+        const length = $(this).val().length;
+        $('#promptLength').text(length);
+        
+        if (length > 350) {
+            $('#promptLength').addClass('text-warning');
+        } else if (length > 380) {
+            $('#promptLength').addClass('text-danger');
+        } else {
+            $('#promptLength').removeClass('text-warning text-danger');
+        }
+    });
+}
+
+// Advanced Mode Toggle
+function initializeAdvancedMode() {
+    $('#customMode').change(function() {
+        if ($(this).is(':checked')) {
+            $('#advancedOptions').slideDown(300);
+        } else {
+            $('#advancedOptions').slideUp(300);
+        }
+    });
+}
+
+// Generate Music Function
+async function generateMusic() {
+    const prompt = $('#mainPrompt').val().trim();
+    if (!prompt) {
+        showAlert('Please enter a song description!', 'warning');
+        return;
+    }
+
+    // Disable generate button
+    $('#generateBtn').prop('disabled', true);
+    $('#generateSpinner').show();
+    $('#generationInfo').show().find('#generationMessage').text('Preparing generation request...');
+
+    try {
+        // Prepare generation data
+        const generationData = {
+            prompt: prompt,
+            model: selectedModel,
+            instrumental: $('#instrumentalMode').is(':checked'),
+            customMode: $('#customMode').is(':checked'),
+            title: $('#songTitle').val().trim() || null,
+            style: $('#songStyle').val().trim() || null
+        };
+
+        console.log('🎵 Generating music with data:', generationData);
+
+        // Create player immediately (inactive state)
+        const playerId = `player_${Date.now()}`;
+        createPlayerCard(playerId, generationData);
+
+        // Make API request
+        const response = await fetch('/api/music/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(generationData)
+        });
+
+        const result = await response.json();
+        console.log('🎵 Generation response:', result);
+
+        if (result.success) {
+            $('#generationMessage').text('Generation started! Track will appear when ready.');
+            
+            // Start polling for updates
+            startPolling(playerId, result.task_id || result.id);
+            
+        } else {
+            throw new Error(result.error || 'Generation failed');
+        }
+
+    } catch (error) {
+        console.error('❌ Generation error:', error);
+        showAlert(`Generation failed: ${error.message}`, 'danger');
+        
+        // Remove failed player if it was created
+        $(`#${playerId}`).remove();
+        updatePlayerCount();
+    } finally {
+        // Re-enable generate button
+        $('#generateBtn').prop('disabled', false);
+        $('#generateSpinner').hide();
+    }
+}
+
+// Create Player Card
+function createPlayerCard(playerId, generationData) {
+    playerCount++;
+    
+    // Hide empty state
+    $('#emptyState').hide();
+    
+    const playerCard = `
+        <div class="player-card generating" id="${playerId}">
+            <div class="track-info">
+                <div class="track-title">
+                    <i class="fas fa-music me-2"></i>
+                    ${generationData.title || 'Generated Track'} #${playerCount}
+                </div>
+                <div class="track-meta">
+                    <span class="badge bg-secondary me-2">${generationData.model}</span>
+                    <span class="badge bg-info me-2">${generationData.instrumental ? 'Instrumental' : 'Vocal'}</span>
+                    <span class="text-muted">${new Date().toLocaleTimeString()}</span>
+                </div>
+            </div>
+            
+            <div class="generating-text pulse">
+                <i class="fas fa-magic me-2"></i>
+                Generating...
+            </div>
+            
+            <div class="audio-player" style="display: none;">
+                <audio controls preload="metadata">
+                    <source src="" type="audio/mpeg">
+                    Your browser does not support the audio element.
+                </audio>
+            </div>
+            
+            <div class="action-buttons" style="display: none;">
+                <button class="btn btn-success btn-sm" onclick="downloadTrack('${playerId}')">
+                    <i class="fas fa-download me-1"></i>Download
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="createVideo('${playerId}')">
+                    <i class="fas fa-video me-1"></i>Create Video
+                </button>
+                <button class="btn btn-outline-danger btn-sm" onclick="deleteTrack('${playerId}')">
+                    <i class="fas fa-trash me-1"></i>Delete
+                </button>
+            </div>
+        </div>
+    `;
+    
+    $('#playersContainer').prepend(playerCard);
+    updatePlayerCount();
+}
+
+// Start Polling for Updates
+function startPolling(playerId, taskId) {
+    console.log(`🔄 Starting polling for player ${playerId}, task ${taskId}`);
+    
+    const pollInterval = setInterval(async () => {
+        try {
+            const response = await fetch(`/api/music/status/${taskId}`);
+            const result = await response.json();
+            
+            console.log(`🔄 Polling update for ${playerId}:`, result);
+            
+            if (result.status === 'completed' && result.audio_url) {
+                // Update player to active state
+                updatePlayerToActive(playerId, result);
+                clearInterval(pollInterval);
+                
+            } else if (result.status === 'error') {
+                // Handle error
+                updatePlayerToError(playerId, result.error || 'Generation failed');
+                clearInterval(pollInterval);
+                
+            } else if (result.status === 'processing') {
+                // Update generating message if needed
+                updateGeneratingMessage(playerId, result.message || 'Generating...');
+            }
+            
+        } catch (error) {
+            console.error(`❌ Polling error for ${playerId}:`, error);
+            // Continue polling - might be temporary network issue
+        }
+    }, 2000); // Poll every 2 seconds
+    
+    // Store interval ID for cleanup
+    $(`#${playerId}`).data('pollInterval', pollInterval);
+}
+
+// Update Player to Active State
+function updatePlayerToActive(playerId, trackData) {
+    const playerCard = $(`#${playerId}`);
+    
+    // Update card state
+    playerCard.removeClass('generating').addClass('active');
+    
+    // Hide generating text
+    playerCard.find('.generating-text').hide();
+    
+    // Update track info
+    if (trackData.title) {
+        playerCard.find('.track-title').html(`
+            <i class="fas fa-music me-2"></i>
+            ${trackData.title}
+        `);
+    }
+    
+    // Show and setup audio player
+    const audioPlayer = playerCard.find('.audio-player');
+    const audioElement = audioPlayer.find('audio');
+    
+    audioElement.attr('src', trackData.audio_url);
+    audioPlayer.show();
+    
+    // Show action buttons
+    playerCard.find('.action-buttons').show();
+    
+    // Store track data
+    playerCard.data('trackData', trackData);
+    
+    console.log(`✅ Player ${playerId} activated with audio: ${trackData.audio_url}`);
+}
+
+// Update Player to Error State
+function updatePlayerToError(playerId, errorMessage) {
+    const playerCard = $(`#${playerId}`);
+    
+    // Update card state
+    playerCard.removeClass('generating active').addClass('border-danger');
+    
+    // Show error message
+    playerCard.find('.generating-text').html(`
+        <i class="fas fa-exclamation-triangle me-2 text-danger"></i>
+        <span class="text-danger">Error: ${errorMessage}</span>
+    `).removeClass('pulse');
+    
+    console.error(`❌ Player ${playerId} error: ${errorMessage}`);
+}
+
+// Update Generating Message
+function updateGeneratingMessage(playerId, message) {
+    $(`#${playerId}`).find('.generating-text').html(`
+        <i class="fas fa-magic me-2"></i>
+        ${message}
+    `);
+}
+
+// Update Player Count
+function updatePlayerCount() {
+    $('#playerCount').text(`${playerCount} tracks`);
+    
+    if (playerCount === 0) {
+        $('#emptyState').show();
+    } else {
+        $('#emptyState').hide();
+    }
+}
+
+// Action Functions
+function downloadTrack(playerId) {
+    const trackData = $(`#${playerId}`).data('trackData');
+    if (trackData && trackData.audio_url) {
+        const a = document.createElement('a');
+        a.href = trackData.audio_url;
+        a.download = trackData.title || 'Generated_Track.mp3';
+        a.click();
+    }
+}
+
+function createVideo(playerId) {
+    const trackData = $(`#${playerId}`).data('trackData');
+    if (trackData) {
+        // Redirect to video creation with track data
+        window.location.href = `/music-gallery?create_video=true&track_id=${trackData.id || playerId}`;
+    }
+}
+
+function deleteTrack(playerId) {
+    if (confirm('Are you sure you want to delete this track?')) {
+        // Clear polling interval if active
+        const pollInterval = $(`#${playerId}`).data('pollInterval');
+        if (pollInterval) {
+            clearInterval(pollInterval);
+        }
+        
+        // Remove player card
+        $(`#${playerId}`).fadeOut(300, function() {
+            $(this).remove();
+            playerCount--;
+            updatePlayerCount();
+        });
+    }
+}
+
+// Utility function to show alerts
+function showAlert(message, type = 'info') {
+    // Create alert element
+    const alertId = 'alert_' + Date.now();
+    const alert = $(`
+        <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
+            <i class="fas fa-${type === 'danger' ? 'exclamation-triangle' : type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    
+    // Add to page
+    $('.compact-container').prepend(alert);
+    
+    // Auto dismiss after 5 seconds
+    setTimeout(() => {
+        $(`#${alertId}`).alert('close');
+    }, 5000);
+}
+</script>
+{% endblock %}
