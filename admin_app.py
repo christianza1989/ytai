@@ -112,11 +112,16 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY', secrets.token_hex(32))
 # Global state management
 class SystemState:
     def __init__(self):
+        self.tasks_file = 'data/generation_tasks.json'
         self.generation_tasks = {}
         self.system_stats = {}
         self.active_sessions = {}
         self.api_status = {}
         self.batch_operations = {}
+        
+        # Load existing tasks on startup
+        self.load_generation_tasks()
+        
         # Mock objects for removed modules to prevent errors
         self.voice_empire = MockVoiceEmpire()
         self.trending_hijacker = MockTrendingHijacker()
@@ -125,6 +130,57 @@ class SystemState:
         self.gemini_vocal_ai = MockGeminiVocalAI()
         self.music_analytics = MockMusicAnalytics()
         
+    def load_generation_tasks(self):
+        """Load generation tasks from file on startup"""
+        try:
+            # Ensure data directory exists
+            os.makedirs('data', exist_ok=True)
+            
+            if os.path.exists(self.tasks_file):
+                with open(self.tasks_file, 'r', encoding='utf-8') as f:
+                    self.generation_tasks = json.load(f)
+                print(f"📁 Loaded {len(self.generation_tasks)} generation tasks from disk")
+            else:
+                print("📁 No existing generation tasks file found, starting fresh")
+        except Exception as e:
+            print(f"⚠️ Error loading generation tasks: {e}")
+            self.generation_tasks = {}
+    
+    def save_generation_tasks(self):
+        """Save generation tasks to file"""
+        try:
+            # Ensure data directory exists
+            os.makedirs('data', exist_ok=True)
+            
+            # Convert datetime objects to ISO strings for JSON serialization
+            serializable_tasks = {}
+            for task_id, task in self.generation_tasks.items():
+                task_copy = dict(task)
+                
+                # Convert datetime objects to strings
+                for key in ['created_at', 'completed_at', 'updated_at']:
+                    if key in task_copy and hasattr(task_copy[key], 'isoformat'):
+                        task_copy[key] = task_copy[key].isoformat()
+                
+                serializable_tasks[task_id] = task_copy
+            
+            with open(self.tasks_file, 'w', encoding='utf-8') as f:
+                json.dump(serializable_tasks, f, indent=2, ensure_ascii=False)
+                
+        except Exception as e:
+            print(f"⚠️ Error saving generation tasks: {e}")
+    
+    def add_generation_task(self, task_id, task_data):
+        """Add a new generation task and save to disk"""
+        self.generation_tasks[task_id] = task_data
+        self.save_generation_tasks()
+    
+    def update_generation_task(self, task_id, updates):
+        """Update existing generation task and save to disk"""
+        if task_id in self.generation_tasks:
+            self.generation_tasks[task_id].update(updates)
+            self.save_generation_tasks()
+
     def update_api_status(self):
         """Update API connection status"""
         status = {}
@@ -507,8 +563,8 @@ def api_start_generation():
     task_id = f"task_{int(time.time())}"
     demo_mode = data.get('demo_mode', False)
     
-    # Store task info
-    system_state.generation_tasks[task_id] = {
+    # Store task info with persistence
+    task_data = {
         'id': task_id,
         'status': 'queued',
         'progress': 0,
@@ -520,32 +576,39 @@ def api_start_generation():
         'demo_mode': demo_mode
     }
     
+    # Save task to persistent storage
+    system_state.add_generation_task(task_id, task_data)
+    
     # Start generation in background thread
     def run_generation():
         try:
-            system_state.generation_tasks[task_id]['status'] = 'running'
+            system_state.update_generation_task(task_id, {'status': 'running'})
             
             if demo_mode:
                 # Demo mode with realistic simulation
                 result = run_demo_generation(task_id, data)
-                system_state.generation_tasks[task_id]['result'] = result
+                system_state.update_generation_task(task_id, {'result': result})
             else:
                 # Real generation pipeline
                 from main import run_creation_pipeline
                 
                 # Mock implementation - replace with actual generation
                 for i in range(10):
-                    system_state.generation_tasks[task_id]['progress'] = (i + 1) * 10
-                    system_state.generation_tasks[task_id]['current_step'] = f'Step {i+1}/10'
+                    system_state.update_generation_task(task_id, {
+                        'progress': (i + 1) * 10,
+                        'current_step': f'Step {i+1}/10'
+                    })
                     time.sleep(1)
                 
-                system_state.generation_tasks[task_id]['result'] = {'success': True}
+                system_state.update_generation_task(task_id, {'result': {'success': True}})
             
-            system_state.generation_tasks[task_id]['status'] = 'completed'
+            system_state.update_generation_task(task_id, {'status': 'completed'})
             
         except Exception as e:
-            system_state.generation_tasks[task_id]['status'] = 'failed'
-            system_state.generation_tasks[task_id]['result'] = {'success': False, 'error': str(e)}
+            system_state.update_generation_task(task_id, {
+                'status': 'failed',
+                'result': {'success': False, 'error': str(e)}
+            })
     
     thread = threading.Thread(target=run_generation, daemon=True)
     thread.start()
@@ -2501,8 +2564,8 @@ def api_music_generate():
         # Generate unique task ID
         task_id = f"music_{int(time.time() * 1000)}"
         
-        # Initialize task in system state
-        system_state.generation_tasks[task_id] = {
+        # Initialize task in system state with persistence
+        task_data = {
             'task_id': task_id,
             'type': 'music_generation',
             'status': 'queued',
@@ -2512,6 +2575,9 @@ def api_music_generate():
             'data': data,
             'logs': []
         }
+        
+        # Save task with persistence
+        system_state.add_generation_task(task_id, task_data)
         
         # Start generation in background thread
         threading.Thread(
@@ -2609,8 +2675,8 @@ def api_music_extend():
         # Generate new task ID for extension
         extend_task_id = f"extend_{int(time.time() * 1000)}"
         
-        # Create task
-        system_state.generation_tasks[extend_task_id] = {
+        # Create task with persistence
+        extend_task_data = {
             'task_id': extend_task_id,
             'type': 'music_extension',
             'status': 'queued',
@@ -2626,6 +2692,7 @@ def api_music_extend():
             'logs': [f"[{datetime.now().strftime('%H:%M:%S')}] Track extension queued"],
             'result': None
         }
+        system_state.add_generation_task(extend_task_id, extend_task_data)
         
         # Start background processing
         threading.Thread(
@@ -2652,13 +2719,19 @@ def process_music_extension(task_id, data):
         task = system_state.generation_tasks[task_id]
         
         def update_progress(progress, step, log_message=None):
-            task['progress'] = progress
-            task['current_step'] = step
+            updates = {
+                'progress': progress,
+                'current_step': step
+            }
             if log_message:
+                if 'logs' not in task:
+                    task['logs'] = []
                 task['logs'].append(f"[{datetime.now().strftime('%H:%M:%S')}] {log_message}")
+                updates['logs'] = task['logs']
+            system_state.update_generation_task(task_id, updates)
         
         # Update status to processing
-        task['status'] = 'processing'
+        system_state.update_generation_task(task_id, {'status': 'processing'})
         update_progress(10, "🎵 Preparing track extension...", "Starting track extension process")
         
         # Initialize Suno client
@@ -2680,32 +2753,38 @@ def process_music_extension(task_id, data):
             update_progress(75, "⚠️ Extension feature coming soon...", "Suno extend API integration pending")
             
             # Simulate completion
-            task['status'] = 'completed'
-            task['result'] = {
-                'success': False,
-                'error': 'Track extension feature is coming soon! Suno AI extend API integration is in development.',
-                'original_track_id': data.get('original_track_id'),
-                'message': 'This feature will allow you to extend tracks by 30-60 seconds using Suno AI.'
-            }
+            system_state.update_generation_task(task_id, {
+                'status': 'completed',
+                'result': {
+                    'success': False,
+                    'error': 'Track extension feature is coming soon! Suno AI extend API integration is in development.',
+                    'original_track_id': data.get('original_track_id'),
+                    'message': 'This feature will allow you to extend tracks by 30-60 seconds using Suno AI.'
+                }
+            })
             
         else:
             # Mock mode or no clip ID
             update_progress(50, "ℹ️ Demo mode active...", "Track extension in demo mode")
             
-            task['status'] = 'completed'
-            task['result'] = {
-                'success': False,
-                'error': 'Track extension requires Suno AI API access and clip ID.',
-                'demo_mode': True,
-                'message': 'Configure Suno API to use track extension feature.'
-            }
+            system_state.update_generation_task(task_id, {
+                'status': 'completed',
+                'result': {
+                    'success': False,
+                    'error': 'Track extension requires Suno AI API access and clip ID.',
+                    'demo_mode': True,
+                    'message': 'Configure Suno API to use track extension feature.'
+                }
+            })
         
         update_progress(100, "✅ Extension process completed", "Track extension process finished")
         
     except Exception as e:
-        task['status'] = 'failed'
-        task['result'] = {'success': False, 'error': str(e)}
-        task['current_step'] = f"❌ Extension failed: {str(e)}"
+        system_state.update_generation_task(task_id, {
+            'status': 'failed',
+            'result': {'success': False, 'error': str(e)},
+            'current_step': f"❌ Extension failed: {str(e)}"
+        })
         print(f"Error in music extension: {e}")
 
 def process_music_generation(task_id, data):
@@ -2714,13 +2793,19 @@ def process_music_generation(task_id, data):
         task = system_state.generation_tasks[task_id]
         
         def update_progress(progress, step, log_message=None):
-            task['progress'] = progress
-            task['current_step'] = step
+            updates = {
+                'progress': progress,
+                'current_step': step
+            }
             if log_message:
+                if 'logs' not in task:
+                    task['logs'] = []
                 task['logs'].append(f"[{datetime.now().strftime('%H:%M:%S')}] {log_message}")
+                updates['logs'] = task['logs']
+            system_state.update_generation_task(task_id, updates)
         
         # Update status to processing
-        task['status'] = 'processing'
+        system_state.update_generation_task(task_id, {'status': 'processing'})
         update_progress(5, "🎵 Preparing music generation request...", "Starting professional music generation")
         
         # Build comprehensive prompt based on user selections
@@ -2937,21 +3022,25 @@ def process_music_generation(task_id, data):
         update_progress(95, "✅ Music generation completed!", "Finalizing output")
         time.sleep(0.5)
         
-        # Mark as completed
-        task['status'] = 'completed'
-        task['progress'] = 100
-        task['current_step'] = '🎉 Professional music generation completed successfully!'
-        task['result'] = result
-        task['completed_at'] = datetime.now()
+        # Mark as completed with persistence
+        system_state.update_generation_task(task_id, {
+            'status': 'completed',
+            'progress': 100,
+            'current_step': '🎉 Professional music generation completed successfully!',
+            'result': result,
+            'completed_at': datetime.now()
+        })
         
         update_progress(100, "🎉 Ready for download!", f"Generated: {result['title']}")
         
     except Exception as e:
-        # Mark as failed
-        task['status'] = 'failed'
-        task['progress'] = 0
-        task['current_step'] = f"❌ Generation failed: {str(e)}"
-        task['result'] = {'error': str(e)}
+        # Mark as failed with persistence
+        system_state.update_generation_task(task_id, {
+            'status': 'failed',
+            'progress': 0,
+            'current_step': f"❌ Generation failed: {str(e)}",
+            'result': {'error': str(e)}
+        })
         task['logs'].append(f"[{datetime.now().strftime('%H:%M:%S')}] ERROR: {str(e)}")
 
 def wait_for_completion_with_progressive_updates(suno, task_id, task, update_progress, max_wait_time=300):
