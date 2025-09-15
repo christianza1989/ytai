@@ -1683,8 +1683,8 @@
     "task_id": "music_1757976646950",
     "type": "music_generation",
     "status": "processing",
-    "progress": 78.66666666666667,
-    "current_step": "🎛️ Suno AI working... (55s)",
+    "progress": 80.33333333333333,
+    "current_step": "🎛️ Suno AI working... (80s)",
     "created_at": "2025-09-15T22:50:46.950645",
     "data": {
       "mode": "custom",
@@ -1731,7 +1731,15 @@
       "[22:51:33] Status: PENDING",
       "[22:51:36] Status: PENDING",
       "[22:51:39] Status: PENDING",
-      "[22:51:42] Status: PENDING"
+      "[22:51:42] Status: PENDING",
+      "[22:51:45] Status: PENDING",
+      "[22:51:48] Status: PENDING",
+      "[22:51:52] Status: PENDING",
+      "[22:51:55] Status: PENDING",
+      "[22:51:58] Status: PENDING",
+      "[22:52:01] Status: PENDING",
+      "[22:52:04] Status: PENDING",
+      "[22:52:07] Status: PENDING"
     ]
   }
 }
