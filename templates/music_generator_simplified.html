@@ -1045,39 +1045,80 @@ function updateSpecializedPreview() {
 
 // Dynamic character counting based on selected model
 function updateCharacterLimits() {
-    const selectedModel = document.getElementById('sunoModelSelect').value;
-    const modelInfo = sunoModels[selectedModel];
-    
-    if (modelInfo) {
+    try {
+        const modelSelect = document.getElementById('sunoModelSelect');
+        if (!modelSelect) {
+            console.log('sunoModelSelect element not found');
+            return;
+        }
+        
+        const selectedModel = modelSelect.value;
+        const modelInfo = sunoModels[selectedModel];
+        
+        if (!modelInfo) {
+            console.log('Model info not found for:', selectedModel);
+            return;
+        }
+        
         // Update simple mode limit display
         const simplePrompt = document.getElementById('simplePrompt');
-        const simpleCount = simplePrompt.value.length;
-        document.getElementById('simpleCharCount').textContent = `${simpleCount}/${modelInfo.simplePromptLimit}`;
+        const simpleCharCount = document.getElementById('simpleCharCount');
+        
+        if (simplePrompt && simpleCharCount) {
+            const simpleCount = simplePrompt.value.length;
+            simpleCharCount.textContent = `${simpleCount}/${modelInfo.simplePromptLimit}`;
+            simplePrompt.maxLength = modelInfo.simplePromptLimit;
+        }
         
         // Update custom mode limit display
         const customPrompt = document.getElementById('customPrompt');
-        const customCount = customPrompt.value.length;
-        document.getElementById('customCharCount').textContent = `${customCount}/${modelInfo.maxPromptLength}`;
+        const customCharCount = document.getElementById('customCharCount');
         
-        // Update placeholder text and maxlength attributes
-        simplePrompt.maxLength = modelInfo.simplePromptLimit;
-        customPrompt.maxLength = modelInfo.maxPromptLength;
+        if (customPrompt && customCharCount) {
+            const customCount = customPrompt.value.length;
+            customCharCount.textContent = `${customCount}/${modelInfo.maxPromptLength}`;
+            customPrompt.maxLength = modelInfo.maxPromptLength;
+        }
         
-        // Update label text
-        document.querySelector('label[for="simplePrompt"] + p + .d-flex small:first-child').innerHTML = 
-            `<i class="fas fa-info-circle me-1"></i>Simple mode - max ${modelInfo.simplePromptLimit} characters`;
-        document.querySelector('label[for="customPrompt"] + textarea + .d-flex small:first-child').textContent = 
-            `Advanced mode - up to ${modelInfo.maxPromptLength} characters`;
+        // Update label text with error handling
+        try {
+            const simpleLabelElement = document.querySelector('label[for="simplePrompt"] + p + .d-flex small:first-child');
+            if (simpleLabelElement) {
+                simpleLabelElement.innerHTML = `<i class="fas fa-info-circle me-1"></i>Simple mode - max ${modelInfo.simplePromptLimit} characters`;
+            }
+        } catch (e) {
+            console.log('Could not update simple mode label:', e);
+        }
+        
+        try {
+            const customLabelElement = document.querySelector('label[for="customPrompt"] + textarea + .d-flex small:first-child');
+            if (customLabelElement) {
+                customLabelElement.textContent = `Advanced mode - up to ${modelInfo.maxPromptLength} characters`;
+            }
+        } catch (e) {
+            console.log('Could not update custom mode label:', e);
+        }
+        
+    } catch (error) {
+        console.error('Error in updateCharacterLimits:', error);
     }
 }
 
 // Character counting with dynamic limits
-document.getElementById('simplePrompt').addEventListener('input', function() {
-    updateCharacterLimits();
-});
+document.addEventListener('DOMContentLoaded', function() {
+    const simplePrompt = document.getElementById('simplePrompt');
+    if (simplePrompt) {
+        simplePrompt.addEventListener('input', function() {
+            updateCharacterLimits();
+        });
+    }
 
-document.getElementById('customPrompt').addEventListener('input', function() {
-    updateCharacterLimits();
+    const customPrompt = document.getElementById('customPrompt');
+    if (customPrompt) {
+        customPrompt.addEventListener('input', function() {
+            updateCharacterLimits();
+        });
+    }
 });
 
 // Specialized category preview update
@@ -1897,23 +1938,45 @@ const sunoModels = {
 
 // Update model information when selection changes
 function updateModelInfo() {
-    const selectedModel = document.getElementById('sunoModelSelect').value;
-    const modelInfo = sunoModels[selectedModel];
-    
-    if (modelInfo) {
-        document.getElementById('modelDescription').textContent = modelInfo.description;
-        console.log(`🤖 Selected Suno Model: ${modelInfo.name} (up to ${modelInfo.maxDuration}min)`);
+    try {
+        const modelSelect = document.getElementById('sunoModelSelect');
+        if (!modelSelect) {
+            console.log('sunoModelSelect element not found in updateModelInfo');
+            return;
+        }
         
-        // Update character limits when model changes
-        updateCharacterLimits();
+        const selectedModel = modelSelect.value;
+        const modelInfo = sunoModels[selectedModel];
+        
+        if (modelInfo) {
+            const descElement = document.getElementById('modelDescription');
+            if (descElement) {
+                descElement.textContent = modelInfo.description;
+            }
+            console.log(`🤖 Selected Suno Model: ${modelInfo.name} (up to ${modelInfo.maxDuration}min)`);
+            
+            // Update character limits when model changes
+            updateCharacterLimits();
+        }
+    } catch (error) {
+        console.error('Error in updateModelInfo:', error);
     }
 }
 
 // Initialize model selection on page load
 function initializeModelSelection() {
-    // Set default model
-    document.getElementById('sunoModelSelect').value = 'V4_5PLUS';
-    updateModelInfo();
+    try {
+        // Set default model
+        const modelSelect = document.getElementById('sunoModelSelect');
+        if (modelSelect) {
+            modelSelect.value = 'V4_5PLUS';
+            updateModelInfo();
+        } else {
+            console.log('sunoModelSelect element not found in initializeModelSelection');
+        }
+    } catch (error) {
+        console.error('Error in initializeModelSelection:', error);
+    }
 }
 
 
