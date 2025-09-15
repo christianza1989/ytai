@@ -27,31 +27,52 @@ class IdeogramClient:
             print(f"📐 Aspect: {aspect_ratio}")
             print(f"⚡ Speed: {rendering_speed}")
             
-            # Prepare request data
-            data = {
+            # Map aspect ratios to Ideogram V3 format (simplified)
+            aspect_ratio_map = {
+                '16:9': '16x9',
+                '9:16': '9x16',
+                '1:1': '1x1',
+                '4:3': '4x3',
+                '3:4': '3x4',
+                '3:2': '3x2',
+                '2:3': '2x3',
+                '16:10': '16x10',
+                '10:16': '10x16',
+                '1:2': '1x2',
+                '2:1': '2x1',
+                '1:3': '1x3',
+                '3:1': '3x1',
+                '4:5': '4x5',
+                '5:4': '5x4'
+            }
+            
+            ideogram_aspect = aspect_ratio_map.get(aspect_ratio, '16x9')
+            
+            # Prepare JSON data for Ideogram V3 API (no image_request wrapper)
+            json_data = {
                 "prompt": prompt,
-                "aspect_ratio": aspect_ratio,
-                "rendering_speed": rendering_speed,
-                "style_type": style_type,
-                "magic_prompt": "AUTO",
-                "num_images": 1
+                "aspect_ratio": ideogram_aspect,
+                "model": "V_3",
+                "magic_prompt_option": "AUTO"
             }
             
             headers = {
-                "Api-Key": self.api_key or "test-key-placeholder"
+                "Api-Key": self.api_key,
+                "Content-Type": "application/json"
             }
             
-            # For now, simulate API call since we don't have real API key
-            if not self.api_key or self.api_key == "test-key-placeholder":
-                print("⚠️ No real API key - using demo mode")
+            # Check if we have a real API key
+            if not self.api_key or self.api_key in ["test-key-placeholder", "your-ideogram-api-key-here", "your_ideogram_api_key_here"]:
+                print("⚠️ No real API key found - using demo mode")
+                print(f"🔑 Current key: {self.api_key[:10] if self.api_key else 'None'}...")
                 return self._generate_demo_response(prompt, aspect_ratio)
             
-            # Make API request
+            # Make API request with JSON data
             print(f"🌐 Calling Ideogram API...")
             response = requests.post(
                 self.base_url,
                 headers=headers,
-                json=data,
+                json=json_data,  # Use json format
                 timeout=30
             )
             
@@ -83,7 +104,16 @@ class IdeogramClient:
                         'message': 'Ideogram API returned empty data'
                     }
             else:
+                error_text = ""
+                try:
+                    error_text = response.text
+                except:
+                    error_text = "Could not read error text"
+                    
                 print(f"❌ IDEOGRAM: Generation failed: API error: {response.status_code}")
+                print(f"💡 IDEOGRAM: Error details: {error_text[:200]}")
+                print(f"💡 IDEOGRAM: Request data: {json_data}")
+                print(f"💡 IDEOGRAM: Headers: {headers}")
                 print(f"💡 IDEOGRAM: Falling back to demo mode")
                 return self._generate_demo_response(prompt, aspect_ratio)
                 

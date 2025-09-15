@@ -1,20 +1,16 @@
 module.exports = {
   apps: [
     {
-      name: 'music-generator',
+      name: 'webapp',
       script: 'python3',
       args: 'admin_app.py',
       env: {
         FLASK_ENV: 'development',
         PORT: 3000,
-        // API keys should be set in .env file or environment variables
-        // SUNO_API_KEY: 'your-suno-api-key-here',
-        // GEMINI_API_KEY: 'your-gemini-api-key-here',
+        // API keys loaded from .env file for security
         GEMINI_MODEL: 'gemini-2.5-flash',
-        // YOUTUBE_API_KEY: 'your-youtube-api-key-here',
-        // YOUTUBE_CLIENT_ID: 'your-youtube-client-id-here',
-        // YOUTUBE_CLIENT_SECRET: 'your-youtube-client-secret-here',
-        // YOUTUBE_CHANNEL_ID: 'your-youtube-channel-id-here'
+        IDEOGRAM_RENDERING_SPEED: 'STANDARD',
+        IDEOGRAM_STYLE_TYPE: 'GENERAL'
       },
       env_file: '.env',
       watch: false,
