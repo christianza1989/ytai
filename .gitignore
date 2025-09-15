@@ -62,3 +62,6 @@ mock_audio/
 *.sqlite3
 database.db
 music_analytics.db
+
+# Runtime data files (dynamically generated)
+data/generation_tasks.json
