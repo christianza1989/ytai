@@ -372,20 +372,22 @@
                                     
                                     <div class="mb-3">
                                         <div class="d-flex gap-2 flex-wrap">
-                                            <button type="button" class="btn btn-primary" onclick="testOAuthConnection()" id="testOAuthBtn" disabled>
-                                                <i class="fas fa-shield-alt me-1"></i>
-                                                Test Credentials
-                                            </button>
-                                            <button type="button" class="btn btn-success" onclick="startOAuthAuthorization()" id="authorizeBtn" disabled>
+                                            <button type="button" class="btn btn-success" onclick="startOAuthAuthorization()" id="authorizeBtn">
                                                 <i class="fas fa-key me-1"></i>
                                                 🔐 Authorize Channel
                                             </button>
-                                            <button type="button" class="btn btn-outline-info btn-sm" onclick="showOAuthHelp()">
+                                            <button type="button" class="btn btn-outline-info" onclick="showOAuthHelp()">
                                                 <i class="fas fa-question-circle me-1"></i>
                                                 Setup Guide
                                             </button>
                                         </div>
+                                        <div class="form-text mt-2">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            <strong>Simplified Workflow:</strong> Fill in your credentials above, click "Save Channel" below, then use "Authorize Channel" for OAuth setup.
+                                        </div>
                                     </div>
+                                    
+
                                     
                                     <!-- OAuth Status Display -->
                                     <div id="oauthStatusDisplay" class="d-none">
@@ -866,7 +868,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Load channels from backend
 function loadChannels() {
-    fetch('/api/youtube/channels/list')
+    fetch('/api/youtube/channels/list?validate_credentials=true')
         .then(response => response.json())
         .then(data => {
             console.log('API Response:', data); // Debug log
@@ -1021,8 +1023,11 @@ function renderChannelsTable() {
                                 <i class="fab fa-youtube"></i>
                             </div>
                         </div>
-                        <div>
-                            <div class="fw-bold">${channelName}</div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold d-flex align-items-center">
+                                ${channelName}
+                                ${getCredentialStatusIndicator(channel)}
+                            </div>
                             <div class="small text-muted">${channelUrl}</div>
                         </div>
                     </div>
@@ -1085,6 +1090,29 @@ function getStatusBadge(status) {
             return '<span class="badge bg-danger"><i class="fas fa-times me-1"></i>Error</span>';
         default:
             return '<span class="badge bg-light text-dark">Unknown</span>';
+    }
+}
+
+function getCredentialStatusIndicator(channel) {
+    const credentialStatus = channel.credential_status;
+    const status = channel.status;
+    
+    // If no credential validation was performed, don't show indicator
+    if (!credentialStatus) {
+        return '';
+    }
+    
+    switch (status) {
+        case 'active':
+            return '<i class="fas fa-check-circle text-success ms-2" title="Credentials Valid"></i>';
+        case 'needs_setup':
+            return '<i class="fas fa-exclamation-triangle text-warning ms-2" title="Setup Required: ' + 
+                   (credentialStatus.error_message || 'Missing or invalid credentials') + '"></i>';
+        case 'error':
+            return '<i class="fas fa-times-circle text-danger ms-2" title="Credential Error: ' + 
+                   (credentialStatus.error_message || 'Unknown error') + '"></i>';
+        default:
+            return '<i class="fas fa-question-circle text-muted ms-2" title="Status Unknown"></i>';
     }
 }
 
@@ -2125,39 +2153,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ====== YOUTUBE OAUTH AUTHENTICATION FUNCTIONS ======
 
-// Validate OAuth credentials and enable buttons
+// Validate OAuth credentials and provide visual feedback
 function validateOAuthCredentials() {
     const clientId = document.getElementById('clientId').value.trim();
     const clientSecret = document.getElementById('clientSecret').value.trim();
-    const testOAuthBtn = document.getElementById('testOAuthBtn');
-    const authorizeBtn = document.getElementById('authorizeBtn');
     
     // Basic validation
     const isClientIdValid = clientId.length > 20 && clientId.includes('.googleusercontent.com');
     const isClientSecretValid = clientSecret.length > 20 && clientSecret.startsWith('GOCSPX-');
     
-    if (isClientIdValid && isClientSecretValid) {
-        testOAuthBtn.disabled = false;
-        authorizeBtn.disabled = false;
-        
-        // Visual feedback
+    // Visual feedback for valid inputs
+    if (isClientIdValid) {
         document.getElementById('clientId').classList.add('is-valid');
         document.getElementById('clientId').classList.remove('is-invalid');
+    } else if (clientId.length > 0) {
+        document.getElementById('clientId').classList.add('is-invalid');
+        document.getElementById('clientId').classList.remove('is-valid');
+    } else {
+        document.getElementById('clientId').classList.remove('is-valid', 'is-invalid');
+    }
+    
+    if (isClientSecretValid) {
         document.getElementById('clientSecret').classList.add('is-valid');
         document.getElementById('clientSecret').classList.remove('is-invalid');
+    } else if (clientSecret.length > 0) {
+        document.getElementById('clientSecret').classList.add('is-invalid');
+        document.getElementById('clientSecret').classList.remove('is-valid');
     } else {
-        testOAuthBtn.disabled = true;
-        authorizeBtn.disabled = true;
-        
-        // Visual feedback for invalid inputs
-        if (clientId.length > 0 && !isClientIdValid) {
-            document.getElementById('clientId').classList.add('is-invalid');
-            document.getElementById('clientId').classList.remove('is-valid');
-        }
-        if (clientSecret.length > 0 && !isClientSecretValid) {
-            document.getElementById('clientSecret').classList.add('is-invalid');
-            document.getElementById('clientSecret').classList.remove('is-valid');
-        }
+        document.getElementById('clientSecret').classList.remove('is-valid', 'is-invalid');
     }
 }
 
@@ -2183,278 +2206,132 @@ function validateApiKey() {
     validateOAuthCredentials();
 }
 
-// Test OAuth credentials (Level 2)
-function testOAuthConnection() {
-    const clientId = document.getElementById('clientId').value;
-    const clientSecret = document.getElementById('clientSecret').value;
-    
-    if (!clientId.trim() || !clientSecret.trim()) {
-        showToast('❌ Please enter both OAuth credentials', 'error');
-        return;
-    }
-    
-    const btn = event.target;
-    const originalText = btn.innerHTML;
-    showLoading(btn);
-    
-    fetch('/api/youtube/test-oauth', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ 
-            client_id: clientId,
-            client_secret: clientSecret
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        hideLoading(btn, originalText);
-        
-        if (data.success) {
-            showToast(`✅ OAuth credentials valid! Ready for authorization.`, 'success');
-            document.getElementById('authorizeBtn').classList.add('btn-pulse');
-        } else {
-            showToast(`❌ OAuth test failed: ${data.error}`, 'error');
-        }
-    })
-    .catch(error => {
-        hideLoading(btn, originalText);
-        console.error('Error testing OAuth:', error);
-        showToast('❌ OAuth test failed. Check your credentials.', 'error');
-    });
-}
+
 
 // Start OAuth authorization flow
 function startOAuthAuthorization() {
+    const channelId = document.getElementById('channelId').value;
     const channelName = document.getElementById('channelName').value;
     const clientId = document.getElementById('clientId').value;
     const clientSecret = document.getElementById('clientSecret').value;
     
+    // Validate required fields with better validation
     if (!channelName.trim()) {
         showToast('❌ Please enter channel name first', 'error');
+        document.getElementById('channelName').focus();
+        return;
+    }
+    
+    if (!clientId.trim()) {
+        showToast('❌ Please enter Client ID first', 'error');
+        document.getElementById('clientId').focus();
+        return;
+    }
+    
+    if (!clientSecret.trim()) {
+        showToast('❌ Please enter Client Secret first', 'error');
+        document.getElementById('clientSecret').focus();
+        return;
+    }
+    
+    // Basic format validation
+    if (clientId.length < 20 || !clientId.includes('.googleusercontent.com')) {
+        showToast('❌ Invalid Client ID format. Should end with .googleusercontent.com', 'error');
+        document.getElementById('clientId').focus();
+        return;
+    }
+    
+    if (clientSecret.length < 20 || !clientSecret.startsWith('GOCSPX-')) {
+        showToast('❌ Invalid Client Secret format. Should start with GOCSPX-', 'error');
+        document.getElementById('clientSecret').focus();
+        return;
+    }
+    
+    // First save the channel to get the ID
+    if (!channelId) {
+        showToast('❌ Please save the channel first by clicking "Save Channel" below', 'error');
         return;
     }
     
     Swal.fire({
-        title: '🔐 OAuth Authorization Required',
+        title: '🔐 YouTube OAuth Autorizacija',
         html: `
             <div class="text-start">
-                <p><strong>Channel:</strong> ${channelName}</p>
-                <p>A browser window will open for you to:</p>
+                <p><strong>Kanalas:</strong> ${channelName}</p>
+                <p>Bus atidarytas naujas langas, kuriame turėsite:</p>
                 <ol>
-                    <li>Sign in to your Google account</li>
-                    <li>Grant permissions to your YouTube channel</li>
-                    <li>Complete the authorization</li>
+                    <li>Prisijungti prie Google paskyros</li>
+                    <li>Suteikti leidimus YouTube kanalui</li>
+                    <li>Užbaigti autorizaciją</li>
                 </ol>
                 <div class="alert alert-info mt-3">
                     <i class="fas fa-info-circle me-2"></i>
-                    This is a <strong>one-time setup</strong> per channel.
+                    Tai <strong>vienkartinis</strong> nustatymas kiekvienam kanalui.
+                </div>
+                <div class="alert alert-warning mt-2">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Svarbu:</strong> Neuždarykite šio lango, kol nebaigsite autorizacijos!
                 </div>
             </div>
         `,
         icon: 'info',
         showCancelButton: true,
-        confirmButtonText: '🚀 Start Authorization',
-        cancelButtonText: 'Cancel'
+        confirmButtonText: '🚀 Pradėti Autorizaciją',
+        cancelButtonText: 'Atšaukti'
     }).then((result) => {
         if (result.isConfirmed) {
-            // Start OAuth flow
-            const oauthData = {
-                channel_name: channelName,
-                client_id: clientId,
-                client_secret: clientSecret
-            };
-            
-            fetch('/api/youtube/start-oauth', {
+            // Start new OAuth flow
+            fetch(`/oauth/youtube/api/authorize/${channelId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(oauthData)
+                }
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // If auth_url is provided, open it in new window for authorization
-                    if (data.auth_url) {
-                        showToast('🔐 Opening Google authorization in new window...', 'info');
-                        
-                        // Open authorization URL in new window
-                        const authWindow = window.open(data.auth_url, 'oauth_authorization', 'width=500,height=600,scrollbars=yes,resizable=yes');
-                        
-                        // Show instructions and wait for user to indicate completion
-                        showToast('📋 Complete the authorization in the popup window, then click the button that appears next.', 'info');
-                        
-                        // Create a button for when user is ready to enter code
-                        setTimeout(() => {
-                            Swal.fire({
-                                title: '🔐 OAuth Authorization',
-                                html: `
-                                    <div class="text-start">
-                                        <p><strong>Step 1:</strong> Complete authorization in the popup window</p>
-                                        <p><strong>Step 2:</strong> Copy the authorization code from Google</p>
-                                        <p><strong>Step 3:</strong> Click "Enter Code" below when ready</p>
-                                        <div class="alert alert-info mt-3">
-                                            <i class="fas fa-info-circle me-2"></i>
-                                            The authorization code will start with "4/0..." and be quite long
-                                        </div>
-                                    </div>
-                                `,
-                                icon: 'info',
-                                showCancelButton: true,
-                                confirmButtonText: '📝 Enter Code',
-                                cancelButtonText: 'Cancel',
-                                allowOutsideClick: false
-                            }).then((result) => {
-                                if (result.isConfirmed) {
-                                    // Now show the prompt for code entry
-                                    const authCode = prompt('🔐 Paste your authorization code here:\n\n(The code should start with "4/0..." and be quite long)\n\nAuthorization Code:');
-                                    
-                                    if (authCode && authCode.trim().length > 10) {
-                                        showToast('🔄 Processing authorization code...', 'info');
-                                        
-                                        // Send authorization code to backend
-                                        fetch('/api/youtube/complete-oauth', {
-                                            method: 'POST',
-                                            headers: {
-                                                'Content-Type': 'application/json'
-                                            },
-                                            body: JSON.stringify({
-                                                channel_name: channelName,
-                                                client_id: clientId,
-                                                client_secret: clientSecret,
-                                                authorization_code: authCode.trim()
-                                            })
-                                        })
-                                        .then(response => response.json())
-                                        .then(data => {
-                                            if (data.success) {
-                                                showOAuthStatus({
-                                                    status: 'Completed',
-                                                    token_valid: true,
-                                                    channel_access: true,
-                                                    upload_permission: true,
-                                                    expires_at: data.expires_at
-                                                });
-                                                updateOAuthStatus(true);
-                                                
-                                                // Update form with OAuth completion data
-                                                if (data.channel_id) {
-                                                    document.getElementById('channelId').value = data.channel_id;
-                                                }
-                                                
-                                                // Update channel name from OAuth if available
-                                                if (data.channel_name) {
-                                                    document.getElementById('channelName').value = data.channel_name;
-                                                }
-                                                
-                                                // Update YouTube channel ID
-                                                if (data.youtube_channel_id) {
-                                                    document.getElementById('channelIdInput').value = data.youtube_channel_id;
-                                                }
-                                                
-                                                showToast('✅ OAuth completed! Channel pre-filled from YouTube account. Ready to configure and save.', 'success');
-                                            } else {
-                                                // Show detailed completion error
-                                                console.error('OAuth Completion Error:', data);
-                                                
-                                                let errorHtml = `
-                                                    <div class="text-start">
-                                                        <p><strong>Error:</strong> ${data.error}</p>
-                                                `;
-                                                
-                                                if (data.hint) {
-                                                    errorHtml += `<p><strong>Hint:</strong> ${data.hint}</p>`;
-                                                }
-                                                
-                                                errorHtml += `
-                                                        <div class="alert alert-info">
-                                                            <strong>Common Issues:</strong><br>
-                                                            • Authorization code expired (try again)<br>
-                                                            • Code copied incorrectly (ensure complete copy)<br>
-                                                            • Wrong Client ID/Secret combination<br>
-                                                            • Account doesn't have YouTube channel
-                                                        </div>
-                                                    </div>
-                                                `;
-                                                
-                                                Swal.fire({
-                                                    title: '❌ Authorization Failed',
-                                                    html: errorHtml,
-                                                    icon: 'error',
-                                                    confirmButtonText: 'Try Again',
-                                                    width: '500px'
-                                                });
-                                            }
-                                        })
-                                        .catch(error => {
-                                            console.error('OAuth completion error:', error);
-                                            showToast('❌ Failed to complete authorization', 'error');
-                                        });
-                                    } else {
-                                        showToast('❌ No valid authorization code provided', 'warning');
-                                    }
-                                } else {
-                                    showToast('❌ Authorization cancelled', 'warning');
-                                }
-                                
-                                // Close auth window if still open
-                                if (authWindow && !authWindow.closed) {
-                                    authWindow.close();
-                                }
-                            });
-                        }, 1000); // Just 1 second delay to show the popup first
-                        
-                    } else {
-                        // Fallback for other success scenarios
-                        showOAuthStatus(data);
-                        updateOAuthStatus(true);
-                    }
-                } else {
-                    // Display detailed error information
-                    let errorMsg = `❌ OAuth setup failed: ${data.error}`;
+                    // Open OAuth authorization in popup window  
+                    showToast('🔐 Atidaromas autorizacijos langas...', 'info');
                     
-                    // Add specific suggestions if available
-                    if (data.suggestions && data.suggestions.length > 0) {
-                        console.error('OAuth Error Details:', data);
-                        
-                        // Show detailed error in modal instead of toast for complex errors
-                        Swal.fire({
-                            title: '🔴 OAuth Configuration Error',
-                            html: `
-                                <div class="text-start">
-                                    <p><strong>Error:</strong> ${data.error}</p>
-                                    ${data.details ? `
-                                        <div class="alert alert-info">
-                                            <strong>Details:</strong><br>
-                                            • Client ID: ${data.details.client_id_valid ? '✅ Valid' : '❌ Invalid'}<br>
-                                            • Client Secret: ${data.details.client_secret_valid ? '✅ Valid' : '❌ Invalid'}<br>
-                                            • Scopes: ${data.details.scopes_requested ? data.details.scopes_requested.join(', ') : 'Unknown'}
-                                        </div>
-                                    ` : ''}
-                                    <div class="alert alert-warning">
-                                        <strong>Suggestions:</strong><br>
-                                        ${data.suggestions.map(s => `• ${s}`).join('<br>')}
-                                    </div>
-                                    <div class="alert alert-primary">
-                                        <strong>Google Console Setup:</strong><br>
-                                        1. Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console</a><br>
-                                        2. Create OAuth 2.0 Client IDs<br>
-                                        3. Set Application Type to "Desktop application"<br>
-                                        4. Add ONLY "urn:ietf:wg:oauth:2.0:oob" as redirect URI<br>
-                                        5. Enable YouTube Data API v3<br>
-                                        6. Download credentials JSON and copy Client ID/Secret
-                                    </div>
-                                </div>
-                            `,
-                            icon: 'error',
-                            confirmButtonText: 'OK',
-                            width: '600px'
-                        });
-                    } else {
-                        showToast(errorMsg, 'error');
+                    // Open in popup window
+                    const popupFeatures = 'width=600,height=700,scrollbars=yes,resizable=yes,status=yes';
+                    const authWindow = window.open(data.authorization_url, 'oauth_popup', popupFeatures);
+                    
+                    if (!authWindow) {
+                        showToast('❌ Nepavyko atidaryti popup lango. Patikrinkite popup blokatorių.', 'error');
+                        return;
                     }
+                    
+                    // Listen for popup messages
+                    const messageHandler = (event) => {
+                        if (event.data && event.data.type === 'oauth_result') {
+                            window.removeEventListener('message', messageHandler);
+                            
+                            if (event.data.success) {
+                                showToast('✅ Autorizacija sėkminga!', 'success');
+                                
+                                // Refresh channel list to show updated status
+                                setTimeout(() => {
+                                    loadYouTubeChannels();
+                                }, 1000);
+                            } else {
+                                showToast(`❌ Autorizacijos klaida: ${event.data.message}`, 'error');
+                            }
+                        }
+                    };
+                    
+                    window.addEventListener('message', messageHandler);
+                    
+                    // Check if popup was closed manually
+                    const checkClosed = setInterval(() => {
+                        if (authWindow.closed) {
+                            clearInterval(checkClosed);
+                            window.removeEventListener('message', messageHandler);
+                            showToast('ℹ️ Autorizacijos langas uždarytas', 'info');
+                        }
+                    }, 1000)
+                } else {
+                    showToast(`❌ Autorizacijos klaida: ${data.error || data.message}`, 'error');
                 }
             })
             .catch(error => {
@@ -2500,8 +2377,12 @@ function updateOAuthStatus(success) {
     } else {
         oauthCard.className = 'card border-primary';
         oauthCard.querySelector('.card-header').className = 'card-header bg-primary text-white';
+        oauthCard.querySelector('.badge').innerHTML = 'Required';
+        oauthCard.querySelector('.badge').className = 'badge bg-light text-dark ms-2';
     }
 }
+
+
 
 // Show OAuth help
 function showOAuthHelp() {
@@ -2531,10 +2412,7 @@ function showOAuthHelp() {
     });
 }
 
-// Main connection test function (OAuth only)
-function testConnection() {
-    testOAuthConnection();
-}
+
 
 // Initialize page message
 showToast('🎯 YouTube Channels Manager loaded - Ready to manage your empire!', 'success');

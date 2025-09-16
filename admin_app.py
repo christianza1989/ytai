@@ -14,7 +14,7 @@ import shutil
 from pathlib import Path
 from datetime import datetime, timedelta
 from functools import wraps
-from flask import Flask, render_template, request, jsonify, send_from_directory, flash, redirect, url_for, session
+from flask import Flask, render_template, request, jsonify, send_from_directory, send_file, flash, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
 from dotenv import load_dotenv
@@ -109,6 +109,9 @@ class MockMusicAnalytics:
 
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', secrets.token_hex(32))
+
+# Import and setup YouTube OAuth system
+from core.auth.youtube_oauth_routes import create_oauth_routes
 
 # Global state management
 class SystemState:
@@ -291,6 +294,9 @@ def require_auth(f):
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
+
+# Initialize YouTube OAuth routes
+create_oauth_routes(app, require_auth)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -4922,15 +4928,19 @@ def api_upload_to_youtube():
 @app.route('/api/youtube/channels/list')
 @require_auth
 def api_list_youtube_channels():
-    """List available YouTube channels with full database integration"""
+    """List available YouTube channels with full database integration and credential validation"""
     try:
         from core.database.youtube_channels_db import YouTubeChannelsDB
         
         db = YouTubeChannelsDB()
-        channels = db.list_channels()
         
-        # Debug: Log API credentials in the channels list
-        print(f"📤 Backend channels list - Found {len(channels)} channels")
+        # Get validate_credentials parameter from query string
+        validate_credentials = request.args.get('validate_credentials', 'true').lower() == 'true'
+        
+        channels = db.list_channels(validate_credentials=validate_credentials)
+        
+        # Debug: Log API credentials and validation status in the channels list
+        print(f"📤 Backend channels list - Found {len(channels)} channels (validation: {validate_credentials})")
         for channel in channels:
             print(f"   Channel {channel.get('id')}: API credentials = {
                 'api_key: ***set***' if channel.get('api_key') else 'api_key: empty'
@@ -4938,12 +4948,13 @@ def api_list_youtube_channels():
                 'client_id: ***set***' if channel.get('client_id') else 'client_id: empty'
             }, {
                 'client_secret: ***set***' if channel.get('client_secret') else 'client_secret: empty'
-            }")
+            }, Status: {channel.get('status')}, Validation: {channel.get('credential_status', {}).get('status') if validate_credentials else 'not_checked'}")
         
         return jsonify({
             'success': True,
             'channels': channels,
-            'count': len(channels)
+            'count': len(channels),
+            'validation_performed': validate_credentials
         })
         
     except Exception as e:
@@ -4991,6 +5002,15 @@ def api_save_youtube_channel():
             try:
                 channel_id = int(channel_id)
                 result = db.update_channel(channel_id, data)
+                
+                # After successful update, validate credentials and update status
+                if result['success'] and result.get('channel'):
+                    validation_result = db._validate_channel_credentials(result['channel'])
+                    if validation_result['status'] != result['channel'].get('status'):
+                        db._update_channel_status(channel_id, validation_result['status'], validation_result.get('error_message'))
+                        result['channel']['status'] = validation_result['status']
+                    result['channel']['credential_status'] = validation_result
+                    
             except (ValueError, TypeError):
                 return jsonify({
                     'success': False,
@@ -4999,6 +5019,14 @@ def api_save_youtube_channel():
         else:
             # Create new channel (channel_id is empty, None, or invalid)
             result = db.add_channel(data)
+            
+            # After successful creation, validate credentials and update status
+            if result['success'] and result.get('channel'):
+                validation_result = db._validate_channel_credentials(result['channel'])
+                if validation_result['status'] != result['channel'].get('status'):
+                    db._update_channel_status(result['channel']['id'], validation_result['status'], validation_result.get('error_message'))
+                    result['channel']['status'] = validation_result['status']
+                result['channel']['credential_status'] = validation_result
         
         if result['success']:
             return jsonify(result)
@@ -5140,6 +5168,52 @@ def api_youtube_test_connection():
         }), 500
 
 
+
+@app.route('/api/youtube/validate-channel-credentials', methods=['POST'])
+@require_auth
+def api_validate_channel_credentials():
+    """Validate specific channel's YouTube API credentials"""
+    try:
+        from core.database.youtube_channels_db import YouTubeChannelsDB
+        
+        data = request.get_json() or {}
+        channel_id = data.get('channel_id')
+        
+        if not channel_id:
+            return jsonify({
+                'success': False,
+                'error': 'Channel ID is required'
+            }), 400
+        
+        db = YouTubeChannelsDB()
+        channel = db.get_channel(channel_id)
+        
+        if not channel:
+            return jsonify({
+                'success': False,
+                'error': 'Channel not found'
+            }), 404
+        
+        # Validate credentials
+        validation_result = db._validate_channel_credentials(channel)
+        
+        # Update channel status if needed
+        if validation_result['status'] != channel['status']:
+            db._update_channel_status(channel_id, validation_result['status'], validation_result.get('error_message'))
+        
+        return jsonify({
+            'success': True,
+            'channel_id': channel_id,
+            'validation_result': validation_result,
+            'status_updated': validation_result['status'] != channel['status']
+        })
+        
+    except Exception as e:
+        print(f"Error validating channel credentials: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 @app.route('/api/youtube/test-oauth', methods=['POST'])
 @require_auth
@@ -6490,6 +6564,45 @@ def api_get_background_tasks():
             'message': 'Failed to load background tasks'
         }), 500
 
+@app.route('/api/tasks/<task_id>/status')
+@require_auth
+def api_get_task_status(task_id):
+    """Get task status for video gallery upload progress polling"""
+    try:
+        # First check in-memory generation tasks (for real-time tasks)
+        if task_id in system_state.generation_tasks:
+            task = system_state.generation_tasks[task_id]
+            return jsonify({
+                'success': True,
+                'task': task
+            })
+        
+        # Then check database background tasks (for persistent tasks)
+        from core.database.youtube_channels_db import YouTubeChannelsDB
+        db = YouTubeChannelsDB()
+        tasks = db.get_background_tasks()
+        
+        task = next((t for t in tasks if t['task_id'] == task_id), None)
+        
+        if task:
+            return jsonify({
+                'success': True,
+                'task': task
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'Task not found'
+            }), 404
+            
+    except Exception as e:
+        print(f"Error getting task status {task_id}: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to load task status'
+        }), 500
+
 @app.route('/api/background-tasks/<task_id>')
 @require_auth 
 def api_get_background_task(task_id):
@@ -6877,6 +6990,68 @@ def api_download_video(video_id):
         
     except Exception as e:
         return f"Download error: {str(e)}", 500
+
+@app.route('/api/video-gallery/fix-durations', methods=['POST'])
+@require_auth
+def api_fix_video_durations():
+    """Fix video durations by analyzing actual video files"""
+    try:
+        from core.database.youtube_channels_db import YouTubeChannelsDB
+        from pathlib import Path
+        import subprocess
+        import json
+        
+        db = YouTubeChannelsDB()
+        videos = db.get_video_gallery(limit=1000)  # Get all videos
+        
+        fixed_count = 0
+        errors = []
+        
+        for video in videos:
+            try:
+                file_path = video.get('file_path')
+                if not file_path or not Path(file_path).exists():
+                    continue
+                
+                # Use ffprobe to get video duration
+                cmd = [
+                    'ffprobe', 
+                    '-v', 'quiet', 
+                    '-print_format', 'json', 
+                    '-show_format', 
+                    file_path
+                ]
+                
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+                if result.returncode == 0:
+                    probe_data = json.loads(result.stdout)
+                    duration_seconds = float(probe_data.get('format', {}).get('duration', 0))
+                    
+                    if duration_seconds > 0:
+                        # Update database with correct duration
+                        db.update_video_duration(video['id'], duration_seconds)
+                        fixed_count += 1
+                        print(f"✅ Fixed duration for video {video['id']}: {duration_seconds:.2f}s")
+                    
+            except Exception as e:
+                error_msg = f"Error processing video {video.get('id', 'unknown')}: {str(e)}"
+                errors.append(error_msg)
+                print(f"❌ {error_msg}")
+        
+        return jsonify({
+            'success': True,
+            'fixed_count': fixed_count,
+            'total_videos': len(videos),
+            'errors': errors,
+            'message': f'Fixed durations for {fixed_count} videos'
+        })
+        
+    except Exception as e:
+        print(f"❌ Error fixing video durations: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 @app.route('/api/video-gallery/<int:video_id>/delete', methods=['DELETE'])
 @require_auth

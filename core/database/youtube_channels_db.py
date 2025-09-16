@@ -623,8 +623,8 @@ class YouTubeChannelsDB:
             self.logger.error(f"Error getting channel {channel_id}: {e}")
             return None
     
-    def list_channels(self, status: Optional[str] = None) -> List[Dict[str, Any]]:
-        """List all channels with optional status filter"""
+    def list_channels(self, status: Optional[str] = None, validate_credentials: bool = True) -> List[Dict[str, Any]]:
+        """List all channels with optional status filter and credential validation"""
         try:
             with sqlite3.connect(self.db_path) as conn:
                 conn.row_factory = sqlite3.Row
@@ -655,6 +655,17 @@ class YouTubeChannelsDB:
                     channel['upload_hours'] = json.loads(channel['upload_hours']) if channel['upload_hours'] else []
                     channel['advanced_settings'] = json.loads(channel['advanced_settings']) if channel['advanced_settings'] else {}
                     
+                    # Validate credentials and update status if needed
+                    if validate_credentials:
+                        validation_status = self._validate_channel_credentials(channel)
+                        channel['credential_status'] = validation_status
+                        
+                        # Update database status if it doesn't match validation
+                        if validation_status['status'] != channel['status']:
+                            print(f"🔄 Updating channel {channel.get('id')} status from {channel['status']} to {validation_status['status']}")
+                            self._update_channel_status(channel['id'], validation_status['status'], validation_status.get('error_message'))
+                            channel['status'] = validation_status['status']
+                    
                     channels.append(channel)
                 
                 return channels
@@ -662,6 +673,81 @@ class YouTubeChannelsDB:
         except Exception as e:
             self.logger.error(f"Error listing channels: {e}")
             return []
+    
+    def _validate_channel_credentials(self, channel: Dict[str, Any]) -> Dict[str, str]:
+        """Validate YouTube API credentials for a channel"""
+        api_key = channel.get('api_key')
+        client_id = channel.get('client_id')
+        client_secret = channel.get('client_secret')
+        oauth_authorized = channel.get('oauth_authorized', False)
+        
+        # Check if all required credentials are present
+        if not api_key or not client_id or not client_secret:
+            return {
+                'status': 'needs_setup',
+                'error_message': 'Missing required API credentials',
+                'issues': [
+                    'API Key missing' if not api_key else None,
+                    'Client ID missing' if not client_id else None,
+                    'Client Secret missing' if not client_secret else None
+                ]
+            }
+        
+        # Check basic credential format
+        format_issues = []
+        if not api_key.startswith('AIza'):
+            format_issues.append('API Key format invalid')
+        if not client_id.endswith('.googleusercontent.com'):
+            format_issues.append('Client ID format invalid')
+        if not client_secret.startswith('GOCSPX-'):
+            format_issues.append('Client Secret format invalid')
+        
+        if format_issues:
+            return {
+                'status': 'needs_setup',
+                'error_message': 'Invalid credential format',
+                'issues': format_issues
+            }
+        
+        # Check OAuth authorization status
+        if not oauth_authorized:
+            return {
+                'status': 'needs_setup',
+                'error_message': 'OAuth authorization required',
+                'issues': ['Channel not authorized for YouTube access']
+            }
+        
+        # If all checks pass, mark as active
+        return {
+            'status': 'active',
+            'error_message': None,
+            'issues': []
+        }
+    
+    def _update_channel_status(self, channel_id: int, status: str, error_message: str = None) -> bool:
+        """Update channel status in database"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                cursor.execute('''
+                    UPDATE youtube_channels 
+                    SET status = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                ''', (status, channel_id))
+                
+                # Log the status change
+                if error_message:
+                    self._log_event(channel_id, 'status_change', f'Status changed to {status}: {error_message}')
+                else:
+                    self._log_event(channel_id, 'status_change', f'Status changed to {status}')
+                
+                conn.commit()
+                return True
+                
+        except Exception as e:
+            self.logger.error(f"Error updating channel status: {e}")
+            return False
     
     def add_background_task(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
         """Add a new background task"""
@@ -1516,6 +1602,30 @@ class YouTubeChannelsDB:
                 'error': str(e),
                 'message': 'Failed to delete video'
             }
+    
+    def update_video_duration(self, video_id: int, duration: float) -> bool:
+        """Update video duration in gallery"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                cursor.execute('''
+                    UPDATE video_gallery SET
+                        duration = ?,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                ''', (duration, video_id))
+                
+                success = cursor.rowcount > 0
+                if success:
+                    conn.commit()
+                    self.logger.info(f"Updated duration for video {video_id} to {duration} seconds")
+                
+                return success
+                
+        except Exception as e:
+            self.logger.error(f"Error updating video duration: {e}")
+            return False
     
     def get_video_gallery_stats(self) -> Dict[str, Any]:
         """Get video gallery statistics"""
