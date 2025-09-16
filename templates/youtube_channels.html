@@ -275,6 +275,19 @@
                                 <textarea class="form-control" id="channelDescription" name="description" rows="3" 
                                           placeholder="Channel description and focus"></textarea>
                             </div>
+                            
+                            <div class="mb-3">
+                                <label for="targetAudience" class="form-label">Target Audience</label>
+                                <select class="form-select" id="targetAudience" name="target_audience">
+                                    <option value="general">General Audience</option>
+                                    <option value="students">Students & Study</option>
+                                    <option value="relaxation">Relaxation & Sleep</option>
+                                    <option value="workout">Fitness & Workout</option>
+                                    <option value="gaming">Gaming & Focus</option>
+                                    <option value="meditation">Meditation & Mindfulness</option>
+                                    <option value="work">Work & Productivity</option>
+                                </select>
+                            </div>
                         </div>
                         
                         <div class="col-md-6 mb-4">
@@ -320,6 +333,27 @@
                                                 <button type="button" class="btn btn-outline-secondary" onclick="togglePasswordVisibility('clientSecret')">
                                                     <i class="fas fa-eye"></i>
                                                 </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- YouTube API Key Field -->
+                                    <div class="row">
+                                        <div class="col-12 mb-3">
+                                            <label for="apiKey" class="form-label">
+                                                YouTube Data API Key *
+                                                <span class="text-muted">(Required for uploads)</span>
+                                            </label>
+                                            <div class="input-group">
+                                                <input type="password" class="form-control" id="apiKey" name="api_key" 
+                                                       placeholder="AIzaSyA..." onchange="validateApiKey()">
+                                                <button type="button" class="btn btn-outline-secondary" onclick="togglePasswordVisibility('apiKey')">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                            <div class="form-text">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                Required for YouTube API access and video uploads. Get from Google Cloud Console → Credentials → API Keys.
                                             </div>
                                         </div>
                                     </div>
@@ -1177,12 +1211,31 @@ function editChannel(channelId) {
         <i class="fab fa-youtube text-danger me-2"></i>Edit Channel: ${channelName}
     `;
     
-    // Populate basic form data
-    document.getElementById('channelId').value = channel.id;
-    document.getElementById('channelName').value = channel.channel_name || channel.name || '';
-    document.getElementById('channelUrl').value = channel.channel_url || channel.url || '';
-    document.getElementById('channelIdInput').value = channel.youtube_channel_id || channel.channel_id || '';
-    document.getElementById('channelDescription').value = channel.description || '';
+    // Populate basic form data - safe checks
+    const channelIdField = document.getElementById('channelId');
+    if (channelIdField) {
+        channelIdField.value = channel.id;
+    }
+    
+    const channelNameField = document.getElementById('channelName');
+    if (channelNameField) {
+        channelNameField.value = channel.channel_name || channel.name || '';
+    }
+    
+    const channelUrlField = document.getElementById('channelUrl');
+    if (channelUrlField) {
+        channelUrlField.value = channel.channel_url || channel.url || '';
+    }
+    
+    const channelIdInputField = document.getElementById('channelIdInput');
+    if (channelIdInputField) {
+        channelIdInputField.value = channel.youtube_channel_id || channel.channel_id || '';
+    }
+    
+    const channelDescriptionField = document.getElementById('channelDescription');
+    if (channelDescriptionField) {
+        channelDescriptionField.value = channel.description || '';
+    }
     
     // Populate API credentials - FIXED: Now loading saved credentials!
     console.log('📥 Frontend editChannel - API credentials from channel data:', {
@@ -1191,14 +1244,33 @@ function editChannel(channelId) {
         client_secret: channel.client_secret ? '***set***' : 'empty/missing'
     });
     
-    document.getElementById('apiKey').value = channel.api_key || '';
-    document.getElementById('clientId').value = channel.client_id || '';
-    document.getElementById('clientSecret').value = channel.client_secret || '';
+    // Safe field population with null checks
+    const apiKeyField = document.getElementById('apiKey');
+    const clientIdField = document.getElementById('clientId');
+    const clientSecretField = document.getElementById('clientSecret');
+    
+    if (apiKeyField) {
+        apiKeyField.value = channel.api_key || '';
+    } else {
+        console.error('apiKey field not found');
+    }
+    
+    if (clientIdField) {
+        clientIdField.value = channel.client_id || '';
+    } else {
+        console.error('clientId field not found');
+    }
+    
+    if (clientSecretField) {
+        clientSecretField.value = channel.client_secret || '';
+    } else {
+        console.error('clientSecret field not found');
+    }
     
     console.log('📝 Frontend editChannel - Form fields after population:', {
-        apiKey: document.getElementById('apiKey').value ? '***set***' : 'empty',
-        clientId: document.getElementById('clientId').value ? '***set***' : 'empty',
-        clientSecret: document.getElementById('clientSecret').value ? '***set***' : 'empty'
+        apiKey: (apiKeyField && apiKeyField.value) ? '***set***' : 'empty',
+        clientId: (clientIdField && clientIdField.value) ? '***set***' : 'empty',
+        clientSecret: (clientSecretField && clientSecretField.value) ? '***set***' : 'empty'
     });
     
     // Populate genre selection
@@ -1226,21 +1298,62 @@ function editChannel(channelId) {
     updateSelectedGenres();
     
     // Populate target audience
-    document.getElementById('targetAudience').value = channel.target_audience || 'general';
+    const targetAudienceField = document.getElementById('targetAudience');
+    if (targetAudienceField) {
+        targetAudienceField.value = channel.target_audience || 'general';
+    }
     
     // Populate schedule settings
-    document.getElementById('uploadSchedule').value = channel.upload_schedule || 'daily';
-    document.getElementById('dailyUploadCount').value = channel.daily_upload_count || 1;
-    document.getElementById('vocalProbability').value = channel.vocal_probability || 0.8;
+    const uploadScheduleField = document.getElementById('uploadSchedule');
+    if (uploadScheduleField) {
+        uploadScheduleField.value = channel.upload_schedule || 'daily';
+    }
     
-    // Populate automation settings
-    document.getElementById('autoUpload').checked = channel.auto_upload !== false;
-    document.getElementById('autoThumbnails').checked = channel.auto_thumbnails !== false;
-    document.getElementById('autoSEO').checked = channel.auto_seo !== false;
-    document.getElementById('aiDecisionEnabled').checked = channel.ai_decision_enabled !== false;
-    document.getElementById('enableAnalytics').checked = channel.enable_analytics !== false;
-    document.getElementById('enableMonetization').checked = channel.enable_monetization || false;
-    document.getElementById('privacySettings').value = channel.privacy_settings || 'private';
+    const dailyUploadCountField = document.getElementById('dailyUploadCount');
+    if (dailyUploadCountField) {
+        dailyUploadCountField.value = channel.daily_upload_count || 1;
+    }
+    
+    const vocalProbabilityField = document.getElementById('vocalProbability');
+    if (vocalProbabilityField) {
+        vocalProbabilityField.value = channel.vocal_probability || 0.8;
+    }
+    
+    // Populate automation settings - safe checks
+    const autoUploadField = document.getElementById('autoUpload');
+    if (autoUploadField) {
+        autoUploadField.checked = channel.auto_upload !== false;
+    }
+    
+    const autoThumbnailsField = document.getElementById('autoThumbnails');
+    if (autoThumbnailsField) {
+        autoThumbnailsField.checked = channel.auto_thumbnails !== false;
+    }
+    
+    const autoSEOField = document.getElementById('autoSEO');
+    if (autoSEOField) {
+        autoSEOField.checked = channel.auto_seo !== false;
+    }
+    
+    const aiDecisionEnabledField = document.getElementById('aiDecisionEnabled');
+    if (aiDecisionEnabledField) {
+        aiDecisionEnabledField.checked = channel.ai_decision_enabled !== false;
+    }
+    
+    const enableAnalyticsField = document.getElementById('enableAnalytics');
+    if (enableAnalyticsField) {
+        enableAnalyticsField.checked = channel.enable_analytics !== false;
+    }
+    
+    const enableMonetizationField = document.getElementById('enableMonetization');
+    if (enableMonetizationField) {
+        enableMonetizationField.checked = channel.enable_monetization || false;
+    }
+    
+    const privacySettingsField = document.getElementById('privacySettings');
+    if (privacySettingsField) {
+        privacySettingsField.value = channel.privacy_settings || 'private';
+    }
     
     // Update schedule options and upload hours
     updateScheduleOptions();
@@ -2046,6 +2159,28 @@ function validateOAuthCredentials() {
             document.getElementById('clientSecret').classList.remove('is-valid');
         }
     }
+}
+
+// Validate API Key
+function validateApiKey() {
+    const apiKey = document.getElementById('apiKey').value.trim();
+    const apiKeyField = document.getElementById('apiKey');
+    
+    // Basic validation for YouTube API Key format
+    const isApiKeyValid = apiKey.length > 25 && apiKey.startsWith('AIza');
+    
+    if (isApiKeyValid) {
+        apiKeyField.classList.add('is-valid');
+        apiKeyField.classList.remove('is-invalid');
+    } else if (apiKey.length > 0) {
+        apiKeyField.classList.add('is-invalid');
+        apiKeyField.classList.remove('is-valid');
+    } else {
+        apiKeyField.classList.remove('is-valid', 'is-invalid');
+    }
+    
+    // Update the overall validation state
+    validateOAuthCredentials();
 }
 
 // Test OAuth credentials (Level 2)
