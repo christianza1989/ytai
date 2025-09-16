@@ -1,389 +1,317 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Gallery - Professional Autonominis Muzikantas</title>
+{% extends "admin_base.html" %}
+
+{% block title %}🎬 Video Gallery - Generated Videos{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Video Gallery Styles */
+.video-gallery-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.bg-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-card {
+    transition: transform 0.3s ease;
+    border-radius: 10px;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+}
+
+.video-card {
+    border-radius: 16px;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    margin-bottom: 1.5rem;
+}
+
+.video-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+.video-card .card {
+    border: none;
+    border-radius: 16px;
+    background: linear-gradient(145deg, #ffffff, #f8f9fa);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.video-info {
+    padding: 1.5rem;
+}
+
+.video-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+}
+
+.video-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.status-badge {
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.status-ready {
+    background: #e8f5e8;
+    color: #27ae60;
+}
+
+.status-uploaded {
+    background: #e3f2fd;
+    color: #3498db;
+}
+
+.status-uploading {
+    background: #fff3e0;
+    color: #f39c12;
+}
+
+.status-failed {
+    background: #ffebee;
+    color: #e74c3c;
+}
+
+.video-actions {
+    padding: 1rem 1.5rem;
+    background: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+}
+
+.btn-custom {
+    border-radius: 25px;
+    padding: 0.5rem 1.2rem;
+    font-weight: 500;
+    border: none;
+    transition: all 0.3s ease;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.btn-upload {
+    background: #27ae60;
+    color: white;
+}
+
+.btn-upload:hover {
+    background: #229954;
+    transform: translateY(-2px);
+    color: white;
+}
+
+.btn-preview {
+    background: #3498db;
+    color: white;
+}
+
+.btn-preview:hover {
+    background: #2980b9;
+    color: white;
+}
+
+.btn-delete {
+    background: #e74c3c;
+    color: white;
+}
+
+.btn-delete:hover {
+    background: #c0392b;
+    color: white;
+}
+
+.btn-download {
+    background: #f39c12;
+    color: white;
+}
+
+.btn-download:hover {
+    background: #e67e22;
+    color: white;
+}
+
+.video-thumbnail {
+    width: 120px;
+    height: 68px;
+    background: #f0f0f0;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-size: 2rem;
+    margin-right: 1rem;
+    flex-shrink: 0;
+}
+
+.video-content {
+    flex-grow: 1;
+}
+
+.video-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.progress-container {
+    display: none;
+    margin-top: 1rem;
+}
+
+.upload-progress {
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #f0f0f0;
+}
+
+.upload-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #27ae60, #2ecc71);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+@media (max-width: 768px) {
+    .video-header {
+        flex-direction: column;
+    }
     
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    
-    <style>
-        :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #3498db;
-            --success-color: #27ae60;
-            --warning-color: #f39c12;
-            --danger-color: #e74c3c;
-            --gradient-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
+    .video-thumbnail {
+        margin-right: 0;
+        margin-bottom: 1rem;
+    }
+}
+</style>
+{% endblock %}
 
-        body {
-            background: var(--gradient-bg);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
-        }
-
-        .main-container {
-            background: white;
-            margin: 20px auto;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            overflow: hidden;
-            max-width: 1400px;
-        }
-
-        .header {
-            background: var(--primary-color);
-            color: white;
-            padding: 2rem;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
-        }
-
-        .header-content {
-            position: relative;
-            z-index: 1;
-        }
-
-        .stats-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 10px;
-            text-align: center;
-            border-left: 4px solid var(--secondary-color);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .stat-card.success {
-            border-left-color: var(--success-color);
-        }
-
-        .stat-card.warning {
-            border-left-color: var(--warning-color);
-        }
-
-        .stat-card.danger {
-            border-left-color: var(--danger-color);
-        }
-
-        .video-card {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
-            margin-bottom: 1.5rem;
-            overflow: hidden;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .video-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 25px rgba(0,0,0,0.15);
-        }
-
-        .video-info {
-            padding: 1.5rem;
-        }
-
-        .video-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: var(--primary-color);
-            margin-bottom: 0.5rem;
-            line-height: 1.4;
-        }
-
-        .video-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            margin: 1rem 0;
-            font-size: 0.9rem;
-            color: #666;
-        }
-
-        .meta-item {
-            display: flex;
-            align-items: center;
-            gap: 0.3rem;
-        }
-
-        .status-badge {
-            padding: 0.3rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            text-transform: uppercase;
-        }
-
-        .status-ready {
-            background: #e8f5e8;
-            color: var(--success-color);
-        }
-
-        .status-uploaded {
-            background: #e3f2fd;
-            color: var(--secondary-color);
-        }
-
-        .status-uploading {
-            background: #fff3e0;
-            color: var(--warning-color);
-        }
-
-        .status-failed {
-            background: #ffebee;
-            color: var(--danger-color);
-        }
-
-        .video-actions {
-            padding: 1rem 1.5rem;
-            background: #f8f9fa;
-            border-top: 1px solid #dee2e6;
-        }
-
-        .btn-custom {
-            border-radius: 25px;
-            padding: 0.5rem 1.2rem;
-            font-weight: 500;
-            border: none;
-            transition: all 0.3s ease;
-            margin-right: 0.5rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .btn-upload {
-            background: var(--success-color);
-            color: white;
-        }
-
-        .btn-upload:hover {
-            background: #229954;
-            transform: translateY(-2px);
-        }
-
-        .btn-preview {
-            background: var(--secondary-color);
-            color: white;
-        }
-
-        .btn-preview:hover {
-            background: #2980b9;
-        }
-
-        .btn-delete {
-            background: var(--danger-color);
-            color: white;
-        }
-
-        .btn-delete:hover {
-            background: #c0392b;
-        }
-
-        .btn-download {
-            background: var(--warning-color);
-            color: white;
-        }
-
-        .btn-download:hover {
-            background: #e67e22;
-        }
-
-        .filter-section {
-            background: #f8f9fa;
-            padding: 1.5rem;
-            border-bottom: 1px solid #dee2e6;
-        }
-
-        .filter-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            align-items: center;
-        }
-
-        .loading-spinner {
-            display: none;
-            text-align: center;
-            padding: 2rem;
-        }
-
-        .video-thumbnail {
-            width: 120px;
-            height: 68px;
-            background: #f0f0f0;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #999;
-            font-size: 2rem;
-            margin-right: 1rem;
-            flex-shrink: 0;
-        }
-
-        .video-content {
-            flex-grow: 1;
-        }
-
-        .video-header {
-            display: flex;
-            align-items: flex-start;
-            gap: 1rem;
-        }
-
-        @media (max-width: 768px) {
-            .header {
-                padding: 1rem;
-            }
-            
-            .filter-row {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .video-header {
-                flex-direction: column;
-            }
-            
-            .video-thumbnail {
-                margin-right: 0;
-                margin-bottom: 1rem;
-            }
-        }
-
-        .progress-container {
-            display: none;
-            margin-top: 1rem;
-        }
-
-        .upload-progress {
-            height: 8px;
-            border-radius: 4px;
-            overflow: hidden;
-            background: #f0f0f0;
-        }
-
-        .upload-progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, var(--success-color), #2ecc71);
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-    </style>
-</head>
-<body>
-    <div class="main-container">
-        <!-- Header -->
-        <div class="header">
-            <div class="header-content">
-                <div class="d-flex justify-content-between align-items-center mb-3">
+{% block content %}
+<div class="video-gallery-container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-gradient text-white d-flex justify-content-between align-items-center">
                     <div>
-                        <h1 class="mb-2">
-                            <i class="fas fa-video me-3"></i>
+                        <h2 class="mb-1">
+                            <i class="fas fa-video me-2"></i>
                             Video Gallery
-                        </h1>
+                        </h2>
                         <p class="mb-0 opacity-75">Manage and upload your generated videos</p>
                     </div>
-                    <div class="d-flex gap-2">
-                        <a href="/" class="btn btn-outline-light">
-                            <i class="fas fa-home"></i> Dashboard
-                        </a>
-                        <button class="btn btn-light" onclick="refreshGallery()">
-                            <i class="fas fa-refresh"></i> Refresh
-                        </button>
-                    </div>
+                    <button class="btn btn-outline-light" onclick="refreshGallery()">
+                        <i class="fas fa-refresh me-1"></i> Refresh
+                    </button>
                 </div>
                 
                 <!-- Statistics -->
-                <div class="stats-cards">
-                    <div class="stat-card">
-                        <i class="fas fa-video fa-2x text-primary mb-2"></i>
-                        <h3 class="mb-1" id="total-videos">-</h3>
-                        <p class="mb-0 text-muted">Total Videos</p>
-                    </div>
-                    <div class="stat-card success">
-                        <i class="fas fa-upload fa-2x text-success mb-2"></i>
-                        <h3 class="mb-1" id="ready-videos">-</h3>
-                        <p class="mb-0 text-muted">Ready to Upload</p>
-                    </div>
-                    <div class="stat-card warning">
-                        <i class="fas fa-youtube fa-2x text-info mb-2"></i>
-                        <h3 class="mb-1" id="uploaded-videos">-</h3>
-                        <p class="mb-0 text-muted">Uploaded</p>
-                    </div>
-                    <div class="stat-card danger">
-                        <i class="fas fa-hdd fa-2x text-warning mb-2"></i>
-                        <h3 class="mb-1" id="total-size">-</h3>
-                        <p class="mb-0 text-muted">Storage Used</p>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3 col-sm-6">
+                            <div class="stat-card border-0 bg-light text-center p-3">
+                                <i class="fas fa-video fa-2x text-primary mb-2"></i>
+                                <h3 class="mb-1" id="total-videos">-</h3>
+                                <p class="mb-0 text-muted">Total Videos</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <div class="stat-card border-0 bg-light text-center p-3">
+                                <i class="fas fa-upload fa-2x text-success mb-2"></i>
+                                <h3 class="mb-1" id="ready-videos">-</h3>
+                                <p class="mb-0 text-muted">Ready to Upload</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <div class="stat-card border-0 bg-light text-center p-3">
+                                <i class="fas fa-youtube fa-2x text-info mb-2"></i>
+                                <h3 class="mb-1" id="uploaded-videos">-</h3>
+                                <p class="mb-0 text-muted">Uploaded</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <div class="stat-card border-0 bg-light text-center p-3">
+                                <i class="fas fa-hdd fa-2x text-warning mb-2"></i>
+                                <h3 class="mb-1" id="total-size">-</h3>
+                                <p class="mb-0 text-muted">Storage Used</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Filters -->
-        <div class="filter-section">
-            <div class="filter-row">
-                <div class="flex-grow-1">
-                    <label class="form-label">Filter by Status:</label>
-                    <select class="form-select" id="statusFilter" onchange="filterVideos()">
-                        <option value="">All Videos</option>
-                        <option value="ready">Ready to Upload</option>
-                        <option value="uploaded">Uploaded</option>
-                        <option value="uploading">Uploading</option>
-                        <option value="failed">Failed</option>
-                    </select>
-                </div>
-                <div class="flex-grow-1">
-                    <label class="form-label">Filter by Genre:</label>
-                    <select class="form-select" id="genreFilter" onchange="filterVideos()">
-                        <option value="">All Genres</option>
-                        <option value="Electronic">Electronic</option>
-                        <option value="Ambient">Ambient</option>
-                        <option value="Classical">Classical</option>
-                        <option value="Jazz">Jazz</option>
-                        <option value="Rock">Rock</option>
-                        <option value="Pop">Pop</option>
-                    </select>
-                </div>
-                <div class="flex-grow-1">
-                    <label class="form-label">Vocal Type:</label>
-                    <select class="form-select" id="vocalFilter" onchange="filterVideos()">
-                        <option value="">All Types</option>
-                        <option value="vocal">Vocal</option>
-                        <option value="instrumental">Instrumental</option>
-                    </select>
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-lg-4 col-md-6">
+                            <label class="form-label">Filter by Status:</label>
+                            <select class="form-select" id="statusFilter" onchange="filterVideos()">
+                                <option value="">All Videos</option>
+                                <option value="ready">Ready to Upload</option>
+                                <option value="uploaded">Uploaded</option>
+                                <option value="uploading">Uploading</option>
+                                <option value="failed">Failed</option>
+                            </select>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <label class="form-label">Filter by Genre:</label>
+                            <select class="form-select" id="genreFilter" onchange="filterVideos()">
+                                <option value="">All Genres</option>
+                                <option value="Electronic">Electronic</option>
+                                <option value="Ambient">Ambient</option>
+                                <option value="Classical">Classical</option>
+                                <option value="Jazz">Jazz</option>
+                                <option value="Rock">Rock</option>
+                                <option value="Pop">Pop</option>
+                            </select>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <label class="form-label">Vocal Type:</label>
+                            <select class="form-select" id="vocalFilter" onchange="filterVideos()">
+                                <option value="">All Types</option>
+                                <option value="vocal">Vocal</option>
+                                <option value="instrumental">Instrumental</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Video Gallery -->
-        <div class="container-fluid p-4">
-            <div class="loading-spinner" id="loading">
+    <!-- Video Gallery -->
+    <div class="row">
+        <div class="col-12">
+            <div class="loading-spinner text-center" id="loading">
                 <i class="fas fa-spinner fa-spin fa-3x text-primary mb-3"></i>
                 <p>Loading videos...</p>
             </div>
@@ -393,13 +321,18 @@
             </div>
 
             <div class="text-center mt-4" id="no-videos" style="display: none;">
-                <i class="fas fa-video fa-4x text-muted mb-3"></i>
-                <h4 class="text-muted">No Videos Found</h4>
-                <p class="text-muted">Generated videos will appear here automatically.<br>
-                   <a href="/music_gallery" class="text-primary">Generate some videos</a> to get started!</p>
+                <div class="card border-0 bg-light">
+                    <div class="card-body p-5">
+                        <i class="fas fa-video fa-4x text-muted mb-3"></i>
+                        <h4 class="text-muted">No Videos Found</h4>
+                        <p class="text-muted">Generated videos will appear here automatically.<br>
+                           <a href="{{ url_for('music_gallery') }}" class="text-primary">Generate some videos</a> to get started!</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+</div>
 
     <!-- Upload Modal -->
     <div class="modal fade" id="uploadModal" tabindex="-1">
@@ -463,17 +396,49 @@
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Video Preview Modal -->
+    <div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="previewModalTitle">
+                        <i class="fas fa-play me-2"></i>
+                        Video Preview
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <video id="previewVideo" class="w-100" style="max-height: 70vh;" controls>
+                        <source id="previewVideoSource" src="" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    <div class="mt-3" id="previewVideoInfo">
+                        <!-- Video info will be loaded here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="previewDownloadBtn" onclick="downloadVideoFromPreview()">
+                        <i class="fas fa-download me-1"></i>
+                        Download Video
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     
     <script>
         let currentVideoId = null;
         let uploadModal = null;
+        let previewModal = null;
+        let currentPreviewVideoId = null;
         let videos = [];
         let channels = [];
 
         document.addEventListener('DOMContentLoaded', function() {
             uploadModal = new bootstrap.Modal(document.getElementById('uploadModal'));
+            previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
             loadVideoGallery();
             loadChannels();
         });
@@ -854,8 +819,61 @@
         }
 
         function previewVideo(videoId) {
-            // You can implement video preview here
-            alert('Preview functionality coming soon!');
+            const video = videos.find(v => v.id === videoId);
+            if (!video) {
+                alert('Video not found');
+                return;
+            }
+            
+            currentPreviewVideoId = videoId;
+            
+            // Set up modal content
+            document.getElementById('previewModalTitle').innerHTML = `
+                <i class="fas fa-play me-2"></i>
+                ${escapeHtml(video.title || 'Untitled Video')}
+            `;
+            
+            // Set video source
+            const previewUrl = `/api/video-gallery/${videoId}/preview`;
+            document.getElementById('previewVideoSource').src = previewUrl;
+            document.getElementById('previewVideo').load(); // Reload video element
+            
+            // Set video info
+            document.getElementById('previewVideoInfo').innerHTML = `
+                <div class="row">
+                    <div class="col-md-3">
+                        <strong><i class="fas fa-music me-1"></i> Genre:</strong><br>
+                        ${escapeHtml(video.genre || 'Unknown')}
+                    </div>
+                    <div class="col-md-3">
+                        <strong><i class="fas fa-clock me-1"></i> Duration:</strong><br>
+                        ${formatDuration(video.duration)}
+                    </div>
+                    <div class="col-md-3">
+                        <strong><i class="fas fa-hdd me-1"></i> Size:</strong><br>
+                        ${video.file_size_mb || 0} MB
+                    </div>
+                    <div class="col-md-3">
+                        <strong><i class="fas fa-calendar me-1"></i> Created:</strong><br>
+                        ${formatDate(video.created_at)}
+                    </div>
+                </div>
+                ${video.description ? `
+                    <div class="mt-3">
+                        <strong><i class="fas fa-info-circle me-1"></i> Description:</strong><br>
+                        <div class="text-muted">${escapeHtml(video.description)}</div>
+                    </div>
+                ` : ''}
+            `;
+            
+            // Show modal
+            previewModal.show();
+        }
+
+        function downloadVideoFromPreview() {
+            if (currentPreviewVideoId) {
+                downloadVideo(currentPreviewVideoId);
+            }
         }
 
         function downloadVideo(videoId) {
@@ -884,5 +902,4 @@
             }
         }
     </script>
-</body>
-</html>
+{% endblock %}

@@ -4529,6 +4529,9 @@ def api_create_video():
                         else:
                             raise Exception("Video file was not created")
                     else:
+                        print(f"❌ Video creation details: audio={audio_path}, image={image_path}")
+                        print(f"❌ Output directory: {output_dir}")
+                        print(f"❌ VideoCreator result: {result}")
                         raise Exception("Video creation failed")
                         
             except Exception as e:
@@ -6896,6 +6899,85 @@ def api_delete_video(video_id):
             'success': False,
             'error': str(e)
         }), 500
+
+@app.route('/api/video-gallery/<int:video_id>/preview')
+@require_auth
+def api_preview_video(video_id):
+    """Stream video file for preview"""
+    try:
+        from core.database.youtube_channels_db import YouTubeChannelsDB
+        from pathlib import Path
+        import os
+        
+        db = YouTubeChannelsDB()
+        video = db.get_video_from_gallery(video_id)
+        
+        if not video:
+            return "Video not found", 404
+        
+        file_path = video.get('file_path')
+        if not file_path or not Path(file_path).exists():
+            return "Video file not found", 404
+        
+        # Get file info
+        file_size = os.path.getsize(file_path)
+        
+        # Support for range requests (for video streaming)
+        range_header = request.headers.get('Range', None)
+        if range_header:
+            byte_start = 0
+            byte_end = file_size - 1
+            
+            # Parse range header (e.g., "bytes=0-1023")
+            if range_header.startswith('bytes='):
+                range_match = range_header.replace('bytes=', '').split('-')
+                try:
+                    if range_match[0]:
+                        byte_start = int(range_match[0])
+                    if range_match[1]:
+                        byte_end = int(range_match[1])
+                except ValueError:
+                    pass
+            
+            # Ensure valid range
+            byte_end = min(byte_end, file_size - 1)
+            content_length = byte_end - byte_start + 1
+            
+            # Create response with partial content
+            def generate_chunk():
+                with open(file_path, 'rb') as f:
+                    f.seek(byte_start)
+                    remaining = content_length
+                    while remaining:
+                        chunk_size = min(8192, remaining)  # 8KB chunks
+                        chunk = f.read(chunk_size)
+                        if not chunk:
+                            break
+                        remaining -= len(chunk)
+                        yield chunk
+            
+            response = Response(
+                generate_chunk(),
+                206,  # Partial Content
+                {
+                    'Content-Range': f'bytes {byte_start}-{byte_end}/{file_size}',
+                    'Accept-Ranges': 'bytes',
+                    'Content-Length': str(content_length),
+                    'Content-Type': 'video/mp4'
+                }
+            )
+            return response
+        else:
+            # Full file response
+            return send_file(
+                file_path,
+                mimetype='video/mp4',
+                as_attachment=False,
+                download_name=f"{video.get('title', 'video')}_{video_id}.mp4"
+            )
+        
+    except Exception as e:
+        return f"Preview error: {str(e)}", 500
 
 @app.route('/api/video/upload-youtube-gallery', methods=['POST'])
 @require_auth
