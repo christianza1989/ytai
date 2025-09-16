@@ -479,9 +479,12 @@ function loadMusicGallery() {
                     title: track.title || 'Untitled Track',
                     audioUrl: track.audio_url,
                     imageUrl: track.image_url || track.video_url,
-                    videoUrl: track.video_url,
+                    videoUrl: track.video_url || track.image_url,
                     duration: track.duration || 'Unknown',
+                    model: track.model_used || 'Unknown',  // Added for renderTracks
                     modelUsed: track.model_used || 'Unknown',
+                    genre: track.style || 'Electronic',  // Added for renderTracks  
+                    mood: 'Unknown',  // Added for renderTracks
                     sunoClipId: track.suno_clip_id,
                     tags: track.tags || '',
                     style: track.style || '',
