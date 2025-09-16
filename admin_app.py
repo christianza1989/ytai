@@ -1123,15 +1123,28 @@ def api_music_gallery():
         else:
             gallery = []
         
-        # Calculate statistics
+        # Calculate statistics with safe duration processing
+        def safe_duration_parse(duration):
+            try:
+                if not duration or duration == 'Unknown' or duration is None:
+                    return 0
+                # Convert string duration to seconds
+                duration_str = str(duration)
+                if ':' in duration_str:
+                    parts = duration_str.split(':')
+                    return int(parts[0]) * 60 + int(parts[1])
+                elif 's' in duration_str:
+                    return int(duration_str.replace('s', ''))
+                else:
+                    return int(duration_str) if duration_str.isdigit() else 0
+            except:
+                return 0
+
         stats = {
             'total_tracks': len(gallery),
             'total_models': len(set(track.get('model_used', 'Unknown') for track in gallery)),
             'recent_tracks': len([t for t in gallery if t.get('created_at', '') > (datetime.now() - timedelta(days=7)).isoformat()]),
-            'total_duration': sum([
-                int(track.get('duration', '0').replace('s', '').replace('m', '').replace(':', '').replace('.', '')) if track.get('duration', '0') != 'Unknown' else 0 
-                for track in gallery
-            ])
+            'total_duration': sum([safe_duration_parse(track.get('duration')) for track in gallery])
         }
         
         return jsonify({
