@@ -2290,46 +2290,14 @@ function startOAuthAuthorization() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Open OAuth authorization in popup window  
-                    showToast('🔐 Atidaromas autorizacijos langas...', 'info');
-                    
-                    // Open in popup window
-                    const popupFeatures = 'width=600,height=700,scrollbars=yes,resizable=yes,status=yes';
-                    const authWindow = window.open(data.authorization_url, 'oauth_popup', popupFeatures);
-                    
-                    if (!authWindow) {
-                        showToast('❌ Nepavyko atidaryti popup lango. Patikrinkite popup blokatorių.', 'error');
-                        return;
+                    if (data.flow_type === 'oob') {
+                        // Out-of-Band flow - manual code entry
+                        showOAuthCodeDialog(data.authorization_url, data.state_token, channelId);
+                    } else {
+                        // Standard redirect flow (fallback)
+                        showToast('🔐 Atidaromas autorizacijos langas...', 'info');
+                        window.open(data.authorization_url, '_blank');
                     }
-                    
-                    // Listen for popup messages
-                    const messageHandler = (event) => {
-                        if (event.data && event.data.type === 'oauth_result') {
-                            window.removeEventListener('message', messageHandler);
-                            
-                            if (event.data.success) {
-                                showToast('✅ Autorizacija sėkminga!', 'success');
-                                
-                                // Refresh channel list to show updated status
-                                setTimeout(() => {
-                                    loadYouTubeChannels();
-                                }, 1000);
-                            } else {
-                                showToast(`❌ Autorizacijos klaida: ${event.data.message}`, 'error');
-                            }
-                        }
-                    };
-                    
-                    window.addEventListener('message', messageHandler);
-                    
-                    // Check if popup was closed manually
-                    const checkClosed = setInterval(() => {
-                        if (authWindow.closed) {
-                            clearInterval(checkClosed);
-                            window.removeEventListener('message', messageHandler);
-                            showToast('ℹ️ Autorizacijos langas uždarytas', 'info');
-                        }
-                    }, 1000)
                 } else {
                     showToast(`❌ Autorizacijos klaida: ${data.error || data.message}`, 'error');
                 }
@@ -2383,6 +2351,109 @@ function updateOAuthStatus(success) {
 }
 
 
+
+// Show OAuth code entry dialog for Out-of-Band flow
+function showOAuthCodeDialog(authUrl, stateToken, channelId) {
+    Swal.fire({
+        title: '🔐 YouTube OAuth Autorizacija',
+        html: `
+            <div class="text-start">
+                <p class="mb-3">Kad užbaigti autorizaciją, atlikite šiuos veiksmus:</p>
+                <ol>
+                    <li class="mb-2">Spauskite "🚀 Atidaryti Google OAuth" mygtuką</li>
+                    <li class="mb-2">Prisijunkite prie Google paskyros</li>
+                    <li class="mb-2">Suteikite leidimus YouTube kanalui</li>
+                    <li class="mb-2">Nukopijuokite gautą <strong>autorizacijos kodą</strong></li>
+                    <li class="mb-2">Įrašykite kodą žemiau ir spauskite "Patvirtinti"</li>
+                </ol>
+                
+                <div class="d-grid mb-3">
+                    <button type="button" class="btn btn-primary" onclick="window.open('${authUrl}', '_blank')">
+                        🚀 Atidaryti Google OAuth
+                    </button>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Svarbu:</strong> Po autorizacijos Google parodys kodą. Nukopijuokite jį ir įrašykite žemiau.
+                </div>
+                
+                <label for="authCode" class="form-label"><strong>Autorizacijos kodas:</strong></label>
+                <input type="text" class="form-control" id="authCode" placeholder="Įrašykite kodą iš Google...">
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '✅ Patvirtinti Kodą',
+        cancelButtonText: 'Atšaukti',
+        width: 600,
+        preConfirm: () => {
+            const code = document.getElementById('authCode').value.trim();
+            if (!code) {
+                Swal.showValidationMessage('Įrašykite autorizacijos kodą');
+                return false;
+            }
+            return code;
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            submitAuthorizationCode(channelId, result.value, stateToken);
+        }
+    });
+}
+
+// Submit authorization code to backend
+function submitAuthorizationCode(channelId, authCode, stateToken) {
+    // Show loading
+    Swal.fire({
+        title: 'Apdorojama...',
+        text: 'Patvirtinamas autorizacijos kodas',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    fetch(`/oauth/youtube/api/submit-code/${channelId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            authorization_code: authCode,
+            state_token: stateToken
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                title: '✅ Autorizacija Sėkminga!',
+                text: data.message,
+                icon: 'success',
+                confirmButtonText: 'Gerai'
+            }).then(() => {
+                // Refresh channel list to show updated status
+                loadChannels();
+            });
+        } else {
+            Swal.fire({
+                title: '❌ Autorizacijos Klaida',
+                text: data.message || data.error,
+                icon: 'error',
+                confirmButtonText: 'Gerai'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error submitting auth code:', error);
+        Swal.fire({
+            title: '❌ Klaida',
+            text: 'Nepavyko apdoroti autorizacijos kodo',
+            icon: 'error',
+            confirmButtonText: 'Gerai'
+        });
+    });
+}
 
 // Show OAuth help
 function showOAuthHelp() {

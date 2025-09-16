@@ -62,9 +62,9 @@ class YouTubeOAuthManager:
             # Generate secure state token
             state_token = secrets.token_urlsafe(32)
             
-            # Use provided redirect URI or raise error if not provided
+            # Default to out-of-band (OOB) flow if no redirect URI provided
             if not redirect_uri:
-                raise Exception("Redirect URI must be provided for OAuth flow")
+                redirect_uri = "urn:ietf:wg:oauth:2.0:oob"
             
             # Store OAuth session data
             session_data = {

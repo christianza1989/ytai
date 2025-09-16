@@ -52,10 +52,9 @@ def create_oauth_routes(app, require_auth=None):
                                      error='OAuth client not configured',
                                      message='Please configure OAuth Client ID first.')
             
-            # Generate OAuth URL - use request host for dynamic URL detection
-            scheme = 'https' if request.is_secure else 'http'
-            base_url = f"{scheme}://{request.host}"
-            redirect_uri = f"{base_url}/oauth/youtube/callback"
+            # Use out-of-band (OOB) flow for dynamic environments
+            # This allows manual code entry instead of redirect URI
+            redirect_uri = "urn:ietf:wg:oauth:2.0:oob"
             
             auth_url, state_token = oauth_manager.generate_oauth_url(
                 channel_id=channel_id,
@@ -160,6 +159,63 @@ def create_oauth_routes(app, require_auth=None):
                                  error='Callback error',
                                  message=f'Failed to process authorization: {str(e)}')
     
+    @youtube_oauth_bp.route('/api/submit-code/<int:channel_id>', methods=['POST'])
+    @auth_required
+    def api_submit_authorization_code(channel_id):
+        """API endpoint to submit authorization code from OOB flow"""
+        
+        try:
+            data = request.get_json()
+            authorization_code = data.get('authorization_code', '').strip()
+            state_token = data.get('state_token', '').strip()
+            
+            if not authorization_code:
+                return jsonify({
+                    'success': False,
+                    'error': 'Missing authorization code',
+                    'message': 'Please provide the authorization code from Google'
+                }), 400
+            
+            if not state_token:
+                return jsonify({
+                    'success': False,
+                    'error': 'Missing state token',
+                    'message': 'Invalid session - please restart authorization'
+                }), 400
+            
+            # Get channel info for client_secret
+            channel = db_manager.get_channel(channel_id)
+            if not channel:
+                return jsonify({
+                    'success': False,
+                    'error': 'Channel not found'
+                }), 404
+            
+            client_secret = channel.get('client_secret')
+            if not client_secret:
+                return jsonify({
+                    'success': False,
+                    'error': 'Missing client secret',
+                    'message': 'OAuth client secret not configured'
+                }), 400
+            
+            # Handle OAuth callback with the provided code
+            result = oauth_manager.handle_oauth_callback(
+                authorization_code=authorization_code,
+                state_token=state_token,
+                client_secret=client_secret
+            )
+            
+            return jsonify(result)
+            
+        except Exception as e:
+            logger.error(f"API submit code error: {e}")
+            return jsonify({
+                'success': False,
+                'error': str(e),
+                'message': 'Failed to process authorization code'
+            }), 500
+    
     # API Routes
     @youtube_oauth_bp.route('/api/authorize/<int:channel_id>', methods=['POST'])
     @auth_required
@@ -182,10 +238,9 @@ def create_oauth_routes(app, require_auth=None):
                     'message': 'Please configure OAuth Client ID first'
                 }), 400
             
-            # Generate OAuth URL - use request host for dynamic URL detection
-            scheme = 'https' if request.is_secure else 'http'
-            base_url = f"{scheme}://{request.host}"
-            redirect_uri = f"{base_url}/oauth/youtube/callback"
+            # Use out-of-band (OOB) flow for dynamic environments
+            # This allows manual code entry instead of redirect URI
+            redirect_uri = "urn:ietf:wg:oauth:2.0:oob"
             
             auth_url, state_token = oauth_manager.generate_oauth_url(
                 channel_id=channel_id,
@@ -197,7 +252,9 @@ def create_oauth_routes(app, require_auth=None):
                 'success': True,
                 'authorization_url': auth_url,
                 'state_token': state_token,
-                'message': 'OAuth authorization URL generated'
+                'redirect_uri': redirect_uri,
+                'flow_type': 'oob' if redirect_uri == 'urn:ietf:wg:oauth:2.0:oob' else 'redirect',
+                'message': 'OAuth authorization URL generated (Out-of-Band flow)'
             })
             
         except Exception as e:
