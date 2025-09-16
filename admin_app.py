@@ -5236,15 +5236,18 @@ def api_youtube_start_oauth():
             }), 400
         
         print(f"🚀 Starting OAuth flow for channel: {channel_name}")
+        print(f"🔍 Client ID: {client_id[:20]}...")
+        print(f"🔑 Client Secret length: {len(client_secret)} chars")
         
-        # Create client config with proper redirect URI
+        # Create client config with proper redirect URI and current Google endpoints
         client_config = {
             "installed": {
                 "client_id": client_id,
                 "client_secret": client_secret,
                 "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                 "token_uri": "https://oauth2.googleapis.com/token",
-                "redirect_uris": ["urn:ietf:wg:oauth:2.0:oob"]
+                "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+                "redirect_uris": ["urn:ietf:wg:oauth:2.0:oob", "http://localhost"]
             }
         }
         
@@ -5265,8 +5268,13 @@ def api_youtube_start_oauth():
             auth_url, _ = flow.authorization_url(
                 prompt='consent',
                 access_type='offline',
-                include_granted_scopes='true'
+                include_granted_scopes='true',
+                # Force out-of-band flow
+                redirect_uri="urn:ietf:wg:oauth:2.0:oob"
             )
+            
+            print(f"🔗 Generated auth URL: {auth_url}")
+            print(f"📋 Scopes requested: {scopes}")
             
             return jsonify({
                 'success': True,
@@ -5341,14 +5349,15 @@ def api_complete_oauth():
         
         print(f"🔐 Completing OAuth for channel: {channel_name}")
         
-        # Create client config
+        # Create client config with updated Google OAuth endpoints
         client_config = {
             "installed": {
                 "client_id": client_id,
                 "client_secret": client_secret,
                 "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                 "token_uri": "https://oauth2.googleapis.com/token",
-                "redirect_uris": ["urn:ietf:wg:oauth:2.0:oob"]
+                "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+                "redirect_uris": ["urn:ietf:wg:oauth:2.0:oob", "http://localhost"]
             }
         }
         
