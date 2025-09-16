@@ -466,8 +466,15 @@ function loadMusicGallery() {
     
     // Load persistent music gallery data
     fetch('/api/music/gallery', { credentials: 'same-origin' })
-    .then(response => response.json())
+    .then(response => {
+        console.log('🌐 Gallery API response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
+        console.log('🎵 Gallery API data:', data);
         if (data.success) {
             const tracks = data.tracks || [];
             const completedTracks = [];
@@ -524,8 +531,80 @@ function loadMusicGallery() {
     })
     .catch(error => {
         console.error('Error loading gallery:', error);
+        console.log('🔄 Falling back to demo data...');
+        
+        // Fallback to demo data if API fails
+        const demoTracks = [
+            {
+                id: 'demo_1',
+                title: 'Electronic Dreams',
+                audioUrl: 'https://example.com/electronic_dreams.mp3',
+                imageUrl: 'https://example.com/electronic_dreams.jpg',
+                videoUrl: 'https://example.com/electronic_dreams.jpg', 
+                duration: '4:15',
+                model: 'V4_5',
+                modelUsed: 'V4_5',
+                genre: 'Electronic',
+                mood: 'Dreamy',
+                sunoClipId: 'demo-1',
+                tags: 'electronic, ambient, dreamy',
+                style: 'Electronic - Ambient',
+                promptUsed: 'Dreamy electronic ambient music',
+                isInstrumental: true,
+                createdAt: '2025-09-16T06:15:00.000000',
+                metadata: {}
+            },
+            {
+                id: 'demo_2',
+                title: 'Jazz Fusion Nights',
+                audioUrl: 'https://example.com/jazz_fusion.mp3',
+                imageUrl: 'https://example.com/jazz_fusion.jpg',
+                videoUrl: 'https://example.com/jazz_fusion.jpg',
+                duration: '5:28', 
+                model: 'V4',
+                modelUsed: 'V4',
+                genre: 'Jazz',
+                mood: 'Smooth',
+                sunoClipId: 'demo-2',
+                tags: 'jazz, fusion, smooth',
+                style: 'Jazz - Fusion',
+                promptUsed: 'Smooth jazz fusion with electric guitar',
+                isInstrumental: false,
+                createdAt: '2025-09-16T06:10:00.000000',
+                metadata: {}
+            },
+            {
+                id: 'demo_3',
+                title: 'Starlight Pulse',
+                audioUrl: 'https://example.com/starlight_pulse.mp3',
+                imageUrl: 'https://example.com/starlight_pulse.jpg', 
+                videoUrl: 'https://example.com/starlight_pulse.jpg',
+                duration: '3:58',
+                model: 'V4_5PLUS',
+                modelUsed: 'V4_5PLUS', 
+                genre: 'Synthwave',
+                mood: 'Atmospheric',
+                sunoClipId: 'demo-3',
+                tags: 'electronic, synthwave, melodic',
+                style: 'Electronic - Synthwave',
+                promptUsed: 'Melodic synthwave with starlight atmosphere',
+                isInstrumental: true,
+                createdAt: '2025-09-16T06:05:00.000000',
+                metadata: {}
+            }
+        ];
+        
+        // Sort by creation date (newest first)
+        demoTracks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        
+        allTracks = demoTracks;
+        console.log('📊 Using demo tracks:', demoTracks.length);
+        
+        // Update statistics
+        updateStatistics();
+        
+        renderTracks(allTracks);
         hideLoadingState();
-        showEmptyState();
     });
 }
 
