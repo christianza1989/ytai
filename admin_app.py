@@ -4711,11 +4711,10 @@ def api_upload_to_youtube():
                         'tags': ['AI', 'generated', 'music', 'suno']
                     }
                 
-                # Create YouTube client with channel credentials
-                from core.services.youtube_client import YouTubeClient
+                # Create YouTube service with channel credentials from database
+                import os
                 
                 # Temporarily set environment variables for this channel
-                import os
                 original_api_key = os.environ.get('YOUTUBE_API_KEY')
                 original_channel_id = os.environ.get('YOUTUBE_CHANNEL_ID')
                 
@@ -4723,19 +4722,115 @@ def api_upload_to_youtube():
                 os.environ['YOUTUBE_CHANNEL_ID'] = channel['youtube_channel_id'] or channel_id
                 
                 try:
-                    youtube_client = YouTubeClient()
+                    # Check if we have stored OAuth credentials for this channel
+                    oauth_credentials_json = channel.get('oauth_credentials')
+                    if not oauth_credentials_json:
+                        raise Exception(f"Channel {channel['channel_name']} is missing OAuth authorization. Please complete OAuth setup in Channel Settings first.")
+                    
+                    # Parse stored OAuth credentials
+                    import json
+                    oauth_creds = json.loads(oauth_credentials_json)
+                    
+                    # Create YouTube service directly with stored credentials
+                    from google.oauth2.credentials import Credentials
+                    from googleapiclient.discovery import build
+                    from datetime import datetime
+                    
+                    # Restore credentials from database
+                    expiry = None
+                    if oauth_creds.get('expiry'):
+                        try:
+                            expiry = datetime.fromisoformat(oauth_creds['expiry'])
+                        except:
+                            pass
+                    
+                    credentials = Credentials(
+                        token=oauth_creds.get('token'),
+                        refresh_token=oauth_creds.get('refresh_token'),
+                        token_uri=oauth_creds.get('token_uri', "https://oauth2.googleapis.com/token"),
+                        client_id=oauth_creds.get('client_id'),
+                        client_secret=oauth_creds.get('client_secret'),
+                        scopes=oauth_creds.get('scopes', [
+                            'https://www.googleapis.com/auth/youtube.upload',
+                            'https://www.googleapis.com/auth/youtube.readonly',
+                            'https://www.googleapis.com/auth/youtube'
+                        ]),
+                        expiry=expiry
+                    )
+                    
+                    # Refresh credentials if needed
+                    if credentials.expired:
+                        from google.auth.transport.requests import Request
+                        credentials.refresh(Request())
+                        
+                        # Update database with new token
+                        from core.database.youtube_channels_db import YouTubeChannelsDB
+                        db = YouTubeChannelsDB()
+                        updated_creds = oauth_creds.copy()
+                        updated_creds.update({
+                            'token': credentials.token,
+                            'refresh_token': credentials.refresh_token,
+                            'expiry': credentials.expiry.isoformat() if credentials.expiry else None
+                        })
+                        db.update_channel_credentials(channel_id, updated_creds)
+                    
+                    # Create YouTube service
+                    youtube_service = build('youtube', 'v3', credentials=credentials)
                     
                     system_state.generation_tasks[task_id]['progress'] = 80
                     system_state.generation_tasks[task_id]['current_step'] = f'Uploading to {channel["channel_name"]}...'
                     
-                    # Upload video to YouTube
-                    video_id = youtube_client.upload_video(
-                        video_path=video_path,
-                        title=metadata.get('title', track_data.get('title', 'Generated Music')),
-                        description=metadata.get('description', f"AI generated music - {track_data.get('title', 'Untitled')}"),
-                        tags=metadata.get('tags', ['AI', 'music', 'generated']),
-                        privacy_status='public'  # or get from channel settings
+                    # Prepare video metadata
+                    from pathlib import Path
+                    if not Path(video_path).exists():
+                        raise FileNotFoundError(f"Video file not found: {video_path}")
+                    
+                    video_metadata = {
+                        'snippet': {
+                            'title': metadata.get('title', track_data.get('title', 'Generated Music')),
+                            'description': metadata.get('description', f"AI generated music - {track_data.get('title', 'Untitled')}"),
+                            'tags': metadata.get('tags', ['AI', 'music', 'generated']),
+                            'categoryId': '10'  # Music category
+                        },
+                        'status': {
+                            'privacyStatus': 'public',  # or get from channel settings
+                            'selfDeclaredMadeForKids': False
+                        }
+                    }
+                    
+                    # Create media upload
+                    from googleapiclient.http import MediaFileUpload
+                    media = MediaFileUpload(
+                        video_path,
+                        chunksize=1024*1024,  # 1MB chunks
+                        resumable=True,
+                        mimetype='video/mp4'
                     )
+                    
+                    # Execute upload
+                    upload_request = youtube_service.videos().insert(
+                        part=','.join(video_metadata.keys()),
+                        body=video_metadata,
+                        media_body=media
+                    )
+                    
+                    # Execute upload with progress
+                    response = None
+                    file_size = Path(video_path).stat().st_size
+                    uploaded_bytes = 0
+                    
+                    while response is None:
+                        try:
+                            status, response = upload_request.next_chunk()
+                            if status:
+                                uploaded_bytes = status.resumable_progress
+                                progress = 80 + (uploaded_bytes / file_size) * 15  # 80-95% range
+                                system_state.generation_tasks[task_id]['progress'] = min(int(progress), 95)
+                        except Exception as e:
+                            print(f"⚠️  Upload chunk failed, retrying: {e}")
+                            continue
+                    
+                    video_id = response.get('id') if response else None
                     
                     if video_id:
                         video_url = f'https://www.youtube.com/watch?v={video_id}'
@@ -5207,7 +5302,9 @@ def api_complete_oauth():
         }
         
         scopes = [
-            'https://www.googleapis.com/auth/youtube.readonly'
+            'https://www.googleapis.com/auth/youtube.upload',
+            'https://www.googleapis.com/auth/youtube.readonly',
+            'https://www.googleapis.com/auth/youtube'
         ]
         
         try:

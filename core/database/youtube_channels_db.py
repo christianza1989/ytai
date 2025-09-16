@@ -1154,6 +1154,34 @@ class YouTubeChannelsDB:
             
         return min(1.0, score)  # Cap at 1.0
     
+    def update_channel_credentials(self, channel_id: int, credentials_data: Dict[str, str]) -> bool:
+        """Update OAuth credentials for a channel"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                # Update credentials
+                cursor.execute('''
+                    UPDATE youtube_channels SET
+                        oauth_credentials = ?,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                ''', (
+                    json.dumps(credentials_data),
+                    channel_id
+                ))
+                
+                success = cursor.rowcount > 0
+                if success:
+                    conn.commit()
+                    self.logger.info(f"Updated OAuth credentials for channel {channel_id}")
+                
+                return success
+                
+        except Exception as e:
+            self.logger.error(f"Error updating channel credentials: {e}")
+            return False
+
     def save_channel(self, channel_data: Dict[str, Any]) -> Dict[str, Any]:
         """Save channel (add new or update existing based on channel_id)"""
         try:
