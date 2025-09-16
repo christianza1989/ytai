@@ -2136,9 +2136,62 @@ function startOAuthAuthorization() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Show OAuth status and update UI
-                    showOAuthStatus(data);
-                    updateOAuthStatus(true); // Mark as authorized
+                    // If auth_url is provided, open it in new window for authorization
+                    if (data.auth_url) {
+                        showToast('🔐 Opening Google authorization in new window...', 'info');
+                        
+                        // Open authorization URL in new window
+                        const authWindow = window.open(data.auth_url, 'oauth_authorization', 'width=500,height=600,scrollbars=yes,resizable=yes');
+                        
+                        // Show instructions dialog
+                        Swal.fire({
+                            title: '🔐 Complete Authorization',
+                            html: `
+                                <div class="text-start">
+                                    <p><strong>A new window opened for authorization.</strong></p>
+                                    <ol>
+                                        <li>Sign in to your Google account</li>
+                                        <li>Grant permissions to ${channelName}</li>
+                                        <li>Complete the authorization</li>
+                                        <li>Return here when done</li>
+                                    </ol>
+                                    <div class="alert alert-info mt-3">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        This is a <strong>one-time setup</strong> per channel.
+                                    </div>
+                                </div>
+                            `,
+                            icon: 'info',
+                            showCancelButton: true,
+                            confirmButtonText: '✅ I completed authorization',
+                            cancelButtonText: 'Cancel',
+                            allowOutsideClick: false
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                // Mark as authorized and update UI
+                                showOAuthStatus({
+                                    status: 'Completed',
+                                    token_valid: true,
+                                    channel_access: true,
+                                    upload_permission: true
+                                });
+                                updateOAuthStatus(true);
+                                showToast('✅ OAuth authorization completed successfully!', 'success');
+                            } else {
+                                showToast('❌ Authorization cancelled', 'warning');
+                            }
+                            
+                            // Close auth window if still open
+                            if (authWindow && !authWindow.closed) {
+                                authWindow.close();
+                            }
+                        });
+                        
+                    } else {
+                        // Fallback for other success scenarios
+                        showOAuthStatus(data);
+                        updateOAuthStatus(true);
+                    }
                 } else {
                     showToast(`❌ OAuth setup failed: ${data.error}`, 'error');
                 }
