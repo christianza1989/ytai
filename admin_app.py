@@ -5122,9 +5122,7 @@ def api_youtube_start_oauth():
         }
         
         scopes = [
-            'https://www.googleapis.com/auth/youtube.upload',
-            'https://www.googleapis.com/auth/youtube.readonly',
-            'https://www.googleapis.com/auth/youtube'
+            'https://www.googleapis.com/auth/youtube.readonly'
         ]
         
         try:
@@ -5209,9 +5207,7 @@ def api_complete_oauth():
         }
         
         scopes = [
-            'https://www.googleapis.com/auth/youtube.upload',
-            'https://www.googleapis.com/auth/youtube.readonly',
-            'https://www.googleapis.com/auth/youtube'
+            'https://www.googleapis.com/auth/youtube.readonly'
         ]
         
         try:
@@ -5259,7 +5255,7 @@ def api_complete_oauth():
                         'oauth_credentials': json.dumps(credentials_data),
                         'oauth_authorized': True,
                         'channel_url': f"https://youtube.com/channel/{youtube_channel_id}",
-                        'subscribers': channel_info.get('statistics', {}).get('subscriberCount', 0),
+                        'total_subscribers': int(channel_info.get('statistics', {}).get('subscriberCount', 0)),
                         'status': 'active'
                     }
                     
@@ -5269,7 +5265,7 @@ def api_complete_oauth():
                     return jsonify({
                         'success': True,
                         'message': 'OAuth authorization completed successfully',
-                        'channel_id': result.get('id'),
+                        'channel_id': result.get('channel_id'),
                         'youtube_channel_id': youtube_channel_id,
                         'channel_name': channel_info['snippet']['title'],
                         'expires_at': credentials.expiry.isoformat() if credentials.expiry else 'No expiry',

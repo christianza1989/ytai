@@ -291,6 +291,10 @@
                                     </h6>
                                 </div>
                                 <div class="card-body">
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        <strong>Important:</strong> If you get "Access blocked" error, add yourself as Test User in Google Cloud Console → OAuth consent screen → Test users → + ADD USERS → your email
+                                    </div>
                                     <div class="alert alert-info">
                                         <i class="fas fa-info-circle me-2"></i>
                                         <strong>Full YouTube Access Required!</strong> This platform uploads videos automatically, so we need complete channel permissions.
@@ -2143,89 +2147,83 @@ function startOAuthAuthorization() {
                         // Open authorization URL in new window
                         const authWindow = window.open(data.auth_url, 'oauth_authorization', 'width=500,height=600,scrollbars=yes,resizable=yes');
                         
-                        // Show instructions dialog with code input
-                        Swal.fire({
-                            title: '🔐 Complete Authorization',
-                            html: `
-                                <div class="text-start">
-                                    <p><strong>A new window opened for authorization.</strong></p>
-                                    <ol>
-                                        <li>Sign in to your Google account</li>
-                                        <li>Grant permissions to ${channelName}</li>
-                                        <li><strong>Copy the authorization code</strong> from the page</li>
-                                        <li>Paste it below and click Complete</li>
-                                    </ol>
-                                    <div class="mt-3">
-                                        <label class="form-label">Authorization Code:</label>
-                                        <input type="text" id="authCodeInput" class="form-control" 
-                                               placeholder="Paste the authorization code here">
-                                        <small class="text-muted">The code will look like: 4/0AX4XfWh...</small>
+                        // Show instructions and wait for user to indicate completion
+                        showToast('📋 Complete the authorization in the popup window, then click the button that appears next.', 'info');
+                        
+                        // Create a button for when user is ready to enter code
+                        setTimeout(() => {
+                            Swal.fire({
+                                title: '🔐 OAuth Authorization',
+                                html: `
+                                    <div class="text-start">
+                                        <p><strong>Step 1:</strong> Complete authorization in the popup window</p>
+                                        <p><strong>Step 2:</strong> Copy the authorization code from Google</p>
+                                        <p><strong>Step 3:</strong> Click "Enter Code" below when ready</p>
+                                        <div class="alert alert-info mt-3">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            The authorization code will start with "4/0..." and be quite long
+                                        </div>
                                     </div>
-                                    <div class="alert alert-info mt-3">
-                                        <i class="fas fa-info-circle me-2"></i>
-                                        This is a <strong>one-time setup</strong> per channel.
-                                    </div>
-                                </div>
-                            `,
-                            icon: 'info',
-                            showCancelButton: true,
-                            confirmButtonText: '✅ Complete Authorization',
-                            cancelButtonText: 'Cancel',
-                            allowOutsideClick: false,
-                            preConfirm: () => {
-                                const authCode = document.getElementById('authCodeInput').value.trim();
-                                if (!authCode) {
-                                    Swal.showValidationMessage('Please enter the authorization code');
-                                    return false;
-                                }
-                                return authCode;
-                            }
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                const authCode = result.value;
-                                
-                                // Send authorization code to backend
-                                fetch('/api/youtube/complete-oauth', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json'
-                                    },
-                                    body: JSON.stringify({
-                                        channel_name: channelName,
-                                        client_id: clientId,
-                                        client_secret: clientSecret,
-                                        authorization_code: authCode
-                                    })
-                                })
-                                .then(response => response.json())
-                                .then(data => {
-                                    if (data.success) {
-                                        showOAuthStatus({
-                                            status: 'Completed',
-                                            token_valid: true,
-                                            channel_access: true,
-                                            upload_permission: true,
-                                            expires_at: data.expires_at
+                                `,
+                                icon: 'info',
+                                showCancelButton: true,
+                                confirmButtonText: '📝 Enter Code',
+                                cancelButtonText: 'Cancel',
+                                allowOutsideClick: false
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    // Now show the prompt for code entry
+                                    const authCode = prompt('🔐 Paste your authorization code here:\n\n(The code should start with "4/0..." and be quite long)\n\nAuthorization Code:');
+                                    
+                                    if (authCode && authCode.trim().length > 10) {
+                                        showToast('🔄 Processing authorization code...', 'info');
+                                        
+                                        // Send authorization code to backend
+                                        fetch('/api/youtube/complete-oauth', {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/json'
+                                            },
+                                            body: JSON.stringify({
+                                                channel_name: channelName,
+                                                client_id: clientId,
+                                                client_secret: clientSecret,
+                                                authorization_code: authCode.trim()
+                                            })
+                                        })
+                                        .then(response => response.json())
+                                        .then(data => {
+                                            if (data.success) {
+                                                showOAuthStatus({
+                                                    status: 'Completed',
+                                                    token_valid: true,
+                                                    channel_access: true,
+                                                    upload_permission: true,
+                                                    expires_at: data.expires_at
+                                                });
+                                                updateOAuthStatus(true);
+                                                showToast('✅ OAuth authorization completed successfully!', 'success');
+                                            } else {
+                                                showToast(`❌ Authorization failed: ${data.error}`, 'error');
+                                            }
+                                        })
+                                        .catch(error => {
+                                            console.error('OAuth completion error:', error);
+                                            showToast('❌ Failed to complete authorization', 'error');
                                         });
-                                        updateOAuthStatus(true);
-                                        showToast('✅ OAuth authorization completed successfully!', 'success');
                                     } else {
-                                        showToast(`❌ Authorization failed: ${data.error}`, 'error');
+                                        showToast('❌ No valid authorization code provided', 'warning');
                                     }
-                                })
-                                .catch(error => {
-                                    console.error('OAuth completion error:', error);
-                                    showToast('❌ Failed to complete authorization', 'error');
-                                });
-                            } else {
-                                showToast('❌ Authorization cancelled', 'warning');
-                            }
-                            
-                            // Close auth window if still open
-                            if (authWindow && !authWindow.closed) {
-                                authWindow.close();
-                            }
-                        });
+                                } else {
+                                    showToast('❌ Authorization cancelled', 'warning');
+                                }
+                                
+                                // Close auth window if still open
+                                if (authWindow && !authWindow.closed) {
+                                    authWindow.close();
+                                }
+                            });
+                        }, 1000); // Just 1 second delay to show the popup first
                         
                     } else {
                         // Fallback for other success scenarios

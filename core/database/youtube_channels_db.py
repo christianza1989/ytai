@@ -45,6 +45,8 @@ class YouTubeChannelsDB:
                     client_id TEXT,
                     client_secret TEXT,
                     oauth_token TEXT,
+                    oauth_credentials TEXT,  -- JSON storage for OAuth credentials
+                    oauth_authorized BOOLEAN DEFAULT 0,  -- OAuth authorization status
                     
                     -- Music Genre Selection (JSON array)
                     selected_genres TEXT NOT NULL DEFAULT '[]',
@@ -342,14 +344,14 @@ class YouTubeChannelsDB:
                 cursor.execute('''
                     INSERT INTO youtube_channels (
                         channel_uuid, channel_name, channel_url, youtube_channel_id, description,
-                        api_key, client_id, client_secret,
+                        api_key, client_id, client_secret, oauth_credentials, oauth_authorized,
                         selected_genres, primary_genre, target_audience,
                         auto_upload, auto_thumbnails, auto_seo, enable_analytics, enable_monetization,
                         daily_upload_count, upload_schedule, upload_hours,
                         vocal_probability, ai_decision_enabled,
                         privacy_settings, default_video_title_template, default_description_template,
                         advanced_settings
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (
                     channel_uuid,
                     channel_data.get('channel_name'),
@@ -359,6 +361,8 @@ class YouTubeChannelsDB:
                     channel_data.get('api_key'),
                     channel_data.get('client_id'),
                     channel_data.get('client_secret'),
+                    channel_data.get('oauth_credentials'),
+                    channel_data.get('oauth_authorized', False),
                     selected_genres_json,
                     channel_data.get('primary_genre'),
                     channel_data.get('target_audience'),
@@ -435,7 +439,7 @@ class YouTubeChannelsDB:
                 cursor.execute('''
                     UPDATE youtube_channels SET
                         channel_name = ?, channel_url = ?, youtube_channel_id = ?, description = ?,
-                        api_key = ?, client_id = ?, client_secret = ?,
+                        api_key = ?, client_id = ?, client_secret = ?, oauth_credentials = ?, oauth_authorized = ?,
                         selected_genres = ?, primary_genre = ?, target_audience = ?,
                         auto_upload = ?, auto_thumbnails = ?, auto_seo = ?, enable_analytics = ?, enable_monetization = ?,
                         daily_upload_count = ?, upload_schedule = ?, upload_hours = ?,
@@ -451,6 +455,8 @@ class YouTubeChannelsDB:
                     channel_data.get('api_key'),
                     channel_data.get('client_id'),
                     channel_data.get('client_secret'),
+                    channel_data.get('oauth_credentials'),
+                    channel_data.get('oauth_authorized', False),
                     selected_genres_json,
                     channel_data.get('primary_genre'),
                     channel_data.get('target_audience'),
@@ -1134,3 +1140,23 @@ class YouTubeChannelsDB:
             score += 0.2
             
         return min(1.0, score)  # Cap at 1.0
+    
+    def save_channel(self, channel_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Save channel (add new or update existing based on channel_id)"""
+        try:
+            channel_id = channel_data.get('channel_id') or channel_data.get('id')
+            
+            if channel_id:
+                # Update existing channel
+                return self.update_channel(int(channel_id), channel_data)
+            else:
+                # Add new channel
+                return self.add_channel(channel_data)
+                
+        except Exception as e:
+            self.logger.error(f"Error saving channel: {e}")
+            return {
+                'success': False,
+                'error': str(e),
+                'message': 'Failed to save channel'
+            }
