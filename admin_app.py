@@ -2734,6 +2734,76 @@ def api_music_cancel(task_id):
         return jsonify({'success': True, 'message': 'Task cancelled'})
     return jsonify({'success': False, 'error': 'Task not found or not cancellable'})
 
+@app.route('/api/tasks/<task_id>/cancel', methods=['POST'])
+@require_auth
+def api_task_cancel(task_id):
+    """Cancel any task (including video uploads)"""
+    try:
+        task = system_state.generation_tasks.get(task_id)
+        if not task:
+            return jsonify({'success': False, 'error': 'Task not found'})
+        
+        if task['status'] not in ['queued', 'processing', 'uploading']:
+            return jsonify({'success': False, 'error': 'Task is not cancellable'})
+        
+        # Mark task as cancelled
+        task['status'] = 'cancelled'
+        task['current_step'] = 'Cancelled by user'
+        task['progress'] = 0
+        
+        # If it's a video upload task, also update video status in video gallery
+        if 'youtube_upload_gallery' in task_id:
+            try:
+                video_id = task.get('video_id')
+                if video_id:
+                    # Update video status to ready (so it can be retried)
+                    from core.database.youtube_channels_db import YouTubeChannelsDB
+                    video_db = YouTubeChannelsDB()
+                    video_db.update_video_upload_status(video_id, {
+                        'upload_status': 'ready',
+                        'upload_response': {'error': 'Cancelled by user'}
+                    })
+            except Exception as e:
+                print(f"Warning: Could not update video status after cancel: {e}")
+        
+        return jsonify({'success': True, 'message': 'Task cancelled successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/video/<int:video_id>/cancel-upload', methods=['POST'])
+@require_auth
+def api_video_cancel_upload(video_id):
+    """Cancel video upload for specific video"""
+    try:
+        # Find any active upload task for this video
+        upload_task_id = None
+        for task_id, task in system_state.generation_tasks.items():
+            if ('youtube_upload_gallery' in task_id and 
+                task.get('video_id') == video_id and
+                task['status'] in ['queued', 'processing', 'uploading']):
+                upload_task_id = task_id
+                break
+        
+        if upload_task_id:
+            # Cancel the task
+            task = system_state.generation_tasks[upload_task_id]
+            task['status'] = 'cancelled'
+            task['current_step'] = 'Upload cancelled by user'
+        
+        # Update video status to ready (so it can be retried)
+        from core.database.youtube_channels_db import YouTubeChannelsDB
+        video_db = YouTubeChannelsDB()
+        video_db.update_video_upload_status(video_id, {
+            'upload_status': 'ready',
+            'upload_response': {'error': 'Cancelled by user'}
+        })
+        
+        return jsonify({'success': True, 'message': 'Upload cancelled successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
 @app.route('/api/music/extend', methods=['POST'])
 @require_auth
 def api_music_extend():

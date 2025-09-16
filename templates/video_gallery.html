@@ -154,6 +154,26 @@
     color: white;
 }
 
+.btn-cancel {
+    background: #e74c3c;
+    color: white;
+}
+
+.btn-cancel:hover {
+    background: #c0392b;
+    color: white;
+}
+
+.btn-retry {
+    background: #f39c12;
+    color: white;
+}
+
+.btn-retry:hover {
+    background: #e67e22;
+    color: white;
+}
+
 .video-thumbnail {
     width: 120px;
     height: 68px;
@@ -386,7 +406,11 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="cancelUploadModalBtn">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="cancelUploadBtn" onclick="cancelCurrentUpload()" style="display: none;">
+                        <i class="fas fa-times me-1"></i>
+                        Cancel Upload
+                    </button>
                     <button type="button" class="btn btn-success" id="confirmUploadBtn" onclick="confirmUpload()">
                         <i class="fas fa-upload me-1"></i>
                         Start Upload
@@ -435,6 +459,8 @@
         let currentPreviewVideoId = null;
         let videos = [];
         let channels = [];
+        let currentUploadTaskId = null;
+        let uploadPollingInterval = null;
 
         document.addEventListener('DOMContentLoaded', function() {
             uploadModal = new bootstrap.Modal(document.getElementById('uploadModal'));
@@ -642,11 +668,32 @@
                         </button>
                         
                         ${video.upload_status === 'uploading' ? `
+                            <button class="btn btn-custom btn-cancel" onclick="cancelUpload(${video.id})">
+                                <i class="fas fa-times"></i> Cancel Upload
+                            </button>
                             <div class="progress-container" style="display: block;">
-                                <div class="upload-progress">
-                                    <div class="upload-progress-bar" style="width: 50%;"></div>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-medium">Uploading to YouTube...</span>
+                                    <span id="progress-${video.id}">0%</span>
                                 </div>
-                                <small class="text-muted">Uploading to YouTube...</small>
+                                <div class="upload-progress">
+                                    <div class="upload-progress-bar" id="progress-bar-${video.id}" style="width: 0%;"></div>
+                                </div>
+                                <div class="mt-1">
+                                    <small class="text-muted" id="status-${video.id}">Preparing upload...</small>
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${video.upload_status === 'failed' ? `
+                            <button class="btn btn-custom btn-retry" onclick="retryUpload(${video.id})">
+                                <i class="fas fa-redo"></i> Retry Upload
+                            </button>
+                            <div class="mt-2">
+                                <small class="text-danger">
+                                    <i class="fas fa-exclamation-triangle"></i> 
+                                    Upload failed: ${video.upload_error || 'Unknown error'}
+                                </small>
                             </div>
                         ` : ''}
                     </div>
@@ -770,6 +817,8 @@
             // Show progress
             document.getElementById('uploadProgressContainer').style.display = 'block';
             document.getElementById('confirmUploadBtn').style.display = 'none';
+            document.getElementById('cancelUploadBtn').style.display = 'inline-block';
+            document.getElementById('cancelUploadModalBtn').style.display = 'none';
             
             try {
                 const response = await fetch('/api/video/upload-youtube-gallery', {
@@ -789,6 +838,8 @@
                 const data = await response.json();
                 
                 if (data.success) {
+                    // Store task ID for potential cancellation
+                    currentUploadTaskId = data.task_id;
                     // Start polling for progress
                     pollUploadProgress(data.task_id);
                 } else {
@@ -797,12 +848,15 @@
                 
             } catch (error) {
                 showError('Upload error: ' + error.message);
-                document.getElementById('uploadProgressContainer').style.display = 'none';
-                document.getElementById('confirmUploadBtn').style.display = 'block';
+                resetUploadModal();
             }
         }
 
         async function pollUploadProgress(taskId) {
+            if (uploadPollingInterval) {
+                clearTimeout(uploadPollingInterval);
+            }
+            
             try {
                 const response = await fetch(`/api/tasks/${taskId}/status`);
                 const data = await response.json();
@@ -824,32 +878,36 @@
                         // Success
                         progressText.textContent = '100%';
                         statusText.textContent = 'Upload completed successfully!';
+                        currentUploadTaskId = null;
                         
                         setTimeout(() => {
                             uploadModal.hide();
                             loadVideoGallery(); // Refresh gallery
                         }, 2000);
                         
-                    } else if (task.status === 'failed') {
-                        // Failed
-                        statusText.textContent = 'Upload failed: ' + (task.result?.error || 'Unknown error');
+                    } else if (task.status === 'failed' || task.status === 'cancelled') {
+                        // Failed or cancelled
+                        const errorMsg = task.status === 'cancelled' ? 'Upload cancelled' : 
+                                       'Upload failed: ' + (task.result?.error || 'Unknown error');
+                        statusText.textContent = errorMsg;
                         statusText.className = 'text-danger';
+                        currentUploadTaskId = null;
                         
                         setTimeout(() => {
-                            document.getElementById('uploadProgressContainer').style.display = 'none';
-                            document.getElementById('confirmUploadBtn').style.display = 'block';
+                            resetUploadModal();
+                            loadVideoGallery(); // Refresh gallery to show failed status
                         }, 3000);
                         
                     } else {
                         // Still running, poll again
-                        setTimeout(() => pollUploadProgress(taskId), 2000);
+                        uploadPollingInterval = setTimeout(() => pollUploadProgress(taskId), 2000);
                     }
                 }
                 
             } catch (error) {
                 console.error('Error polling upload progress:', error);
                 // Retry after delay
-                setTimeout(() => pollUploadProgress(taskId), 5000);
+                uploadPollingInterval = setTimeout(() => pollUploadProgress(taskId), 5000);
             }
         }
 
@@ -936,5 +994,93 @@
                 showError('Error deleting video: ' + error.message);
             }
         }
+
+        function resetUploadModal() {
+            document.getElementById('uploadProgressContainer').style.display = 'none';
+            document.getElementById('confirmUploadBtn').style.display = 'block';
+            document.getElementById('cancelUploadBtn').style.display = 'none';
+            document.getElementById('cancelUploadModalBtn').style.display = 'inline-block';
+            currentUploadTaskId = null;
+            
+            if (uploadPollingInterval) {
+                clearTimeout(uploadPollingInterval);
+                uploadPollingInterval = null;
+            }
+        }
+
+        async function cancelCurrentUpload() {
+            if (!currentUploadTaskId) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/tasks/${currentUploadTaskId}/cancel`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('uploadStatusText').textContent = 'Cancelling upload...';
+                    document.getElementById('cancelUploadBtn').disabled = true;
+                } else {
+                    showError('Failed to cancel upload: ' + (data.error || 'Unknown error'));
+                }
+                
+            } catch (error) {
+                showError('Error cancelling upload: ' + error.message);
+            }
+        }
+
+        async function cancelUpload(videoId) {
+            if (!confirm('Are you sure you want to cancel this upload?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/video/${videoId}/cancel-upload`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    loadVideoGallery(); // Refresh gallery
+                } else {
+                    showError('Failed to cancel upload: ' + (data.error || 'Unknown error'));
+                }
+                
+            } catch (error) {
+                showError('Error cancelling upload: ' + error.message);
+            }
+        }
+
+        function retryUpload(videoId) {
+            // Simply show upload modal again for retry
+            showUploadModal(videoId);
+        }
+
+        // Enhanced progress tracking for individual videos
+        function updateVideoProgress(videoId, progress, status, error) {
+            const progressElement = document.getElementById(`progress-${videoId}`);
+            const progressBarElement = document.getElementById(`progress-bar-${videoId}`);
+            const statusElement = document.getElementById(`status-${videoId}`);
+            
+            if (progressElement) progressElement.textContent = progress + '%';
+            if (progressBarElement) progressBarElement.style.width = progress + '%';
+            if (statusElement) {
+                statusElement.textContent = status;
+                if (error) {
+                    statusElement.className = 'text-danger';
+                } else {
+                    statusElement.className = 'text-muted';
+                }
+            }
+        }
+
+        // Auto-refresh gallery every 30 seconds to catch status changes
+        setInterval(() => {
+            loadVideoGallery();
+        }, 30000);
     </script>
 {% endblock %}
