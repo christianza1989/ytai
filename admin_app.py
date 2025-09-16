@@ -5110,14 +5110,14 @@ def api_youtube_start_oauth():
         
         print(f"🚀 Starting OAuth flow for channel: {channel_name}")
         
-        # Create client config
+        # Create client config with proper redirect URI
         client_config = {
             "installed": {
                 "client_id": client_id,
                 "client_secret": client_secret,
                 "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                 "token_uri": "https://oauth2.googleapis.com/token",
-                "redirect_uris": ["http://localhost:8080/"]
+                "redirect_uris": ["urn:ietf:wg:oauth:2.0:oob"]
             }
         }
         
@@ -5131,11 +5131,15 @@ def api_youtube_start_oauth():
             # Create flow
             flow = InstalledAppFlow.from_client_config(client_config, scopes)
             
-            # For production deployment, we need to handle OAuth differently
-            # Since we can't run browser flow in server environment,
-            # we'll return instructions for manual setup
+            # Set the redirect URI explicitly for "out of band" flow
+            flow.redirect_uri = "urn:ietf:wg:oauth:2.0:oob"
             
-            auth_url, _ = flow.authorization_url(prompt='consent')
+            # Generate authorization URL with explicit parameters
+            auth_url, _ = flow.authorization_url(
+                prompt='consent',
+                access_type='offline',
+                include_granted_scopes='true'
+            )
             
             return jsonify({
                 'success': True,
@@ -5165,6 +5169,137 @@ def api_youtube_start_oauth():
             
     except Exception as e:
         print(f"❌ Error starting OAuth: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/youtube/complete-oauth', methods=['POST'])
+@require_auth
+def api_complete_oauth():
+    """Complete OAuth authorization with authorization code"""
+    try:
+        from google_auth_oauthlib.flow import InstalledAppFlow
+        from core.database.youtube_channels_db import YouTubeChannelsDB
+        import json
+        
+        data = request.get_json() or {}
+        channel_name = data.get('channel_name', '').strip()
+        client_id = data.get('client_id', '').strip()
+        client_secret = data.get('client_secret', '').strip()
+        authorization_code = data.get('authorization_code', '').strip()
+        
+        if not all([channel_name, client_id, client_secret, authorization_code]):
+            return jsonify({
+                'success': False,
+                'error': 'All fields are required: channel name, client ID, client secret, and authorization code'
+            }), 400
+        
+        print(f"🔐 Completing OAuth for channel: {channel_name}")
+        
+        # Create client config
+        client_config = {
+            "installed": {
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "redirect_uris": ["urn:ietf:wg:oauth:2.0:oob"]
+            }
+        }
+        
+        scopes = [
+            'https://www.googleapis.com/auth/youtube.upload',
+            'https://www.googleapis.com/auth/youtube.readonly',
+            'https://www.googleapis.com/auth/youtube'
+        ]
+        
+        try:
+            # Create flow and exchange code for credentials
+            flow = InstalledAppFlow.from_client_config(client_config, scopes)
+            flow.redirect_uri = "urn:ietf:wg:oauth:2.0:oob"
+            
+            # Fetch token using authorization code
+            flow.fetch_token(code=authorization_code)
+            
+            # Get credentials
+            credentials = flow.credentials
+            
+            # Store credentials in database
+            db = YouTubeChannelsDB()
+            
+            # Convert credentials to JSON for storage
+            credentials_data = {
+                'token': credentials.token,
+                'refresh_token': credentials.refresh_token,
+                'token_uri': credentials.token_uri,
+                'client_id': credentials.client_id,
+                'client_secret': credentials.client_secret,
+                'scopes': credentials.scopes,
+                'expiry': credentials.expiry.isoformat() if credentials.expiry else None
+            }
+            
+            # Try to get YouTube channel info to verify permissions
+            try:
+                from googleapiclient.discovery import build
+                
+                service = build('youtube', 'v3', credentials=credentials)
+                channels_response = service.channels().list(part='snippet,statistics', mine=True).execute()
+                
+                if channels_response.get('items'):
+                    channel_info = channels_response['items'][0]
+                    youtube_channel_id = channel_info['id']
+                    
+                    # Update or create channel with OAuth credentials
+                    channel_data = {
+                        'channel_name': channel_name,
+                        'youtube_channel_id': youtube_channel_id,
+                        'client_id': client_id,
+                        'client_secret': client_secret,
+                        'oauth_credentials': json.dumps(credentials_data),
+                        'oauth_authorized': True,
+                        'channel_url': f"https://youtube.com/channel/{youtube_channel_id}",
+                        'subscribers': channel_info.get('statistics', {}).get('subscriberCount', 0),
+                        'status': 'active'
+                    }
+                    
+                    # Save to database
+                    result = db.save_channel(channel_data)
+                    
+                    return jsonify({
+                        'success': True,
+                        'message': 'OAuth authorization completed successfully',
+                        'channel_id': result.get('id'),
+                        'youtube_channel_id': youtube_channel_id,
+                        'channel_name': channel_info['snippet']['title'],
+                        'expires_at': credentials.expiry.isoformat() if credentials.expiry else 'No expiry',
+                        'token_valid': True,
+                        'upload_permission': True,
+                        'channel_access': True
+                    })
+                else:
+                    return jsonify({
+                        'success': False,
+                        'error': 'No YouTube channel found for this account'
+                    }), 400
+                    
+            except Exception as api_error:
+                print(f"❌ YouTube API error: {api_error}")
+                return jsonify({
+                    'success': False,
+                    'error': f'Failed to verify YouTube channel access: {str(api_error)}'
+                }), 400
+            
+        except Exception as token_error:
+            print(f"❌ Token exchange error: {token_error}")
+            return jsonify({
+                'success': False,
+                'error': f'Invalid authorization code: {str(token_error)}',
+                'hint': 'Please make sure you copied the complete authorization code'
+            }), 400
+            
+    except Exception as e:
+        print(f"❌ Error completing OAuth: {e}")
         return jsonify({
             'success': False,
             'error': str(e)

@@ -378,7 +378,7 @@
                                         </ol>
                                         <div class="alert alert-warning">
                                             <i class="fas fa-exclamation-triangle me-2"></i>
-                                            <strong>Important:</strong> Choose "Desktop Application" type when creating OAuth credentials.
+                                            <strong>Important:</strong> Choose "Desktop Application" type. No redirect URI configuration needed.
                                         </div>
                                     </div>
                                 </div>
@@ -2143,7 +2143,7 @@ function startOAuthAuthorization() {
                         // Open authorization URL in new window
                         const authWindow = window.open(data.auth_url, 'oauth_authorization', 'width=500,height=600,scrollbars=yes,resizable=yes');
                         
-                        // Show instructions dialog
+                        // Show instructions dialog with code input
                         Swal.fire({
                             title: '🔐 Complete Authorization',
                             html: `
@@ -2152,9 +2152,15 @@ function startOAuthAuthorization() {
                                     <ol>
                                         <li>Sign in to your Google account</li>
                                         <li>Grant permissions to ${channelName}</li>
-                                        <li>Complete the authorization</li>
-                                        <li>Return here when done</li>
+                                        <li><strong>Copy the authorization code</strong> from the page</li>
+                                        <li>Paste it below and click Complete</li>
                                     </ol>
+                                    <div class="mt-3">
+                                        <label class="form-label">Authorization Code:</label>
+                                        <input type="text" id="authCodeInput" class="form-control" 
+                                               placeholder="Paste the authorization code here">
+                                        <small class="text-muted">The code will look like: 4/0AX4XfWh...</small>
+                                    </div>
                                     <div class="alert alert-info mt-3">
                                         <i class="fas fa-info-circle me-2"></i>
                                         This is a <strong>one-time setup</strong> per channel.
@@ -2163,20 +2169,54 @@ function startOAuthAuthorization() {
                             `,
                             icon: 'info',
                             showCancelButton: true,
-                            confirmButtonText: '✅ I completed authorization',
+                            confirmButtonText: '✅ Complete Authorization',
                             cancelButtonText: 'Cancel',
-                            allowOutsideClick: false
+                            allowOutsideClick: false,
+                            preConfirm: () => {
+                                const authCode = document.getElementById('authCodeInput').value.trim();
+                                if (!authCode) {
+                                    Swal.showValidationMessage('Please enter the authorization code');
+                                    return false;
+                                }
+                                return authCode;
+                            }
                         }).then((result) => {
                             if (result.isConfirmed) {
-                                // Mark as authorized and update UI
-                                showOAuthStatus({
-                                    status: 'Completed',
-                                    token_valid: true,
-                                    channel_access: true,
-                                    upload_permission: true
+                                const authCode = result.value;
+                                
+                                // Send authorization code to backend
+                                fetch('/api/youtube/complete-oauth', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        channel_name: channelName,
+                                        client_id: clientId,
+                                        client_secret: clientSecret,
+                                        authorization_code: authCode
+                                    })
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        showOAuthStatus({
+                                            status: 'Completed',
+                                            token_valid: true,
+                                            channel_access: true,
+                                            upload_permission: true,
+                                            expires_at: data.expires_at
+                                        });
+                                        updateOAuthStatus(true);
+                                        showToast('✅ OAuth authorization completed successfully!', 'success');
+                                    } else {
+                                        showToast(`❌ Authorization failed: ${data.error}`, 'error');
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('OAuth completion error:', error);
+                                    showToast('❌ Failed to complete authorization', 'error');
                                 });
-                                updateOAuthStatus(true);
-                                showToast('✅ OAuth authorization completed successfully!', 'success');
                             } else {
                                 showToast('❌ Authorization cancelled', 'warning');
                             }
@@ -2257,8 +2297,11 @@ function showOAuthHelp() {
                     <li>Choose <strong>Desktop Application</strong></li>
                     <li>Copy <strong>Client ID</strong> and <strong>Client Secret</strong></li>
                 </ol>
-                <div class="alert alert-warning mt-3">
-                    <strong>⚠️ Important:</strong> OAuth setup requires one-time browser authorization per channel.
+                <div class="alert alert-info mt-3">
+                    <strong>✅ Desktop Application:</strong> No redirect URI configuration needed - the system uses "out-of-band" flow.
+                </div>
+                <div class="alert alert-warning mt-2">
+                    <strong>⚠️ Important:</strong> OAuth requires one-time browser authorization and copying the authorization code.
                 </div>
             </div>
         `,
