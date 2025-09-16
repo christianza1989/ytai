@@ -9,7 +9,7 @@
 
 {% block extra_css %}
 <style>
-/* Progressive Authorization Styles */
+/* YouTube OAuth Setup Styles */
 .btn-pulse {
     animation: pulse 2s infinite;
 }
@@ -29,41 +29,21 @@
     }
 }
 
-.auth-level-card {
+.card {
     transition: all 0.3s ease;
 }
 
-.auth-level-card:hover {
+.card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-
-.progress-bar {
-    transition: width 0.5s ease;
 }
 
 .card-header h6 {
     font-weight: 600;
 }
 
-.form-text {
-    font-size: 0.875rem;
-}
-
 .badge {
     transition: all 0.3s ease;
-}
-
-/* Feature comparison table */
-.table th {
-    border-top: none;
-    font-weight: 600;
-    font-size: 0.875rem;
-}
-
-.table td {
-    font-size: 0.875rem;
-    vertical-align: middle;
 }
 
 /* OAuth status display */
@@ -76,12 +56,6 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Level indicators */
-.auth-level-indicators .badge {
-    font-size: 0.875rem;
-    padding: 8px 12px;
-}
-
 /* Input validation states */
 .form-control.is-valid {
     border-color: #28a745;
@@ -91,6 +65,11 @@
 .form-control.is-invalid {
     border-color: #dc3545;
     box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+/* Features list styling */
+.list-unstyled li {
+    margin-bottom: 0.25rem;
 }
 
 /* Responsive adjustments */
@@ -299,93 +278,38 @@
                         </div>
                         
                         <div class="col-md-6 mb-4">
-                            <h6><i class="fas fa-key text-warning me-2"></i>API Setup - Progressive Authorization</h6>
+                            <h6><i class="fas fa-key text-warning me-2"></i>YouTube API Credentials</h6>
                             <hr>
                             
-                            <!-- Authorization Level Indicator -->
-                            <div class="mb-4">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="badge bg-primary" id="authLevel1Badge">
-                                        <i class="fas fa-circle me-1"></i>Level 1: Statistics Only
-                                    </span>
-                                    <i class="fas fa-arrow-right text-muted"></i>
-                                    <span class="badge bg-secondary" id="authLevel2Badge">
-                                        <i class="far fa-circle me-1"></i>Level 2: Full Upload
-                                    </span>
-                                </div>
-                                <div class="progress" style="height: 8px;">
-                                    <div class="progress-bar" id="authProgressBar" role="progressbar" style="width: 50%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
-                                </div>
-                            </div>
-                            
-                            <!-- Level 1: API Key Only (Quick Start) -->
-                            <div class="card border-success mb-3" id="level1Setup">
-                                <div class="card-header bg-success text-white">
+                            <!-- OAuth Credentials Setup -->
+                            <div class="card border-primary" id="oauthSetup">
+                                <div class="card-header bg-primary text-white">
                                     <h6 class="mb-0">
-                                        <i class="fas fa-bolt me-2"></i>
-                                        Quick Start - Statistics Only
+                                        <i class="fab fa-youtube me-2"></i>
+                                        YouTube Data API v3 Setup
+                                        <span class="badge bg-light text-dark ms-2">Required</span>
                                     </h6>
                                 </div>
                                 <div class="card-body">
-                                    <div class="alert alert-success">
+                                    <div class="alert alert-info">
                                         <i class="fas fa-info-circle me-2"></i>
-                                        <strong>Perfect for getting started!</strong> Just add your API key to view channel statistics and manage settings.
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <label for="apiKey" class="form-label">
-                                            YouTube API Key *
-                                            <span class="text-muted">(Required)</span>
-                                        </label>
-                                        <div class="input-group">
-                                            <input type="password" class="form-control" id="apiKey" name="api_key" 
-                                                   placeholder="AIzaSyC..." onchange="validateApiKey()">
-                                            <button type="button" class="btn btn-outline-secondary" onclick="togglePasswordVisibility('apiKey')">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                        </div>
-                                        <div class="form-text">
-                                            ✅ Channel statistics, subscriber count, video list<br>
-                                            ❌ Cannot upload videos (Level 2 needed)
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <button type="button" class="btn btn-success" onclick="testApiConnection()">
-                                            <i class="fas fa-plug me-1"></i>
-                                            Test API Connection
-                                        </button>
-                                        <button type="button" class="btn btn-outline-info btn-sm" onclick="showApiKeyHelp()">
-                                            <i class="fas fa-question-circle me-1"></i>
-                                            How to get API Key?
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Level 2: OAuth Credentials (Full Features) -->
-                            <div class="card border-warning" id="level2Setup">
-                                <div class="card-header bg-warning text-dark">
-                                    <h6 class="mb-0">
-                                        <i class="fas fa-upload me-2"></i>
-                                        Advanced - Video Upload Enabled
-                                        <span class="badge bg-dark ms-2">Optional</span>
-                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="alert alert-warning">
-                                        <i class="fas fa-exclamation-triangle me-2"></i>
-                                        <strong>Only needed for video uploads!</strong> Skip if you only want statistics and analytics.
+                                        <strong>Full YouTube Access Required!</strong> This platform uploads videos automatically, so we need complete channel permissions.
                                     </div>
                                     
                                     <div class="row">
                                         <div class="col-md-6 mb-3">
-                                            <label for="clientId" class="form-label">OAuth Client ID</label>
+                                            <label for="clientId" class="form-label">
+                                                OAuth Client ID *
+                                                <span class="text-muted">(Required)</span>
+                                            </label>
                                             <input type="text" class="form-control" id="clientId" name="client_id" 
-                                                   placeholder="1234567890-abc..." onchange="validateOAuthCredentials()">
+                                                   placeholder="1234567890-abc...googleusercontent.com" onchange="validateOAuthCredentials()">
                                         </div>
                                         <div class="col-md-6 mb-3">
-                                            <label for="clientSecret" class="form-label">OAuth Client Secret</label>
+                                            <label for="clientSecret" class="form-label">
+                                                OAuth Client Secret *
+                                                <span class="text-muted">(Required)</span>
+                                            </label>
                                             <div class="input-group">
                                                 <input type="password" class="form-control" id="clientSecret" name="client_secret" 
                                                        placeholder="GOCSPX-..." onchange="validateOAuthCredentials()">
@@ -396,77 +320,66 @@
                                         </div>
                                     </div>
                                     
+                                    <!-- Features List -->
+                                    <div class="mb-3">
+                                        <h6 class="text-success">✅ What this enables:</h6>
+                                        <ul class="list-unstyled">
+                                            <li class="text-success"><i class="fas fa-check me-2"></i>Automatic video uploads</li>
+                                            <li class="text-success"><i class="fas fa-check me-2"></i>Channel statistics & analytics</li>
+                                            <li class="text-success"><i class="fas fa-check me-2"></i>Video management & SEO</li>
+                                            <li class="text-success"><i class="fas fa-check me-2"></i>24/7 automation support</li>
+                                            <li class="text-success"><i class="fas fa-check me-2"></i>Thumbnail & metadata control</li>
+                                        </ul>
+                                    </div>
+                                    
                                     <div class="mb-3">
                                         <div class="d-flex gap-2 flex-wrap">
-                                            <button type="button" class="btn btn-warning" onclick="testOAuthConnection()" id="testOAuthBtn" disabled>
+                                            <button type="button" class="btn btn-primary" onclick="testOAuthConnection()" id="testOAuthBtn" disabled>
                                                 <i class="fas fa-shield-alt me-1"></i>
-                                                Test OAuth Setup
+                                                Test Credentials
                                             </button>
-                                            <button type="button" class="btn btn-outline-primary" onclick="startOAuthAuthorization()" id="authorizeBtn" disabled>
+                                            <button type="button" class="btn btn-success" onclick="startOAuthAuthorization()" id="authorizeBtn" disabled>
                                                 <i class="fas fa-key me-1"></i>
                                                 🔐 Authorize Channel
                                             </button>
                                             <button type="button" class="btn btn-outline-info btn-sm" onclick="showOAuthHelp()">
                                                 <i class="fas fa-question-circle me-1"></i>
-                                                OAuth Setup Guide
+                                                Setup Guide
                                             </button>
                                         </div>
                                     </div>
                                     
                                     <!-- OAuth Status Display -->
                                     <div id="oauthStatusDisplay" class="d-none">
-                                        <div class="alert alert-info">
-                                            <h6><i class="fas fa-info-circle me-2"></i>OAuth Authorization Status</h6>
+                                        <div class="alert alert-success">
+                                            <h6><i class="fas fa-check-circle me-2"></i>Authorization Status</h6>
                                             <div id="oauthStatusContent"></div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             
-                            <!-- Feature Comparison -->
+                            <!-- Setup Instructions -->
                             <div class="mt-3">
-                                <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#featureComparison">
-                                    <i class="fas fa-chart-bar me-1"></i>
-                                    Compare Features
+                                <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#setupInstructions">
+                                    <i class="fas fa-list-ol me-1"></i>
+                                    Quick Setup Guide
                                 </button>
-                                <div class="collapse mt-2" id="featureComparison">
+                                <div class="collapse mt-2" id="setupInstructions">
                                     <div class="card card-body">
-                                        <table class="table table-sm">
-                                            <thead>
-                                                <tr>
-                                                    <th>Feature</th>
-                                                    <th class="text-success">API Key Only</th>
-                                                    <th class="text-warning">OAuth Setup</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr>
-                                                    <td>Setup Difficulty</td>
-                                                    <td class="text-success">⚡ Very Easy</td>
-                                                    <td class="text-warning">🔧 Moderate</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Channel Statistics</td>
-                                                    <td class="text-success">✅ Yes</td>
-                                                    <td class="text-success">✅ Yes</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Video Upload</td>
-                                                    <td class="text-danger">❌ No</td>
-                                                    <td class="text-success">✅ Yes</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Auto Upload</td>
-                                                    <td class="text-danger">❌ No</td>
-                                                    <td class="text-success">✅ Yes</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Browser Required</td>
-                                                    <td class="text-success">❌ No</td>
-                                                    <td class="text-warning">⚠️ One Time</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
+                                        <h6><i class="fas fa-rocket me-2"></i>YouTube API Setup Steps:</h6>
+                                        <ol class="mb-3">
+                                            <li>Go to <a href="https://console.developers.google.com/" target="_blank" class="text-primary">Google Cloud Console</a></li>
+                                            <li>Create a new project or select existing</li>
+                                            <li>Enable <strong>YouTube Data API v3</strong></li>
+                                            <li>Create <strong>OAuth 2.0 Client ID</strong> (Desktop Application)</li>
+                                            <li>Copy Client ID and Client Secret here</li>
+                                            <li>Test credentials and authorize your channel</li>
+                                        </ol>
+                                        <div class="alert alert-warning">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            <strong>Important:</strong> Choose "Desktop Application" type when creating OAuth credentials.
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -2092,26 +2005,7 @@ document.addEventListener('DOMContentLoaded', function() {
     updateScheduleOptions();
 });
 
-// ====== PROGRESSIVE AUTHORIZATION FUNCTIONS ======
-
-// Validate API Key and update UI accordingly
-function validateApiKey() {
-    const apiKey = document.getElementById('apiKey').value.trim();
-    const level1Badge = document.getElementById('authLevel1Badge');
-    const progressBar = document.getElementById('authProgressBar');
-    
-    if (apiKey.length > 20) { // Basic validation
-        level1Badge.innerHTML = '<i class="fas fa-check-circle me-1"></i>Level 1: Ready';
-        level1Badge.className = 'badge bg-success';
-        progressBar.style.width = '50%';
-        progressBar.className = 'progress-bar bg-success';
-    } else {
-        level1Badge.innerHTML = '<i class="fas fa-circle me-1"></i>Level 1: Statistics Only';
-        level1Badge.className = 'badge bg-primary';
-        progressBar.style.width = '25%';
-        progressBar.className = 'progress-bar';
-    }
-}
+// ====== YOUTUBE OAUTH AUTHENTICATION FUNCTIONS ======
 
 // Validate OAuth credentials and enable buttons
 function validateOAuthCredentials() {
@@ -2119,60 +2013,34 @@ function validateOAuthCredentials() {
     const clientSecret = document.getElementById('clientSecret').value.trim();
     const testOAuthBtn = document.getElementById('testOAuthBtn');
     const authorizeBtn = document.getElementById('authorizeBtn');
-    const level2Badge = document.getElementById('authLevel2Badge');
-    const progressBar = document.getElementById('authProgressBar');
     
-    if (clientId.length > 10 && clientSecret.length > 10) {
+    // Basic validation
+    const isClientIdValid = clientId.length > 20 && clientId.includes('.googleusercontent.com');
+    const isClientSecretValid = clientSecret.length > 20 && clientSecret.startsWith('GOCSPX-');
+    
+    if (isClientIdValid && isClientSecretValid) {
         testOAuthBtn.disabled = false;
         authorizeBtn.disabled = false;
-        level2Badge.innerHTML = '<i class="fas fa-check-circle me-1"></i>Level 2: Ready';
-        level2Badge.className = 'badge bg-success';
-        progressBar.style.width = '100%';
-        progressBar.className = 'progress-bar bg-success';
+        
+        // Visual feedback
+        document.getElementById('clientId').classList.add('is-valid');
+        document.getElementById('clientId').classList.remove('is-invalid');
+        document.getElementById('clientSecret').classList.add('is-valid');
+        document.getElementById('clientSecret').classList.remove('is-invalid');
     } else {
         testOAuthBtn.disabled = true;
         authorizeBtn.disabled = true;
-        level2Badge.innerHTML = '<i class="far fa-circle me-1"></i>Level 2: Full Upload';
-        level2Badge.className = 'badge bg-secondary';
-    }
-}
-
-// Test API Key only (Level 1)
-function testApiConnection() {
-    const apiKey = document.getElementById('apiKey').value;
-    
-    if (!apiKey.trim()) {
-        showToast('❌ Please enter API key first', 'error');
-        return;
-    }
-    
-    const btn = event.target;
-    const originalText = btn.innerHTML;
-    showLoading(btn);
-    
-    fetch('/api/youtube/test-api-key', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ api_key: apiKey })
-    })
-    .then(response => response.json())
-    .then(data => {
-        hideLoading(btn, originalText);
         
-        if (data.success) {
-            showToast(`✅ API Key works! Quota: ${data.quota_remaining || 'Unknown'}`, 'success');
-            updateAuthProgress(1); // Level 1 complete
-        } else {
-            showToast(`❌ API Key test failed: ${data.error}`, 'error');
+        // Visual feedback for invalid inputs
+        if (clientId.length > 0 && !isClientIdValid) {
+            document.getElementById('clientId').classList.add('is-invalid');
+            document.getElementById('clientId').classList.remove('is-valid');
         }
-    })
-    .catch(error => {
-        hideLoading(btn, originalText);
-        console.error('Error testing API key:', error);
-        showToast('❌ API connection test failed. Please try again.', 'error');
-    });
+        if (clientSecret.length > 0 && !isClientSecretValid) {
+            document.getElementById('clientSecret').classList.add('is-invalid');
+            document.getElementById('clientSecret').classList.remove('is-valid');
+        }
+    }
 }
 
 // Test OAuth credentials (Level 2)
@@ -2306,50 +2174,19 @@ function showOAuthStatus(data) {
     statusDisplay.classList.remove('d-none');
 }
 
-// Update authorization progress
-function updateAuthProgress(level) {
-    const progressBar = document.getElementById('authProgressBar');
-    const level1Badge = document.getElementById('authLevel1Badge');
-    const level2Badge = document.getElementById('authLevel2Badge');
+// Update OAuth authorization status
+function updateOAuthStatus(success) {
+    const oauthCard = document.getElementById('oauthSetup');
     
-    if (level >= 1) {
-        level1Badge.innerHTML = '<i class="fas fa-check-circle me-1"></i>Level 1: Complete';
-        level1Badge.className = 'badge bg-success';
-        progressBar.style.width = '50%';
-        progressBar.className = 'progress-bar bg-success';
+    if (success) {
+        oauthCard.className = 'card border-success';
+        oauthCard.querySelector('.card-header').className = 'card-header bg-success text-white';
+        oauthCard.querySelector('.badge').innerHTML = 'Authorized';
+        oauthCard.querySelector('.badge').className = 'badge bg-light text-success ms-2';
+    } else {
+        oauthCard.className = 'card border-primary';
+        oauthCard.querySelector('.card-header').className = 'card-header bg-primary text-white';
     }
-    
-    if (level >= 2) {
-        level2Badge.innerHTML = '<i class="fas fa-check-circle me-1"></i>Level 2: Complete';
-        level2Badge.className = 'badge bg-success';
-        progressBar.style.width = '100%';
-        progressBar.className = 'progress-bar bg-success';
-    }
-}
-
-// Show API Key help
-function showApiKeyHelp() {
-    Swal.fire({
-        title: '🔑 How to Get YouTube API Key',
-        html: `
-            <div class="text-start">
-                <h6>Follow these steps:</h6>
-                <ol>
-                    <li>Go to <a href="https://console.developers.google.com/" target="_blank">Google Cloud Console</a></li>
-                    <li>Create a new project or select existing</li>
-                    <li>Enable <strong>YouTube Data API v3</strong></li>
-                    <li>Go to <strong>Credentials</strong> → <strong>Create Credentials</strong></li>
-                    <li>Select <strong>API Key</strong></li>
-                    <li>Copy the generated key</li>
-                </ol>
-                <div class="alert alert-info mt-3">
-                    <strong>🔒 Security:</strong> Restrict your API key to YouTube Data API v3 only.
-                </div>
-            </div>
-        `,
-        icon: 'info',
-        confirmButtonText: 'Got it!'
-    });
 }
 
 // Show OAuth help
@@ -2377,9 +2214,9 @@ function showOAuthHelp() {
     });
 }
 
-// Override original testConnection to use new API
+// Main connection test function (OAuth only)
 function testConnection() {
-    testApiConnection(); // Use Level 1 API test by default
+    testOAuthConnection();
 }
 
 // Initialize page message
