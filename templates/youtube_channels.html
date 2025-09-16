@@ -2470,11 +2470,14 @@ function showOAuthHelp() {
                     <li>Choose <strong>Desktop Application</strong></li>
                     <li>Copy <strong>Client ID</strong> and <strong>Client Secret</strong></li>
                 </ol>
-                <div class="alert alert-info mt-3">
-                    <strong>✅ Desktop Application:</strong> No redirect URI configuration needed - the system uses "out-of-band" flow.
+                <div class="alert alert-success mt-3">
+                    <strong>✅ Desktop Application:</strong> Choose "Desktop Application" type - no redirect URI setup needed!
+                </div>
+                <div class="alert alert-info mt-2">
+                    <strong>🔄 Out-of-Band Flow:</strong> This system uses Google's OOB flow - you'll copy an authorization code instead of redirect URIs.
                 </div>
                 <div class="alert alert-warning mt-2">
-                    <strong>⚠️ Important:</strong> OAuth requires one-time browser authorization and copying the authorization code.
+                    <strong>⚠️ Note:</strong> If you get "Access blocked" error, add yourself as Test User in Google Cloud Console → OAuth consent screen → Test users.
                 </div>
             </div>
         `,
