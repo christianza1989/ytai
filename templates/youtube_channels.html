@@ -2292,7 +2292,8 @@ function startOAuthAuthorization() {
                 if (data.success) {
                     if (data.flow_type === 'oob') {
                         // Out-of-Band flow - manual code entry
-                        showOAuthCodeDialog(data.authorization_url, data.state_token, channelId);
+                        const authUrl = data.authorization_url;
+                        showOAuthCodeDialog(authUrl, data.state_token, channelId);
                     } else {
                         // Standard redirect flow (fallback)
                         showToast('🔐 Atidaromas autorizacijos langas...', 'info');
@@ -2354,6 +2355,7 @@ function updateOAuthStatus(success) {
 
 // Show OAuth code entry dialog for Out-of-Band flow
 function showOAuthCodeDialog(authUrl, stateToken, channelId) {
+    // Use SweetAlert2 input dialog instead of HTML input
     Swal.fire({
         title: '🔐 YouTube OAuth Autorizacija',
         html: `
@@ -2364,7 +2366,7 @@ function showOAuthCodeDialog(authUrl, stateToken, channelId) {
                     <li class="mb-2">Prisijunkite prie Google paskyros</li>
                     <li class="mb-2">Suteikite leidimus YouTube kanalui</li>
                     <li class="mb-2">Nukopijuokite gautą <strong>autorizacijos kodą</strong></li>
-                    <li class="mb-2">Įrašykite kodą žemiau ir spauskite "Patvirtinti"</li>
+                    <li class="mb-2">Spauskite "Toliau" ir įklijuokite kodą kitame lange</li>
                 </ol>
                 
                 <div class="d-grid mb-3">
@@ -2375,59 +2377,70 @@ function showOAuthCodeDialog(authUrl, stateToken, channelId) {
                 
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle me-2"></i>
-                    <strong>Svarbu:</strong> Po autorizacijos Google parodys kodą. Nukopijuokite jį ir įrašykite žemiau.
-                </div>
-                
-                <label for="authCode" class="form-label"><strong>Autorizacijos kodas:</strong></label>
-                <div class="input-group input-group-lg">
-                    <input type="text" class="form-control" id="authCode" 
-                           placeholder="Įrašykite kodą iš Google..." 
-                           autocomplete="off" spellcheck="false" 
-                           style="background: white !important; border: 2px solid #007bff; font-size: 16px;"
-                           onclick="this.focus(); this.select();" 
-                           onfocus="this.style.borderColor='#28a745';">
-                    <button type="button" class="btn btn-outline-secondary" 
-                            onclick="document.getElementById('authCode').focus(); document.getElementById('authCode').select();">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                </div>
-                <div class="form-text mt-1">
-                    <small class="text-muted">Jei negalite įrašyti, spauskite edit mygtuką šalia</small>
+                    <strong>Svarbu:</strong> Po autorizacijos Google parodys kodą. Nukopijuokite jį - kitame žingsnyje galėsite jį įklijuoti.
                 </div>
             </div>
         `,
         showCancelButton: true,
-        confirmButtonText: '✅ Patvirtinti Kodą',
+        confirmButtonText: '➡️ Toliau (Įvesti Kodą)',
         cancelButtonText: 'Atšaukti',
-        width: 600,
-        didOpen: () => {
-            // Ensure input field is enabled and focused
-            const authCodeInput = document.getElementById('authCode');
-            if (authCodeInput) {
-                authCodeInput.disabled = false;
-                authCodeInput.readOnly = false;
-                authCodeInput.style.backgroundColor = 'white';
-                authCodeInput.style.pointerEvents = 'auto';
-                authCodeInput.removeAttribute('disabled');
-                authCodeInput.removeAttribute('readonly');
-                // Focus after a small delay to ensure dialog is fully rendered
-                setTimeout(() => {
-                    authCodeInput.focus();
-                    authCodeInput.select();
-                }, 200);
-            }
+        width: 600
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Show second dialog with native SweetAlert2 input
+            showCodeInputDialog(stateToken, channelId);
+        }
+    });
+}
+
+// Show native SweetAlert2 input dialog for authorization code
+function showCodeInputDialog(stateToken, channelId) {
+    Swal.fire({
+        title: '📝 Įveskite Autorizacijos Kodą',
+        text: 'Įklijuokite nukopijuotą kodą iš Google OAuth lango:',
+        input: 'textarea',
+        inputPlaceholder: 'Įklijuokite autorizacijos kodą čia...',
+        inputAttributes: {
+            'style': 'height: 120px; font-family: monospace; font-size: 14px;',
+            'autocomplete': 'off',
+            'spellcheck': 'false'
         },
-        preConfirm: () => {
-            const code = document.getElementById('authCode').value.trim();
-            if (!code) {
-                Swal.showValidationMessage('Įrašykite autorizacijos kodą');
-                return false;
+        showCancelButton: true,
+        confirmButtonText: '✅ Patvirtinti Kodą',
+        cancelButtonText: '← Atgal',
+        width: 500,
+        inputValidator: (value) => {
+            if (!value || !value.trim()) {
+                return 'Prašome įvesti autorizacijos kodą!';
             }
-            return code;
+            if (value.trim().length < 10) {
+                return 'Autorizacijos kodas per trumpas. Patikrinkite ar nukopijavote visą kodą.';
+            }
+            return null;
+        },
+        didOpen: () => {
+            // Focus on the textarea and add helpful styling
+            const textarea = Swal.getInput();
+            if (textarea) {
+                textarea.style.border = '2px solid #007bff';
+                textarea.focus();
+                // Add paste detection
+                textarea.addEventListener('paste', (e) => {
+                    setTimeout(() => {
+                        if (textarea.value.trim().length > 0) {
+                            textarea.style.borderColor = '#28a745';
+                        }
+                    }, 100);
+                });
+            }
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            submitAuthorizationCode(channelId, result.value, stateToken);
+            const authCode = result.value.trim();
+            submitAuthorizationCode(channelId, authCode, stateToken);
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+            // Go back to first dialog
+            showOAuthCodeDialog(authUrl, stateToken, channelId);
         }
     });
 }
