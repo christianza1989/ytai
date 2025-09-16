@@ -2138,7 +2138,7 @@ function startOAuthAuthorization() {
                 if (data.success) {
                     // Show OAuth status and update UI
                     showOAuthStatus(data);
-                    updateAuthProgress(2); // Level 2 complete
+                    updateOAuthStatus(true); // Mark as authorized
                 } else {
                     showToast(`❌ OAuth setup failed: ${data.error}`, 'error');
                 }
