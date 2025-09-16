@@ -2441,8 +2441,10 @@ function startOAuthAuthorization() {
                                         <strong>Google Console Setup:</strong><br>
                                         1. Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console</a><br>
                                         2. Create OAuth 2.0 Client IDs<br>
-                                        3. Add "urn:ietf:wg:oauth:2.0:oob" as redirect URI<br>
-                                        4. Enable YouTube Data API v3
+                                        3. Set Application Type to "Desktop application"<br>
+                                        4. Add ONLY "urn:ietf:wg:oauth:2.0:oob" as redirect URI<br>
+                                        5. Enable YouTube Data API v3<br>
+                                        6. Download credentials JSON and copy Client ID/Secret
                                     </div>
                                 </div>
                             `,

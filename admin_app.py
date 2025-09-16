@@ -5239,7 +5239,7 @@ def api_youtube_start_oauth():
         print(f"🔍 Client ID: {client_id[:20]}...")
         print(f"🔑 Client Secret length: {len(client_secret)} chars")
         
-        # Create client config with proper redirect URI and current Google endpoints
+        # Create client config with single redirect URI to avoid conflicts
         client_config = {
             "installed": {
                 "client_id": client_id,
@@ -5247,7 +5247,7 @@ def api_youtube_start_oauth():
                 "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                 "token_uri": "https://oauth2.googleapis.com/token",
                 "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-                "redirect_uris": ["urn:ietf:wg:oauth:2.0:oob", "http://localhost"]
+                "redirect_uris": ["urn:ietf:wg:oauth:2.0:oob"]
             }
         }
         
@@ -5264,13 +5264,11 @@ def api_youtube_start_oauth():
             # Set the redirect URI explicitly for "out of band" flow
             flow.redirect_uri = "urn:ietf:wg:oauth:2.0:oob"
             
-            # Generate authorization URL with explicit parameters
+            # Generate authorization URL with explicit parameters (no duplicate redirect_uri)
             auth_url, _ = flow.authorization_url(
                 prompt='consent',
                 access_type='offline',
-                include_granted_scopes='true',
-                # Force out-of-band flow
-                redirect_uri="urn:ietf:wg:oauth:2.0:oob"
+                include_granted_scopes='true'
             )
             
             print(f"🔗 Generated auth URL: {auth_url}")
@@ -5349,7 +5347,7 @@ def api_complete_oauth():
         
         print(f"🔐 Completing OAuth for channel: {channel_name}")
         
-        # Create client config with updated Google OAuth endpoints
+        # Create client config with single redirect URI to avoid conflicts
         client_config = {
             "installed": {
                 "client_id": client_id,
@@ -5357,7 +5355,7 @@ def api_complete_oauth():
                 "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                 "token_uri": "https://oauth2.googleapis.com/token",
                 "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-                "redirect_uris": ["urn:ietf:wg:oauth:2.0:oob", "http://localhost"]
+                "redirect_uris": ["urn:ietf:wg:oauth:2.0:oob"]
             }
         }
         
