@@ -299,6 +299,19 @@ class YouTubeChannelsDB:
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_music_queue_expiry ON music_queue (expiry_date)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_music_queue_suno_clip ON music_queue (suno_clip_id)')
             
+            # Add missing columns if they don't exist (migrations)
+            try:
+                cursor.execute('ALTER TABLE youtube_channels ADD COLUMN oauth_credentials TEXT')
+                print("Added oauth_credentials column")
+            except sqlite3.OperationalError:
+                pass  # Column already exists
+            
+            try:
+                cursor.execute('ALTER TABLE youtube_channels ADD COLUMN oauth_authorized BOOLEAN DEFAULT 0')
+                print("Added oauth_authorized column")
+            except sqlite3.OperationalError:
+                pass  # Column already exists
+            
             conn.commit()
             self.logger.info("YouTube Channels database initialized successfully")
     

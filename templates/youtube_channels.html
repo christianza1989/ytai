@@ -1344,7 +1344,7 @@ function saveChannel() {
     }
     
     if (selectedGenres.length === 0) {
-        showToast('Please select at least one music genre', 'error');
+        showToast('Please select at least one music genre before saving', 'error');
         return;
     }
     
@@ -1416,7 +1416,8 @@ function saveChannel() {
             // Don't close modal immediately, let user enable automation
             showToast('Channel saved! You can now enable 24/7 automation above.', 'info');
         } else {
-            showToast(data.message || 'Failed to save channel', 'error');
+            console.error('Save channel failed:', data);
+            showToast(data.message || data.error || 'Failed to save channel', 'error');
         }
     })
     .catch(error => {
@@ -2202,7 +2203,23 @@ function startOAuthAuthorization() {
                                                     expires_at: data.expires_at
                                                 });
                                                 updateOAuthStatus(true);
-                                                showToast('✅ OAuth authorization completed successfully!', 'success');
+                                                
+                                                // Update form with OAuth completion data
+                                                if (data.channel_id) {
+                                                    document.getElementById('channelId').value = data.channel_id;
+                                                }
+                                                
+                                                // Update channel name from OAuth if available
+                                                if (data.channel_name) {
+                                                    document.getElementById('channelName').value = data.channel_name;
+                                                }
+                                                
+                                                // Update YouTube channel ID
+                                                if (data.youtube_channel_id) {
+                                                    document.getElementById('channelIdInput').value = data.youtube_channel_id;
+                                                }
+                                                
+                                                showToast('✅ OAuth completed! Channel pre-filled from YouTube account. Ready to configure and save.', 'success');
                                             } else {
                                                 showToast(`❌ Authorization failed: ${data.error}`, 'error');
                                             }
