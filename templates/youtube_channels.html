@@ -2379,13 +2379,44 @@ function showOAuthCodeDialog(authUrl, stateToken, channelId) {
                 </div>
                 
                 <label for="authCode" class="form-label"><strong>Autorizacijos kodas:</strong></label>
-                <input type="text" class="form-control" id="authCode" placeholder="Įrašykite kodą iš Google...">
+                <div class="input-group input-group-lg">
+                    <input type="text" class="form-control" id="authCode" 
+                           placeholder="Įrašykite kodą iš Google..." 
+                           autocomplete="off" spellcheck="false" 
+                           style="background: white !important; border: 2px solid #007bff; font-size: 16px;"
+                           onclick="this.focus(); this.select();" 
+                           onfocus="this.style.borderColor='#28a745';">
+                    <button type="button" class="btn btn-outline-secondary" 
+                            onclick="document.getElementById('authCode').focus(); document.getElementById('authCode').select();">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </div>
+                <div class="form-text mt-1">
+                    <small class="text-muted">Jei negalite įrašyti, spauskite edit mygtuką šalia</small>
+                </div>
             </div>
         `,
         showCancelButton: true,
         confirmButtonText: '✅ Patvirtinti Kodą',
         cancelButtonText: 'Atšaukti',
         width: 600,
+        didOpen: () => {
+            // Ensure input field is enabled and focused
+            const authCodeInput = document.getElementById('authCode');
+            if (authCodeInput) {
+                authCodeInput.disabled = false;
+                authCodeInput.readOnly = false;
+                authCodeInput.style.backgroundColor = 'white';
+                authCodeInput.style.pointerEvents = 'auto';
+                authCodeInput.removeAttribute('disabled');
+                authCodeInput.removeAttribute('readonly');
+                // Focus after a small delay to ensure dialog is fully rendered
+                setTimeout(() => {
+                    authCodeInput.focus();
+                    authCodeInput.select();
+                }, 200);
+            }
+        },
         preConfirm: () => {
             const code = document.getElementById('authCode').value.trim();
             if (!code) {
