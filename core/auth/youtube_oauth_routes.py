@@ -52,8 +52,9 @@ def create_oauth_routes(app, require_auth=None):
                                      error='OAuth client not configured',
                                      message='Please configure OAuth Client ID first.')
             
-            # Generate OAuth URL
-            base_url = os.getenv('BASE_URL', 'http://localhost:3000')
+            # Generate OAuth URL - use request host for dynamic URL detection
+            scheme = 'https' if request.is_secure else 'http'
+            base_url = f"{scheme}://{request.host}"
             redirect_uri = f"{base_url}/oauth/youtube/callback"
             
             auth_url, state_token = oauth_manager.generate_oauth_url(
@@ -181,8 +182,9 @@ def create_oauth_routes(app, require_auth=None):
                     'message': 'Please configure OAuth Client ID first'
                 }), 400
             
-            # Generate OAuth URL
-            base_url = os.getenv('BASE_URL', 'http://localhost:3000')
+            # Generate OAuth URL - use request host for dynamic URL detection
+            scheme = 'https' if request.is_secure else 'http'
+            base_url = f"{scheme}://{request.host}"
             redirect_uri = f"{base_url}/oauth/youtube/callback"
             
             auth_url, state_token = oauth_manager.generate_oauth_url(

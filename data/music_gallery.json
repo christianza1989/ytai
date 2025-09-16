@@ -1,5 +1,33 @@
 [
   {
+    "id": "track_1758048703_41",
+    "created_at": "2025-09-16T18:51:43.957270",
+    "title": "Music (Version 2)",
+    "audio_url": "https://mfile.erweima.ai/ZWNhMTVjYTMtYjU5NS00M2ZiLTk0YjItYzRlNTZjNWU5NjUz",
+    "image_url": "https://apiboxfiles.erweima.ai/ZWNhMTVjYTMtYjU5NS00M2ZiLTk0YjItYzRlNTZjNWU5NjUz.jpeg",
+    "duration": null,
+    "model_used": "chirp-bluejay",
+    "suno_clip_id": "eca15ca3-b595-43fb-94b2-c4e56c5e9653",
+    "tags": "Country, Country Rock, male vocals, soft & gentle, adult",
+    "style": "",
+    "prompt_used": "Create Country, Country Rock, male vocals, soft & gentle, adult music",
+    "is_instrumental": false
+  },
+  {
+    "id": "track_1758048703_40",
+    "created_at": "2025-09-16T18:51:43.955474",
+    "title": "New",
+    "audio_url": "https://mfile.erweima.ai/NTUxOGI5MDMtNjIwZi00MGM5LWI0NWYtYTlhNGNmODE3NGQ4",
+    "image_url": "https://apiboxfiles.erweima.ai/NTUxOGI5MDMtNjIwZi00MGM5LWI0NWYtYTlhNGNmODE3NGQ4.jpeg",
+    "duration": null,
+    "model_used": "chirp-bluejay",
+    "suno_clip_id": "5518b903-620f-40c9-b45f-a9a4cf8174d8",
+    "tags": "Country, Country Rock, male vocals, soft & gentle, adult",
+    "style": "",
+    "prompt_used": "Create Country, Country Rock, male vocals, soft & gentle, adult music",
+    "is_instrumental": false
+  },
+  {
     "id": "track_1758048503_39",
     "created_at": "2025-09-16T18:48:23.010985",
     "title": "Creative (Version 2)",

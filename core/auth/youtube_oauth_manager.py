@@ -62,9 +62,9 @@ class YouTubeOAuthManager:
             # Generate secure state token
             state_token = secrets.token_urlsafe(32)
             
-            # Default redirect URI
+            # Use provided redirect URI or raise error if not provided
             if not redirect_uri:
-                redirect_uri = f"{os.getenv('BASE_URL', 'http://localhost:3000')}/oauth/youtube/callback"
+                raise Exception("Redirect URI must be provided for OAuth flow")
             
             # Store OAuth session data
             session_data = {
