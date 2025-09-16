@@ -1,5 +1,33 @@
 [
   {
+    "id": "track_1758049626_43",
+    "created_at": "2025-09-16T19:07:06.903009",
+    "title": "Song (Version 2)",
+    "audio_url": "https://mfile.erweima.ai/YzMzMjk4ODMtODI2NC00ZmI0LTk5NTYtYjExMWQ1MjcyMGU2",
+    "image_url": "https://apiboxfiles.erweima.ai/YzMzMjk4ODMtODI2NC00ZmI0LTk5NTYtYjExMWQ1MjcyMGU2.jpeg",
+    "duration": null,
+    "model_used": "chirp-bluejay",
+    "suno_clip_id": "c3329883-8264-4fb4-9956-b111d52720e6",
+    "tags": "Dubstep, Deathstep, male vocals, aggressive, adult",
+    "style": "",
+    "prompt_used": "Create Dubstep, Deathstep, male vocals, aggressive, adult music",
+    "is_instrumental": false
+  },
+  {
+    "id": "track_1758049626_42",
+    "created_at": "2025-09-16T19:07:06.901291",
+    "title": "Vibes",
+    "audio_url": "https://mfile.erweima.ai/YzgwNmZhZGEtZTkyMS00ZWVhLTk0MTYtNTdiZWE3ZTc2Mjgz",
+    "image_url": "https://apiboxfiles.erweima.ai/YzgwNmZhZGEtZTkyMS00ZWVhLTk0MTYtNTdiZWE3ZTc2Mjgz.jpeg",
+    "duration": null,
+    "model_used": "chirp-bluejay",
+    "suno_clip_id": "c806fada-e921-4eea-9416-57bea7e76283",
+    "tags": "Dubstep, Deathstep, male vocals, aggressive, adult",
+    "style": "",
+    "prompt_used": "Create Dubstep, Deathstep, male vocals, aggressive, adult music",
+    "is_instrumental": false
+  },
+  {
     "id": "track_1758048703_41",
     "created_at": "2025-09-16T18:51:43.957270",
     "title": "Music (Version 2)",

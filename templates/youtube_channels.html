@@ -2292,8 +2292,9 @@ function startOAuthAuthorization() {
                 if (data.success) {
                     if (data.flow_type === 'oob') {
                         // Out-of-Band flow - manual code entry
-                        const authUrl = data.authorization_url;
-                        showOAuthCodeDialog(authUrl, data.state_token, channelId);
+                        // Store auth URL globally for the prompt function
+                        window.currentAuthUrl = data.authorization_url;
+                        showOAuthCodeDialog(data.authorization_url, data.state_token, channelId);
                     } else {
                         // Standard redirect flow (fallback)
                         showToast('🔐 Atidaromas autorizacijos langas...', 'info');
@@ -2353,96 +2354,76 @@ function updateOAuthStatus(success) {
 
 
 
-// Show OAuth code entry dialog for Out-of-Band flow
+// SIMPLE 1-STEP OAuth code entry using JavaScript prompt()
 function showOAuthCodeDialog(authUrl, stateToken, channelId) {
-    // Use SweetAlert2 input dialog instead of HTML input
+    // First show instructions
     Swal.fire({
         title: '🔐 YouTube OAuth Autorizacija',
         html: `
             <div class="text-start">
-                <p class="mb-3">Kad užbaigti autorizaciją, atlikite šiuos veiksmus:</p>
+                <p class="mb-3"><strong>Paprastas 3-step procesas:</strong></p>
                 <ol>
-                    <li class="mb-2">Spauskite "🚀 Atidaryti Google OAuth" mygtuką</li>
-                    <li class="mb-2">Prisijunkite prie Google paskyros</li>
-                    <li class="mb-2">Suteikite leidimus YouTube kanalui</li>
-                    <li class="mb-2">Nukopijuokite gautą <strong>autorizacijos kodą</strong></li>
-                    <li class="mb-2">Spauskite "Toliau" ir įklijuokite kodą kitame lange</li>
+                    <li class="mb-2">Spauskite "Atidaryti Google" mygtuką</li>
+                    <li class="mb-2">Užbaikite autorizaciją Google sistemoje</li>
+                    <li class="mb-2">Nukopijuokite gautą kodą ir spauskite "Įvesti Kodą"</li>
                 </ol>
                 
-                <div class="d-grid mb-3">
-                    <button type="button" class="btn btn-primary" onclick="window.open('${authUrl}', '_blank')">
-                        🚀 Atidaryti Google OAuth
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-primary btn-lg" onclick="window.open('${authUrl}', '_blank')">
+                        🚀 1. Atidaryti Google OAuth
+                    </button>
+                    <button type="button" class="btn btn-success btn-lg" onclick="promptForCode('${stateToken}', ${channelId})">
+                        📝 2. Įvesti Kodą (po Google autorizacijos)
                     </button>
                 </div>
                 
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
-                    <strong>Svarbu:</strong> Po autorizacijos Google parodys kodą. Nukopijuokite jį - kitame žingsnyje galėsite jį įklijuoti.
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Svarbu:</strong> Pirma atidarykite Google OAuth ir užbaikite autorizaciją. Tada spauskite "Įvesti Kodą".
                 </div>
             </div>
         `,
         showCancelButton: true,
-        confirmButtonText: '➡️ Toliau (Įvesti Kodą)',
+        confirmButtonText: 'Uždaryti',
+        showConfirmButton: false,
         cancelButtonText: 'Atšaukti',
-        width: 600
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Show second dialog with native SweetAlert2 input
-            showCodeInputDialog(stateToken, channelId);
-        }
+        width: 600,
+        allowOutsideClick: false
     });
 }
 
-// Show native SweetAlert2 input dialog for authorization code
-function showCodeInputDialog(stateToken, channelId) {
-    Swal.fire({
-        title: '📝 Įveskite Autorizacijos Kodą',
-        text: 'Įklijuokite nukopijuotą kodą iš Google OAuth lango:',
-        input: 'textarea',
-        inputPlaceholder: 'Įklijuokite autorizacijos kodą čia...',
-        inputAttributes: {
-            'style': 'height: 120px; font-family: monospace; font-size: 14px;',
-            'autocomplete': 'off',
-            'spellcheck': 'false'
-        },
-        showCancelButton: true,
-        confirmButtonText: '✅ Patvirtinti Kodą',
-        cancelButtonText: '← Atgal',
-        width: 500,
-        inputValidator: (value) => {
-            if (!value || !value.trim()) {
-                return 'Prašome įvesti autorizacijos kodą!';
-            }
-            if (value.trim().length < 10) {
-                return 'Autorizacijos kodas per trumpas. Patikrinkite ar nukopijavote visą kodą.';
-            }
-            return null;
-        },
-        didOpen: () => {
-            // Focus on the textarea and add helpful styling
-            const textarea = Swal.getInput();
-            if (textarea) {
-                textarea.style.border = '2px solid #007bff';
-                textarea.focus();
-                // Add paste detection
-                textarea.addEventListener('paste', (e) => {
-                    setTimeout(() => {
-                        if (textarea.value.trim().length > 0) {
-                            textarea.style.borderColor = '#28a745';
-                        }
-                    }, 100);
-                });
-            }
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            const authCode = result.value.trim();
-            submitAuthorizationCode(channelId, authCode, stateToken);
-        } else if (result.dismiss === Swal.DismissReason.cancel) {
-            // Go back to first dialog
-            showOAuthCodeDialog(authUrl, stateToken, channelId);
-        }
-    });
+// Simple JavaScript prompt for code entry - ALWAYS works!
+function promptForCode(stateToken, channelId) {
+    const code = prompt(
+        "Įklijuokite autorizacijos kodą iš Google OAuth lango:\n\n" +
+        "Nukopijuokite kodą iš Google ir įklijuokite čia (Ctrl+V):\n" +
+        "Kodas paprastai yra ilgas ir prasideda raidėmis/skaičiais."
+    );
+    
+    if (code === null) {
+        // User cancelled
+        return;
+    }
+    
+    if (!code || !code.trim()) {
+        alert('Prašome įvesti autorizacijos kodą!');
+        // Try again
+        setTimeout(() => promptForCode(stateToken, channelId), 100);
+        return;
+    }
+    
+    if (code.trim().length < 10) {
+        alert('Autorizacijos kodas per trumpas. Patikrinkite ar nukopijavote visą kodą.');
+        // Try again
+        setTimeout(() => promptForCode(stateToken, channelId), 100);
+        return;
+    }
+    
+    // Close any open Swal dialogs
+    Swal.close();
+    
+    // Submit the code
+    submitAuthorizationCode(channelId, code.trim(), stateToken);
 }
 
 // Submit authorization code to backend
