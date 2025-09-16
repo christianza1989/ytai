@@ -448,6 +448,21 @@
             
             try {
                 const response = await fetch('/api/video-gallery');
+                
+                // Check if we got redirected to login (HTML response)
+                if (!response.ok || response.url.includes('/login')) {
+                    showLoading(false);
+                    window.location.href = '/login';
+                    return;
+                }
+                
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    showLoading(false);
+                    window.location.href = '/login';
+                    return;
+                }
+                
                 const data = await response.json();
                 
                 if (data.success) {
@@ -458,7 +473,13 @@
                     showError('Failed to load videos: ' + (data.error || 'Unknown error'));
                 }
             } catch (error) {
-                showError('Error loading videos: ' + error.message);
+                showLoading(false);
+                // If it's a JSON parse error, likely we got HTML (redirect to login)
+                if (error.message.includes('JSON') || error.message.includes('token')) {
+                    window.location.href = '/login';
+                } else {
+                    showError('Error loading videos: ' + error.message);
+                }
             } finally {
                 showLoading(false);
             }
@@ -467,6 +488,17 @@
         async function loadChannels() {
             try {
                 const response = await fetch('/api/youtube/channels');
+                
+                // Check if we got redirected to login (HTML response)
+                if (!response.ok || response.url.includes('/login')) {
+                    return; // Don't load channels if not authenticated
+                }
+                
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    return; // Don't load channels if not authenticated
+                }
+                
                 const data = await response.json();
                 
                 if (data.success) {
@@ -474,7 +506,10 @@
                     updateChannelSelect();
                 }
             } catch (error) {
-                console.error('Error loading channels:', error);
+                // Silently fail channel loading if authentication error
+                if (!error.message.includes('JSON') && !error.message.includes('token')) {
+                    console.error('Error loading channels:', error);
+                }
             }
         }
 
