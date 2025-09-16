@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Gallery - Professional Autonominis Muzikantas</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --gradient-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        body {
+            background: var(--gradient-bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+
+        .main-container {
+            background: white;
+            margin: 20px auto;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+            max-width: 1400px;
+        }
+
+        .header {
+            background: var(--primary-color);
+            color: white;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+            border-left: 4px solid var(--secondary-color);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card.success {
+            border-left-color: var(--success-color);
+        }
+
+        .stat-card.warning {
+            border-left-color: var(--warning-color);
+        }
+
+        .stat-card.danger {
+            border-left-color: var(--danger-color);
+        }
+
+        .video-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .video-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 25px rgba(0,0,0,0.15);
+        }
+
+        .video-info {
+            padding: 1.5rem;
+        }
+
+        .video-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+
+        .video-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .status-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .status-ready {
+            background: #e8f5e8;
+            color: var(--success-color);
+        }
+
+        .status-uploaded {
+            background: #e3f2fd;
+            color: var(--secondary-color);
+        }
+
+        .status-uploading {
+            background: #fff3e0;
+            color: var(--warning-color);
+        }
+
+        .status-failed {
+            background: #ffebee;
+            color: var(--danger-color);
+        }
+
+        .video-actions {
+            padding: 1rem 1.5rem;
+            background: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .btn-custom {
+            border-radius: 25px;
+            padding: 0.5rem 1.2rem;
+            font-weight: 500;
+            border: none;
+            transition: all 0.3s ease;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .btn-upload {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-upload:hover {
+            background: #229954;
+            transform: translateY(-2px);
+        }
+
+        .btn-preview {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-preview:hover {
+            background: #2980b9;
+        }
+
+        .btn-delete {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #c0392b;
+        }
+
+        .btn-download {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .btn-download:hover {
+            background: #e67e22;
+        }
+
+        .filter-section {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .video-thumbnail {
+            width: 120px;
+            height: 68px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 2rem;
+            margin-right: 1rem;
+            flex-shrink: 0;
+        }
+
+        .video-content {
+            flex-grow: 1;
+        }
+
+        .video-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem;
+            }
+            
+            .filter-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .video-header {
+                flex-direction: column;
+            }
+            
+            .video-thumbnail {
+                margin-right: 0;
+                margin-bottom: 1rem;
+            }
+        }
+
+        .progress-container {
+            display: none;
+            margin-top: 1rem;
+        }
+
+        .upload-progress {
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            background: #f0f0f0;
+        }
+
+        .upload-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success-color), #2ecc71);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-content">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h1 class="mb-2">
+                            <i class="fas fa-video me-3"></i>
+                            Video Gallery
+                        </h1>
+                        <p class="mb-0 opacity-75">Manage and upload your generated videos</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="/" class="btn btn-outline-light">
+                            <i class="fas fa-home"></i> Dashboard
+                        </a>
+                        <button class="btn btn-light" onclick="refreshGallery()">
+                            <i class="fas fa-refresh"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Statistics -->
+                <div class="stats-cards">
+                    <div class="stat-card">
+                        <i class="fas fa-video fa-2x text-primary mb-2"></i>
+                        <h3 class="mb-1" id="total-videos">-</h3>
+                        <p class="mb-0 text-muted">Total Videos</p>
+                    </div>
+                    <div class="stat-card success">
+                        <i class="fas fa-upload fa-2x text-success mb-2"></i>
+                        <h3 class="mb-1" id="ready-videos">-</h3>
+                        <p class="mb-0 text-muted">Ready to Upload</p>
+                    </div>
+                    <div class="stat-card warning">
+                        <i class="fas fa-youtube fa-2x text-info mb-2"></i>
+                        <h3 class="mb-1" id="uploaded-videos">-</h3>
+                        <p class="mb-0 text-muted">Uploaded</p>
+                    </div>
+                    <div class="stat-card danger">
+                        <i class="fas fa-hdd fa-2x text-warning mb-2"></i>
+                        <h3 class="mb-1" id="total-size">-</h3>
+                        <p class="mb-0 text-muted">Storage Used</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-section">
+            <div class="filter-row">
+                <div class="flex-grow-1">
+                    <label class="form-label">Filter by Status:</label>
+                    <select class="form-select" id="statusFilter" onchange="filterVideos()">
+                        <option value="">All Videos</option>
+                        <option value="ready">Ready to Upload</option>
+                        <option value="uploaded">Uploaded</option>
+                        <option value="uploading">Uploading</option>
+                        <option value="failed">Failed</option>
+                    </select>
+                </div>
+                <div class="flex-grow-1">
+                    <label class="form-label">Filter by Genre:</label>
+                    <select class="form-select" id="genreFilter" onchange="filterVideos()">
+                        <option value="">All Genres</option>
+                        <option value="Electronic">Electronic</option>
+                        <option value="Ambient">Ambient</option>
+                        <option value="Classical">Classical</option>
+                        <option value="Jazz">Jazz</option>
+                        <option value="Rock">Rock</option>
+                        <option value="Pop">Pop</option>
+                    </select>
+                </div>
+                <div class="flex-grow-1">
+                    <label class="form-label">Vocal Type:</label>
+                    <select class="form-select" id="vocalFilter" onchange="filterVideos()">
+                        <option value="">All Types</option>
+                        <option value="vocal">Vocal</option>
+                        <option value="instrumental">Instrumental</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Video Gallery -->
+        <div class="container-fluid p-4">
+            <div class="loading-spinner" id="loading">
+                <i class="fas fa-spinner fa-spin fa-3x text-primary mb-3"></i>
+                <p>Loading videos...</p>
+            </div>
+
+            <div id="video-gallery">
+                <!-- Videos will be loaded here -->
+            </div>
+
+            <div class="text-center mt-4" id="no-videos" style="display: none;">
+                <i class="fas fa-video fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No Videos Found</h4>
+                <p class="text-muted">Generated videos will appear here automatically.<br>
+                   <a href="/music_gallery" class="text-primary">Generate some videos</a> to get started!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div class="modal fade" id="uploadModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-upload me-2"></i>
+                        Upload to YouTube
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Select Channel:</label>
+                        <select class="form-select" id="uploadChannelSelect">
+                            <option value="">Loading channels...</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Video Title:</label>
+                        <input type="text" class="form-control" id="uploadVideoTitle" maxlength="100">
+                        <div class="form-text">Maximum 100 characters</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description:</label>
+                        <textarea class="form-control" id="uploadVideoDescription" rows="4" maxlength="5000"></textarea>
+                        <div class="form-text">Maximum 5000 characters</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Privacy:</label>
+                        <select class="form-select" id="uploadPrivacy">
+                            <option value="public">Public</option>
+                            <option value="unlisted">Unlisted</option>
+                            <option value="private" selected>Private</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Upload Progress -->
+                    <div class="progress-container" id="uploadProgressContainer">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-medium">Upload Progress</span>
+                            <span id="uploadProgressText">0%</span>
+                        </div>
+                        <div class="upload-progress">
+                            <div class="upload-progress-bar" id="uploadProgressBar"></div>
+                        </div>
+                        <div class="mt-2">
+                            <small class="text-muted" id="uploadStatusText">Preparing upload...</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" id="confirmUploadBtn" onclick="confirmUpload()">
+                        <i class="fas fa-upload me-1"></i>
+                        Start Upload
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        let currentVideoId = null;
+        let uploadModal = null;
+        let videos = [];
+        let channels = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            uploadModal = new bootstrap.Modal(document.getElementById('uploadModal'));
+            loadVideoGallery();
+            loadChannels();
+        });
+
+        async function loadVideoGallery() {
+            showLoading(true);
+            
+            try {
+                const response = await fetch('/api/video-gallery');
+                const data = await response.json();
+                
+                if (data.success) {
+                    videos = data.videos;
+                    updateStatistics(data.stats);
+                    displayVideos(videos);
+                } else {
+                    showError('Failed to load videos: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                showError('Error loading videos: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function loadChannels() {
+            try {
+                const response = await fetch('/api/youtube/channels');
+                const data = await response.json();
+                
+                if (data.success) {
+                    channels = data.channels;
+                    updateChannelSelect();
+                }
+            } catch (error) {
+                console.error('Error loading channels:', error);
+            }
+        }
+
+        function updateChannelSelect() {
+            const select = document.getElementById('uploadChannelSelect');
+            select.innerHTML = '';
+            
+            if (channels.length === 0) {
+                select.innerHTML = '<option value="">No channels configured</option>';
+                return;
+            }
+            
+            select.innerHTML = '<option value="">Select a channel...</option>';
+            
+            channels.forEach(channel => {
+                const option = document.createElement('option');
+                option.value = channel.id;
+                option.textContent = channel.channel_name;
+                
+                // Add status indicator
+                if (channel.oauth_authorized) {
+                    option.textContent += ' ✓';
+                } else {
+                    option.textContent += ' (Setup Required)';
+                    option.disabled = true;
+                }
+                
+                select.appendChild(option);
+            });
+        }
+
+        function updateStatistics(stats) {
+            document.getElementById('total-videos').textContent = stats.total_videos || 0;
+            document.getElementById('ready-videos').textContent = stats.ready_to_upload || 0;
+            document.getElementById('uploaded-videos').textContent = stats.uploaded_videos || 0;
+            document.getElementById('total-size').textContent = (stats.total_size_mb || 0) + ' MB';
+        }
+
+        function displayVideos(videoList) {
+            const gallery = document.getElementById('video-gallery');
+            const noVideos = document.getElementById('no-videos');
+            
+            if (videoList.length === 0) {
+                gallery.innerHTML = '';
+                noVideos.style.display = 'block';
+                return;
+            }
+            
+            noVideos.style.display = 'none';
+            
+            const html = videoList.map(video => createVideoCard(video)).join('');
+            gallery.innerHTML = html;
+        }
+
+        function createVideoCard(video) {
+            const statusClass = getStatusClass(video.upload_status);
+            const statusText = getStatusText(video.upload_status);
+            
+            return `
+                <div class="video-card">
+                    <div class="video-info">
+                        <div class="video-header">
+                            <div class="video-thumbnail">
+                                <i class="fas fa-play"></i>
+                            </div>
+                            <div class="video-content">
+                                <div class="video-title">${escapeHtml(video.title || video.video_title || 'Untitled Video')}</div>
+                                
+                                <div class="video-meta">
+                                    <div class="meta-item">
+                                        <i class="fas fa-music"></i>
+                                        <span>${escapeHtml(video.genre || 'Unknown')}</span>
+                                    </div>
+                                    <div class="meta-item">
+                                        <i class="fas fa-microphone${video.vocal_type === 'instrumental' ? '-slash' : ''}"></i>
+                                        <span>${video.vocal_type || 'Unknown'}</span>
+                                    </div>
+                                    <div class="meta-item">
+                                        <i class="fas fa-clock"></i>
+                                        <span>${formatDuration(video.duration)}</span>
+                                    </div>
+                                    <div class="meta-item">
+                                        <i class="fas fa-hdd"></i>
+                                        <span>${video.file_size_mb || 0} MB</span>
+                                    </div>
+                                    <div class="meta-item">
+                                        <i class="fas fa-calendar"></i>
+                                        <span>${formatDate(video.created_at)}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="status-badge ${statusClass}">${statusText}</span>
+                                    ${video.youtube_video_id ? `
+                                        <a href="https://www.youtube.com/watch?v=${video.youtube_video_id}" 
+                                           target="_blank" class="text-primary text-decoration-none">
+                                            <i class="fab fa-youtube"></i> View on YouTube
+                                        </a>
+                                    ` : ''}
+                                    ${!video.file_exists ? '<small class="text-danger"><i class="fas fa-exclamation-triangle"></i> File missing</small>' : ''}
+                                </div>
+                                
+                                ${video.description ? `
+                                    <div class="mt-2">
+                                        <small class="text-muted">${escapeHtml(video.description.substring(0, 150))}${video.description.length > 150 ? '...' : ''}</small>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="video-actions">
+                        ${video.upload_status === 'ready' && video.file_exists ? `
+                            <button class="btn btn-custom btn-upload" onclick="showUploadModal(${video.id})">
+                                <i class="fas fa-upload"></i> Upload to YouTube
+                            </button>
+                        ` : ''}
+                        
+                        ${video.file_exists ? `
+                            <button class="btn btn-custom btn-preview" onclick="previewVideo(${video.id})">
+                                <i class="fas fa-play"></i> Preview
+                            </button>
+                            <button class="btn btn-custom btn-download" onclick="downloadVideo(${video.id})">
+                                <i class="fas fa-download"></i> Download
+                            </button>
+                        ` : ''}
+                        
+                        <button class="btn btn-custom btn-delete" onclick="deleteVideo(${video.id})">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                        
+                        ${video.upload_status === 'uploading' ? `
+                            <div class="progress-container" style="display: block;">
+                                <div class="upload-progress">
+                                    <div class="upload-progress-bar" style="width: 50%;"></div>
+                                </div>
+                                <small class="text-muted">Uploading to YouTube...</small>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function getStatusClass(status) {
+            switch (status) {
+                case 'ready': return 'status-ready';
+                case 'uploaded': return 'status-uploaded';
+                case 'uploading': return 'status-uploading';
+                case 'failed': return 'status-failed';
+                default: return 'status-ready';
+            }
+        }
+
+        function getStatusText(status) {
+            switch (status) {
+                case 'ready': return 'Ready';
+                case 'uploaded': return 'Uploaded';
+                case 'uploading': return 'Uploading';
+                case 'failed': return 'Failed';
+                default: return 'Ready';
+            }
+        }
+
+        function formatDuration(seconds) {
+            if (!seconds) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'Unknown';
+            const date = new Date(dateString);
+            return date.toLocaleDateString();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        function showError(message) {
+            // You can implement a toast notification system here
+            alert(message);
+        }
+
+        function refreshGallery() {
+            loadVideoGallery();
+        }
+
+        function filterVideos() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const genreFilter = document.getElementById('genreFilter').value;
+            const vocalFilter = document.getElementById('vocalFilter').value;
+            
+            let filtered = videos;
+            
+            if (statusFilter) {
+                filtered = filtered.filter(v => v.upload_status === statusFilter);
+            }
+            
+            if (genreFilter) {
+                filtered = filtered.filter(v => v.genre === genreFilter);
+            }
+            
+            if (vocalFilter) {
+                filtered = filtered.filter(v => v.vocal_type === vocalFilter);
+            }
+            
+            displayVideos(filtered);
+        }
+
+        function showUploadModal(videoId) {
+            currentVideoId = videoId;
+            const video = videos.find(v => v.id === videoId);
+            
+            if (video) {
+                document.getElementById('uploadVideoTitle').value = video.video_title || video.title || '';
+                document.getElementById('uploadVideoDescription').value = video.video_description || video.description || '';
+            }
+            
+            // Reset progress
+            document.getElementById('uploadProgressContainer').style.display = 'none';
+            document.getElementById('confirmUploadBtn').style.display = 'block';
+            
+            uploadModal.show();
+        }
+
+        async function confirmUpload() {
+            const channelId = document.getElementById('uploadChannelSelect').value;
+            const title = document.getElementById('uploadVideoTitle').value.trim();
+            const description = document.getElementById('uploadVideoDescription').value.trim();
+            const privacy = document.getElementById('uploadPrivacy').value;
+            
+            if (!channelId) {
+                alert('Please select a channel');
+                return;
+            }
+            
+            if (!title) {
+                alert('Please enter a video title');
+                return;
+            }
+            
+            // Find video info
+            const video = videos.find(v => v.id === currentVideoId);
+            if (!video) {
+                alert('Video not found');
+                return;
+            }
+            
+            // Show progress
+            document.getElementById('uploadProgressContainer').style.display = 'block';
+            document.getElementById('confirmUploadBtn').style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/video/upload-youtube-gallery', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        video_id: currentVideoId,
+                        channel_id: channelId,
+                        title: title,
+                        description: description,
+                        privacy_status: privacy
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Start polling for progress
+                    pollUploadProgress(data.task_id);
+                } else {
+                    throw new Error(data.error || 'Upload failed');
+                }
+                
+            } catch (error) {
+                showError('Upload error: ' + error.message);
+                document.getElementById('uploadProgressContainer').style.display = 'none';
+                document.getElementById('confirmUploadBtn').style.display = 'block';
+            }
+        }
+
+        async function pollUploadProgress(taskId) {
+            try {
+                const response = await fetch(`/api/tasks/${taskId}/status`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const task = data.task;
+                    
+                    // Update progress
+                    const progressBar = document.getElementById('uploadProgressBar');
+                    const progressText = document.getElementById('uploadProgressText');
+                    const statusText = document.getElementById('uploadStatusText');
+                    
+                    const progress = Math.max(0, Math.min(100, task.progress || 0));
+                    progressBar.style.width = progress + '%';
+                    progressText.textContent = progress + '%';
+                    statusText.textContent = task.current_step || 'Processing...';
+                    
+                    if (task.status === 'completed') {
+                        // Success
+                        progressText.textContent = '100%';
+                        statusText.textContent = 'Upload completed successfully!';
+                        
+                        setTimeout(() => {
+                            uploadModal.hide();
+                            loadVideoGallery(); // Refresh gallery
+                        }, 2000);
+                        
+                    } else if (task.status === 'failed') {
+                        // Failed
+                        statusText.textContent = 'Upload failed: ' + (task.result?.error || 'Unknown error');
+                        statusText.className = 'text-danger';
+                        
+                        setTimeout(() => {
+                            document.getElementById('uploadProgressContainer').style.display = 'none';
+                            document.getElementById('confirmUploadBtn').style.display = 'block';
+                        }, 3000);
+                        
+                    } else {
+                        // Still running, poll again
+                        setTimeout(() => pollUploadProgress(taskId), 2000);
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Error polling upload progress:', error);
+                // Retry after delay
+                setTimeout(() => pollUploadProgress(taskId), 5000);
+            }
+        }
+
+        function previewVideo(videoId) {
+            // You can implement video preview here
+            alert('Preview functionality coming soon!');
+        }
+
+        function downloadVideo(videoId) {
+            window.open(`/api/video-gallery/${videoId}/download`, '_blank');
+        }
+
+        async function deleteVideo(videoId) {
+            if (!confirm('Are you sure you want to delete this video? This action cannot be undone.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/video-gallery/${videoId}/delete`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    loadVideoGallery(); // Refresh gallery
+                } else {
+                    showError('Failed to delete video: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                showError('Error deleting video: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -299,6 +299,78 @@ class YouTubeChannelsDB:
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_music_queue_expiry ON music_queue (expiry_date)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_music_queue_suno_clip ON music_queue (suno_clip_id)')
             
+            # Video Gallery - Store all generated videos for reuse and upload management
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS video_gallery (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    video_uuid TEXT UNIQUE NOT NULL,
+                    
+                    -- Video File Information
+                    title TEXT NOT NULL,
+                    description TEXT,
+                    file_path TEXT NOT NULL,  -- Local path to video file
+                    thumbnail_path TEXT,      -- Path to thumbnail image
+                    duration REAL,            -- Duration in seconds
+                    file_size INTEGER,        -- File size in bytes
+                    file_format TEXT DEFAULT 'mp4',
+                    
+                    -- Generation Details
+                    original_task_id TEXT,    -- Background task that created this
+                    generation_source TEXT DEFAULT 'suno',  -- suno, manual, other
+                    music_track_id TEXT,      -- Reference to music queue entry
+                    
+                    -- Music Information
+                    genre TEXT,
+                    vocal_type TEXT,          -- vocal, instrumental
+                    music_url TEXT,           -- Original music URL from Suno
+                    music_title TEXT,
+                    music_tags TEXT,          -- JSON array of music tags
+                    
+                    -- Video Metadata
+                    video_title TEXT,         -- Generated/custom video title
+                    video_description TEXT,   -- Generated/custom description
+                    video_tags TEXT,          -- JSON array of video tags
+                    seo_metadata TEXT,        -- JSON with SEO data
+                    
+                    -- Upload Status
+                    upload_status TEXT DEFAULT 'ready',  -- ready, uploading, uploaded, failed
+                    youtube_video_id TEXT,    -- YouTube video ID if uploaded
+                    upload_channel_id INTEGER, -- Which channel it was uploaded to
+                    uploaded_at TEXT,
+                    upload_response TEXT,     -- JSON response from YouTube
+                    
+                    -- Quality and Performance
+                    video_quality TEXT DEFAULT 'HD',  -- SD, HD, FHD
+                    processing_time INTEGER,  -- Generation time in seconds
+                    
+                    -- Status and Metadata
+                    status TEXT DEFAULT 'available',  -- available, archived, deleted
+                    visibility TEXT DEFAULT 'private', -- public, private, unlisted
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    
+                    -- Statistics (filled after upload)
+                    view_count INTEGER DEFAULT 0,
+                    like_count INTEGER DEFAULT 0,
+                    comment_count INTEGER DEFAULT 0,
+                    last_stats_update TEXT,
+                    
+                    -- Notes and Custom Fields
+                    notes TEXT,               -- User notes
+                    custom_fields TEXT,       -- JSON for additional data
+                    
+                    FOREIGN KEY (upload_channel_id) REFERENCES youtube_channels (id) ON DELETE SET NULL
+                )
+            ''')
+            
+            # Video Gallery indexes
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_video_gallery_status ON video_gallery (status)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_video_gallery_upload_status ON video_gallery (upload_status)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_video_gallery_genre ON video_gallery (genre)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_video_gallery_created ON video_gallery (created_at DESC)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_video_gallery_channel ON video_gallery (upload_channel_id)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_video_gallery_youtube_id ON video_gallery (youtube_video_id)')
+            
             # Add missing columns if they don't exist (migrations)
             try:
                 cursor.execute('ALTER TABLE youtube_channels ADD COLUMN oauth_credentials TEXT')
@@ -1201,3 +1273,286 @@ class YouTubeChannelsDB:
                 'error': str(e),
                 'message': 'Failed to save channel'
             }
+    
+    # === VIDEO GALLERY MANAGEMENT ===
+    
+    def add_to_video_gallery(self, video_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Add generated video to gallery"""
+        try:
+            import uuid
+            from datetime import datetime
+            from pathlib import Path
+            
+            video_uuid = str(uuid.uuid4())
+            
+            # Get file information
+            file_path = video_data.get('file_path')
+            file_size = 0
+            if file_path and Path(file_path).exists():
+                file_size = Path(file_path).stat().st_size
+            
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                cursor.execute('''
+                    INSERT INTO video_gallery (
+                        video_uuid, title, description, file_path, thumbnail_path,
+                        duration, file_size, file_format, original_task_id, generation_source,
+                        music_track_id, genre, vocal_type, music_url, music_title, music_tags,
+                        video_title, video_description, video_tags, seo_metadata,
+                        video_quality, processing_time, notes
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    video_uuid,
+                    video_data.get('title'),
+                    video_data.get('description'),
+                    video_data.get('file_path'),
+                    video_data.get('thumbnail_path'),
+                    video_data.get('duration'),
+                    file_size,
+                    video_data.get('file_format', 'mp4'),
+                    video_data.get('original_task_id'),
+                    video_data.get('generation_source', 'suno'),
+                    video_data.get('music_track_id'),
+                    video_data.get('genre'),
+                    video_data.get('vocal_type'),
+                    video_data.get('music_url'),
+                    video_data.get('music_title'),
+                    json.dumps(video_data.get('music_tags', [])),
+                    video_data.get('video_title'),
+                    video_data.get('video_description'),
+                    json.dumps(video_data.get('video_tags', [])),
+                    json.dumps(video_data.get('seo_metadata', {})),
+                    video_data.get('video_quality', 'HD'),
+                    video_data.get('processing_time'),
+                    video_data.get('notes')
+                ))
+                
+                video_id = cursor.lastrowid
+                conn.commit()
+                
+                self.logger.info(f"Video added to gallery: {video_data.get('title')} (ID: {video_id})")
+                
+                return {
+                    'success': True,
+                    'video_id': video_id,
+                    'video_uuid': video_uuid,
+                    'message': 'Video added to gallery successfully'
+                }
+                
+        except Exception as e:
+            self.logger.error(f"Error adding video to gallery: {e}")
+            return {
+                'success': False,
+                'error': str(e),
+                'message': 'Failed to add video to gallery'
+            }
+    
+    def get_video_gallery(self, status: str = None, upload_status: str = None, 
+                         genre: str = None, limit: int = 50) -> List[Dict[str, Any]]:
+        """Get videos from gallery with optional filters"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                
+                # Build query
+                query = '''
+                    SELECT v.*, c.channel_name 
+                    FROM video_gallery v 
+                    LEFT JOIN youtube_channels c ON v.upload_channel_id = c.id 
+                    WHERE 1=1
+                '''
+                params = []
+                
+                if status:
+                    query += ' AND v.status = ?'
+                    params.append(status)
+                    
+                if upload_status:
+                    query += ' AND v.upload_status = ?'
+                    params.append(upload_status)
+                    
+                if genre:
+                    query += ' AND v.genre = ?'
+                    params.append(genre)
+                
+                query += ' ORDER BY v.created_at DESC LIMIT ?'
+                params.append(limit)
+                
+                cursor.execute(query, params)
+                rows = cursor.fetchall()
+                
+                videos = []
+                for row in rows:
+                    video = dict(row)
+                    
+                    # Parse JSON fields
+                    video['music_tags'] = json.loads(video['music_tags']) if video['music_tags'] else []
+                    video['video_tags'] = json.loads(video['video_tags']) if video['video_tags'] else []
+                    video['seo_metadata'] = json.loads(video['seo_metadata']) if video['seo_metadata'] else {}
+                    video['custom_fields'] = json.loads(video['custom_fields']) if video['custom_fields'] else {}
+                    
+                    # Check if file still exists
+                    file_path = video.get('file_path')
+                    video['file_exists'] = bool(file_path and Path(file_path).exists()) if file_path else False
+                    
+                    # Format file size
+                    if video.get('file_size'):
+                        size_mb = video['file_size'] / (1024 * 1024)
+                        video['file_size_mb'] = round(size_mb, 1)
+                    
+                    videos.append(video)
+                
+                return videos
+                
+        except Exception as e:
+            self.logger.error(f"Error getting video gallery: {e}")
+            return []
+    
+    def get_video_from_gallery(self, video_id: int) -> Optional[Dict[str, Any]]:
+        """Get single video from gallery by ID"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                
+                cursor.execute('''
+                    SELECT v.*, c.channel_name 
+                    FROM video_gallery v 
+                    LEFT JOIN youtube_channels c ON v.upload_channel_id = c.id 
+                    WHERE v.id = ?
+                ''', (video_id,))
+                
+                row = cursor.fetchone()
+                if not row:
+                    return None
+                
+                video = dict(row)
+                
+                # Parse JSON fields
+                video['music_tags'] = json.loads(video['music_tags']) if video['music_tags'] else []
+                video['video_tags'] = json.loads(video['video_tags']) if video['video_tags'] else []
+                video['seo_metadata'] = json.loads(video['seo_metadata']) if video['seo_metadata'] else {}
+                
+                return video
+                
+        except Exception as e:
+            self.logger.error(f"Error getting video from gallery: {e}")
+            return None
+    
+    def update_video_upload_status(self, video_id: int, upload_data: Dict[str, Any]) -> bool:
+        """Update video upload status in gallery"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                cursor.execute('''
+                    UPDATE video_gallery SET
+                        upload_status = ?,
+                        youtube_video_id = ?,
+                        upload_channel_id = ?,
+                        uploaded_at = ?,
+                        upload_response = ?,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                ''', (
+                    upload_data.get('upload_status'),
+                    upload_data.get('youtube_video_id'),
+                    upload_data.get('upload_channel_id'),
+                    upload_data.get('uploaded_at'),
+                    json.dumps(upload_data.get('upload_response', {})),
+                    video_id
+                ))
+                
+                success = cursor.rowcount > 0
+                if success:
+                    conn.commit()
+                    self.logger.info(f"Updated upload status for video {video_id}")
+                
+                return success
+                
+        except Exception as e:
+            self.logger.error(f"Error updating video upload status: {e}")
+            return False
+    
+    def delete_video_from_gallery(self, video_id: int, delete_file: bool = False) -> Dict[str, Any]:
+        """Delete video from gallery (optionally delete file too)"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                # Get video info first
+                cursor.execute('SELECT title, file_path FROM video_gallery WHERE id = ?', (video_id,))
+                video = cursor.fetchone()
+                
+                if not video:
+                    return {'success': False, 'message': 'Video not found'}
+                
+                title, file_path = video
+                
+                # Delete from database
+                cursor.execute('DELETE FROM video_gallery WHERE id = ?', (video_id,))
+                
+                # Optionally delete file
+                if delete_file and file_path and Path(file_path).exists():
+                    try:
+                        Path(file_path).unlink()
+                        self.logger.info(f"Deleted video file: {file_path}")
+                    except Exception as e:
+                        self.logger.warning(f"Could not delete video file: {e}")
+                
+                conn.commit()
+                
+                return {
+                    'success': True,
+                    'message': f'Video "{title}" deleted from gallery'
+                }
+                
+        except Exception as e:
+            self.logger.error(f"Error deleting video from gallery: {e}")
+            return {
+                'success': False,
+                'error': str(e),
+                'message': 'Failed to delete video'
+            }
+    
+    def get_video_gallery_stats(self) -> Dict[str, Any]:
+        """Get video gallery statistics"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                # Basic counts
+                cursor.execute('SELECT COUNT(*) FROM video_gallery WHERE status = "available"')
+                total_videos = cursor.fetchone()[0]
+                
+                cursor.execute('SELECT COUNT(*) FROM video_gallery WHERE upload_status = "ready"')
+                ready_to_upload = cursor.fetchone()[0]
+                
+                cursor.execute('SELECT COUNT(*) FROM video_gallery WHERE upload_status = "uploaded"')
+                uploaded_videos = cursor.fetchone()[0]
+                
+                cursor.execute('SELECT SUM(file_size) FROM video_gallery WHERE status = "available"')
+                total_size = cursor.fetchone()[0] or 0
+                
+                # Upload status breakdown
+                cursor.execute('SELECT upload_status, COUNT(*) FROM video_gallery GROUP BY upload_status')
+                upload_status_breakdown = {row[0]: row[1] for row in cursor.fetchall()}
+                
+                # Genre breakdown
+                cursor.execute('SELECT genre, COUNT(*) FROM video_gallery WHERE genre IS NOT NULL GROUP BY genre')
+                genre_breakdown = {row[0]: row[1] for row in cursor.fetchall()}
+                
+                return {
+                    'total_videos': total_videos,
+                    'ready_to_upload': ready_to_upload,
+                    'uploaded_videos': uploaded_videos,
+                    'total_size_mb': round((total_size / (1024 * 1024)), 1) if total_size else 0,
+                    'upload_status_breakdown': upload_status_breakdown,
+                    'genre_breakdown': genre_breakdown
+                }
+                
+        except Exception as e:
+            self.logger.error(f"Error getting video gallery stats: {e}")
+            return {}

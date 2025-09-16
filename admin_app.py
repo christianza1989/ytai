@@ -4482,8 +4482,38 @@ def api_create_video():
                             file_size_bytes = os.path.getsize(video_file)
                             file_size_mb = file_size_bytes / (1024 * 1024)
                             
+                            system_state.generation_tasks[task_id]['progress'] = 90
+                            system_state.generation_tasks[task_id]['current_step'] = 'Adding video to gallery...'
+                            
+                            # Add video to gallery
+                            from core.database.youtube_channels_db import YouTubeChannelsDB
+                            db = YouTubeChannelsDB()
+                            
+                            # Prepare video data for gallery
+                            video_data = {
+                                'title': track_title,
+                                'description': f"AI generated video - {track_title}",
+                                'file_path': os.path.abspath(video_file),
+                                'file_size': file_size_bytes,
+                                'file_format': 'mp4',
+                                'original_task_id': task_id,
+                                'generation_source': 'api_video_create',
+                                'music_url': audio_url if not ('demo_assets' in audio_path) else None,
+                                'music_title': track_title,
+                                'video_title': track_title,
+                                'video_description': f"AI generated video created from audio and image",
+                                'video_tags': ['AI', 'generated', 'video', 'music'],
+                                'genre': data.get('genre', 'Unknown'),
+                                'vocal_type': data.get('vocal_type', 'unknown'),
+                                'duration': data.get('duration'),
+                                'video_quality': 'HD',
+                                'notes': f'Created via API from audio: {audio_url} and image: {image_url}'
+                            }
+                            
+                            gallery_result = db.add_to_video_gallery(video_data)
+                            
                             system_state.generation_tasks[task_id]['progress'] = 100
-                            system_state.generation_tasks[task_id]['current_step'] = f'Video creation completed! ({file_size_mb:.1f} MB)'
+                            system_state.generation_tasks[task_id]['current_step'] = f'Video created and added to gallery! ({file_size_mb:.1f} MB)'
                             system_state.generation_tasks[task_id]['status'] = 'completed'
                             system_state.generation_tasks[task_id]['result'] = {
                                 'success': True,
@@ -4492,7 +4522,9 @@ def api_create_video():
                                 'file_size_bytes': file_size_bytes,
                                 'file_size_mb': round(file_size_mb, 1),
                                 'audio_source': 'demo' if 'demo_assets' in audio_path else 'downloaded',
-                                'image_source': 'downloaded'
+                                'image_source': 'downloaded',
+                                'gallery_video_id': gallery_result.get('video_id') if gallery_result['success'] else None,
+                                'added_to_gallery': gallery_result['success']
                             }
                         else:
                             raise Exception("Video file was not created")
@@ -6734,6 +6766,366 @@ def api_queue_tracks():
         })
         
     except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# === VIDEO GALLERY ENDPOINTS ===
+
+@app.route('/video_gallery')
+@require_auth
+def video_gallery():
+    """Video Gallery page"""
+    return render_template('video_gallery.html')
+
+@app.route('/api/video-gallery', methods=['GET'])
+@require_auth
+def api_get_video_gallery():
+    """Get videos from gallery with filters"""
+    try:
+        from core.database.youtube_channels_db import YouTubeChannelsDB
+        
+        # Get filter parameters
+        status = request.args.get('status')
+        upload_status = request.args.get('upload_status')
+        genre = request.args.get('genre')
+        limit = min(int(request.args.get('limit', 50)), 100)  # Max 100 videos
+        
+        db = YouTubeChannelsDB()
+        
+        # Get videos
+        videos = db.get_video_gallery(
+            status=status,
+            upload_status=upload_status,
+            genre=genre,
+            limit=limit
+        )
+        
+        # Get statistics
+        stats = db.get_video_gallery_stats()
+        
+        return jsonify({
+            'success': True,
+            'videos': videos,
+            'stats': stats,
+            'count': len(videos)
+        })
+        
+    except Exception as e:
+        print(f"❌ Error getting video gallery: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/video-gallery/<int:video_id>/download')
+@require_auth
+def api_download_video(video_id):
+    """Download video file"""
+    try:
+        from core.database.youtube_channels_db import YouTubeChannelsDB
+        from pathlib import Path
+        import os
+        
+        db = YouTubeChannelsDB()
+        video = db.get_video_from_gallery(video_id)
+        
+        if not video:
+            return "Video not found", 404
+        
+        file_path = video.get('file_path')
+        if not file_path or not Path(file_path).exists():
+            return "Video file not found", 404
+        
+        return send_file(
+            file_path,
+            as_attachment=True,
+            download_name=f"{video.get('title', 'video')}_{video_id}.{video.get('file_format', 'mp4')}"
+        )
+        
+    except Exception as e:
+        return f"Download error: {str(e)}", 500
+
+@app.route('/api/video-gallery/<int:video_id>/delete', methods=['DELETE'])
+@require_auth
+def api_delete_video(video_id):
+    """Delete video from gallery"""
+    try:
+        from core.database.youtube_channels_db import YouTubeChannelsDB
+        
+        data = request.get_json() or {}
+        delete_file = data.get('delete_file', False)
+        
+        db = YouTubeChannelsDB()
+        result = db.delete_video_from_gallery(video_id, delete_file)
+        
+        if result['success']:
+            return jsonify(result)
+        else:
+            return jsonify(result), 400
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/video/upload-youtube-gallery', methods=['POST'])
+@require_auth
+def api_upload_video_from_gallery():
+    """Upload video to YouTube from gallery"""
+    try:
+        data = request.get_json() or {}
+        
+        video_id = data.get('video_id')
+        channel_id = data.get('channel_id')
+        title = data.get('title', '').strip()
+        description = data.get('description', '').strip()
+        privacy_status = data.get('privacy_status', 'private')
+        
+        if not all([video_id, channel_id, title]):
+            return jsonify({
+                'success': False,
+                'error': 'video_id, channel_id, and title are required'
+            }), 400
+        
+        # Get video from gallery
+        from core.database.youtube_channels_db import YouTubeChannelsDB
+        db = YouTubeChannelsDB()
+        video = db.get_video_from_gallery(video_id)
+        
+        if not video:
+            return jsonify({
+                'success': False,
+                'error': 'Video not found in gallery'
+            }), 404
+        
+        # Check if video file exists
+        from pathlib import Path
+        if not video.get('file_path') or not Path(video['file_path']).exists():
+            return jsonify({
+                'success': False,
+                'error': 'Video file not found on disk'
+            }), 404
+        
+        # Create background task for YouTube upload  
+        task_id = f"youtube_upload_gallery_{int(time.time())}"
+        
+        # Store task info
+        system_state.generation_tasks[task_id] = {
+            'id': task_id,
+            'status': 'running', 
+            'progress': 0,
+            'current_step': 'Starting YouTube upload from gallery...',
+            'logs': [],
+            'parameters': {
+                'video_id': video_id,
+                'channel_id': channel_id,
+                'title': title,
+                'description': description,
+                'privacy_status': privacy_status,
+                'source': 'gallery'
+            },
+            'created_at': datetime.now().isoformat(),
+            'result': None,
+            'type': 'youtube_upload_gallery'
+        }
+        
+        # Update video status to uploading
+        db.update_video_upload_status(video_id, {
+            'upload_status': 'uploading',
+            'upload_channel_id': channel_id
+        })
+        
+        # Start YouTube upload in background
+        def upload_youtube_from_gallery_background():
+            try:
+                system_state.generation_tasks[task_id]['progress'] = 20
+                system_state.generation_tasks[task_id]['current_step'] = 'Loading channel credentials...'
+                
+                # Get channel credentials from database
+                from core.database.youtube_channels_db import YouTubeChannelsDB
+                db = YouTubeChannelsDB()
+                channel = db.get_channel(channel_id)
+                
+                if not channel:
+                    raise Exception(f"Channel not found: {channel_id}")
+                
+                # Verify channel has required API credentials
+                if not channel.get('api_key') or not channel.get('client_id') or not channel.get('client_secret'):
+                    raise Exception(f"Channel {channel['channel_name']} is missing YouTube API credentials. Please configure them in Channel Settings.")
+                
+                system_state.generation_tasks[task_id]['progress'] = 40
+                system_state.generation_tasks[task_id]['current_step'] = 'Preparing YouTube API...'
+                
+                # Check OAuth credentials
+                oauth_credentials_json = channel.get('oauth_credentials')
+                if not oauth_credentials_json:
+                    raise Exception(f"Channel {channel['channel_name']} is missing OAuth authorization. Please complete OAuth setup in Channel Settings first.")
+                
+                # Parse stored OAuth credentials
+                import json
+                oauth_creds = json.loads(oauth_credentials_json)
+                
+                # Create YouTube service directly with stored credentials
+                from google.oauth2.credentials import Credentials
+                from googleapiclient.discovery import build
+                from datetime import datetime
+                
+                # Restore credentials from database
+                expiry = None
+                if oauth_creds.get('expiry'):
+                    try:
+                        expiry = datetime.fromisoformat(oauth_creds['expiry'])
+                    except:
+                        pass
+                
+                credentials = Credentials(
+                    token=oauth_creds.get('token'),
+                    refresh_token=oauth_creds.get('refresh_token'),
+                    token_uri=oauth_creds.get('token_uri', "https://oauth2.googleapis.com/token"),
+                    client_id=oauth_creds.get('client_id'),
+                    client_secret=oauth_creds.get('client_secret'),
+                    scopes=oauth_creds.get('scopes', [
+                        'https://www.googleapis.com/auth/youtube.upload',
+                        'https://www.googleapis.com/auth/youtube.readonly',
+                        'https://www.googleapis.com/auth/youtube'
+                    ]),
+                    expiry=expiry
+                )
+                
+                # Refresh credentials if needed
+                if credentials.expired:
+                    from google.auth.transport.requests import Request
+                    credentials.refresh(Request())
+                    
+                    # Update database with new token
+                    updated_creds = oauth_creds.copy()
+                    updated_creds.update({
+                        'token': credentials.token,
+                        'refresh_token': credentials.refresh_token,
+                        'expiry': credentials.expiry.isoformat() if credentials.expiry else None
+                    })
+                    db.update_channel_credentials(channel_id, updated_creds)
+                
+                # Create YouTube service
+                youtube_service = build('youtube', 'v3', credentials=credentials)
+                
+                system_state.generation_tasks[task_id]['progress'] = 60
+                system_state.generation_tasks[task_id]['current_step'] = f'Uploading "{title}" to {channel["channel_name"]}...'
+                
+                # Prepare video metadata
+                from pathlib import Path
+                video_path = video['file_path']
+                if not Path(video_path).exists():
+                    raise FileNotFoundError(f"Video file not found: {video_path}")
+                
+                # Use provided metadata or fallback to video gallery data
+                video_metadata = {
+                    'snippet': {
+                        'title': title,
+                        'description': description or video.get('description', f"AI generated music video - {video.get('genre', 'Unknown')} {video.get('vocal_type', '')}"),
+                        'tags': video.get('video_tags', []) or video.get('music_tags', []) or ['AI', 'music', 'generated'],
+                        'categoryId': '10'  # Music category
+                    },
+                    'status': {
+                        'privacyStatus': privacy_status,
+                        'selfDeclaredMadeForKids': False
+                    }
+                }
+                
+                # Create media upload
+                from googleapiclient.http import MediaFileUpload
+                media = MediaFileUpload(
+                    video_path,
+                    chunksize=1024*1024,  # 1MB chunks
+                    resumable=True,
+                    mimetype='video/mp4'
+                )
+                
+                # Execute upload
+                upload_request = youtube_service.videos().insert(
+                    part=','.join(video_metadata.keys()),
+                    body=video_metadata,
+                    media_body=media
+                )
+                
+                # Execute upload with progress
+                response = None
+                file_size = Path(video_path).stat().st_size
+                uploaded_bytes = 0
+                
+                while response is None:
+                    try:
+                        status, response = upload_request.next_chunk()
+                        if status:
+                            uploaded_bytes = status.resumable_progress
+                            progress = 60 + (uploaded_bytes / file_size) * 30  # 60-90% range
+                            system_state.generation_tasks[task_id]['progress'] = min(int(progress), 90)
+                    except Exception as e:
+                        print(f"⚠️  Upload chunk failed, retrying: {e}")
+                        continue
+                
+                youtube_video_id = response.get('id') if response else None
+                
+                if youtube_video_id:
+                    video_url = f'https://www.youtube.com/watch?v={youtube_video_id}'
+                    
+                    # Update video gallery with upload success
+                    db.update_video_upload_status(video_id, {
+                        'upload_status': 'uploaded',
+                        'youtube_video_id': youtube_video_id,
+                        'upload_channel_id': channel_id,
+                        'uploaded_at': datetime.now().isoformat(),
+                        'upload_response': {
+                            'video_id': youtube_video_id,
+                            'video_url': video_url,
+                            'title': title,
+                            'privacy_status': privacy_status
+                        }
+                    })
+                    
+                    system_state.generation_tasks[task_id]['progress'] = 100
+                    system_state.generation_tasks[task_id]['current_step'] = f'Successfully uploaded! Video ID: {youtube_video_id}'
+                    system_state.generation_tasks[task_id]['status'] = 'completed'
+                    system_state.generation_tasks[task_id]['result'] = {
+                        'success': True,
+                        'video_id': youtube_video_id,
+                        'video_url': video_url,
+                        'title': title,
+                        'channel_name': channel['channel_name'],
+                        'gallery_video_id': video_id
+                    }
+                else:
+                    raise Exception("Upload failed - no video ID returned")
+                    
+            except Exception as e:
+                # Update video gallery with upload failure
+                db.update_video_upload_status(video_id, {
+                    'upload_status': 'failed'
+                })
+                
+                system_state.generation_tasks[task_id]['status'] = 'failed'
+                system_state.generation_tasks[task_id]['result'] = {'success': False, 'error': str(e)}
+                system_state.generation_tasks[task_id]['progress'] = -1
+                system_state.generation_tasks[task_id]['current_step'] = f'Failed: {str(e)}'
+        
+        # Start background thread
+        import threading
+        thread = threading.Thread(target=upload_youtube_from_gallery_background)
+        thread.start()
+        
+        return jsonify({
+            'success': True,
+            'task_id': task_id,
+            'message': 'YouTube upload started from gallery',
+            'video_title': title,
+            'channel_name': channel.get('channel_name') if 'channel' in locals() else 'Unknown'
+        })
+        
+    except Exception as e:
+        print(f"❌ Error starting gallery upload: {e}")
         return jsonify({
             'success': False,
             'error': str(e)

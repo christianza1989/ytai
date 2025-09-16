@@ -770,6 +770,13 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'video_gallery' %}active{% endif %}" href="{{ url_for('video_gallery') }}">
+                                <i class="fas fa-video text-info"></i>
+                                Video Gallery
+                                <span class="badge bg-info ms-1">🎬 Videos</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'batch' %}active{% endif %}" href="{{ url_for('batch') }}">
                                 <i class="fas fa-tasks"></i>
                                 Batch Operations
