@@ -5249,7 +5249,9 @@ def api_youtube_start_oauth():
         }
         
         scopes = [
-            'https://www.googleapis.com/auth/youtube.readonly'
+            'https://www.googleapis.com/auth/youtube.upload',
+            'https://www.googleapis.com/auth/youtube.readonly',
+            'https://www.googleapis.com/auth/youtube'
         ]
         
         try:
@@ -5286,17 +5288,34 @@ def api_youtube_start_oauth():
             })
             
         except Exception as flow_error:
+            print(f"❌ OAuth flow error: {flow_error}")
+            error_details = {
+                'error_type': type(flow_error).__name__,
+                'error_message': str(flow_error),
+                'client_id_valid': bool(client_id and len(client_id) > 10),
+                'client_secret_valid': bool(client_secret and len(client_secret) > 10),
+                'scopes_requested': scopes
+            }
+            
             return jsonify({
                 'success': False,
-                'error': f'OAuth flow error: {str(flow_error)}',
-                'error_code': 'oauth_flow_failed'
+                'error': f'OAuth configuration error: {str(flow_error)}',
+                'error_code': 'oauth_flow_failed',
+                'details': error_details,
+                'suggestions': [
+                    'Verify Client ID and Client Secret are correct',
+                    'Ensure OAuth 2.0 credentials are enabled in Google Console',
+                    'Check that YouTube Data API v3 is enabled for your project',
+                    'Verify redirect URIs include "urn:ietf:wg:oauth:2.0:oob"'
+                ]
             }), 400
             
     except Exception as e:
         print(f"❌ Error starting OAuth: {e}")
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': f'OAuth setup error: {str(e)}',
+            'error_code': 'oauth_setup_failed'
         }), 500
 
 @app.route('/api/youtube/complete-oauth', methods=['POST'])

@@ -1090,14 +1090,25 @@
         }
         
         function showToast(message, type = 'success') {
+            // Longer timer for error messages
+            const timer = type === 'error' ? 8000 : 3000;
+            
             Swal.fire({
                 toast: true,
                 position: 'top-end',
                 showConfirmButton: false,
-                timer: 3000,
+                timer: timer,
                 timerProgressBar: true,
                 icon: type,
-                title: message
+                title: message,
+                // For error messages, allow click to close early
+                didOpen: (toast) => {
+                    if (type === 'error') {
+                        toast.addEventListener('click', () => {
+                            Swal.close();
+                        });
+                    }
+                }
             });
         }
         

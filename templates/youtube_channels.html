@@ -2356,7 +2356,36 @@ function startOAuthAuthorization() {
                                                 
                                                 showToast('✅ OAuth completed! Channel pre-filled from YouTube account. Ready to configure and save.', 'success');
                                             } else {
-                                                showToast(`❌ Authorization failed: ${data.error}`, 'error');
+                                                // Show detailed completion error
+                                                console.error('OAuth Completion Error:', data);
+                                                
+                                                let errorHtml = `
+                                                    <div class="text-start">
+                                                        <p><strong>Error:</strong> ${data.error}</p>
+                                                `;
+                                                
+                                                if (data.hint) {
+                                                    errorHtml += `<p><strong>Hint:</strong> ${data.hint}</p>`;
+                                                }
+                                                
+                                                errorHtml += `
+                                                        <div class="alert alert-info">
+                                                            <strong>Common Issues:</strong><br>
+                                                            • Authorization code expired (try again)<br>
+                                                            • Code copied incorrectly (ensure complete copy)<br>
+                                                            • Wrong Client ID/Secret combination<br>
+                                                            • Account doesn't have YouTube channel
+                                                        </div>
+                                                    </div>
+                                                `;
+                                                
+                                                Swal.fire({
+                                                    title: '❌ Authorization Failed',
+                                                    html: errorHtml,
+                                                    icon: 'error',
+                                                    confirmButtonText: 'Try Again',
+                                                    width: '500px'
+                                                });
                                             }
                                         })
                                         .catch(error => {
@@ -2383,12 +2412,52 @@ function startOAuthAuthorization() {
                         updateOAuthStatus(true);
                     }
                 } else {
-                    showToast(`❌ OAuth setup failed: ${data.error}`, 'error');
+                    // Display detailed error information
+                    let errorMsg = `❌ OAuth setup failed: ${data.error}`;
+                    
+                    // Add specific suggestions if available
+                    if (data.suggestions && data.suggestions.length > 0) {
+                        console.error('OAuth Error Details:', data);
+                        
+                        // Show detailed error in modal instead of toast for complex errors
+                        Swal.fire({
+                            title: '🔴 OAuth Configuration Error',
+                            html: `
+                                <div class="text-start">
+                                    <p><strong>Error:</strong> ${data.error}</p>
+                                    ${data.details ? `
+                                        <div class="alert alert-info">
+                                            <strong>Details:</strong><br>
+                                            • Client ID: ${data.details.client_id_valid ? '✅ Valid' : '❌ Invalid'}<br>
+                                            • Client Secret: ${data.details.client_secret_valid ? '✅ Valid' : '❌ Invalid'}<br>
+                                            • Scopes: ${data.details.scopes_requested ? data.details.scopes_requested.join(', ') : 'Unknown'}
+                                        </div>
+                                    ` : ''}
+                                    <div class="alert alert-warning">
+                                        <strong>Suggestions:</strong><br>
+                                        ${data.suggestions.map(s => `• ${s}`).join('<br>')}
+                                    </div>
+                                    <div class="alert alert-primary">
+                                        <strong>Google Console Setup:</strong><br>
+                                        1. Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console</a><br>
+                                        2. Create OAuth 2.0 Client IDs<br>
+                                        3. Add "urn:ietf:wg:oauth:2.0:oob" as redirect URI<br>
+                                        4. Enable YouTube Data API v3
+                                    </div>
+                                </div>
+                            `,
+                            icon: 'error',
+                            confirmButtonText: 'OK',
+                            width: '600px'
+                        });
+                    } else {
+                        showToast(errorMsg, 'error');
+                    }
                 }
             })
             .catch(error => {
                 console.error('OAuth error:', error);
-                showToast('❌ OAuth setup failed. Please try again.', 'error');
+                showToast('❌ Network error during OAuth setup. Please check your connection and try again.', 'error');
             });
         }
     });

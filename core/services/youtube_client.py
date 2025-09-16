@@ -12,7 +12,7 @@ from google.auth.exceptions import RefreshError
 class YouTubeClient:
     """YouTube Data API v3 client with Progressive Authorization (API Key + OAuth)"""
 
-    # YouTube API scopes
+    # YouTube API scopes - Updated for current Google API requirements
     SCOPES = [
         'https://www.googleapis.com/auth/youtube.upload',
         'https://www.googleapis.com/auth/youtube.readonly',
