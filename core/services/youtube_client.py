@@ -10,7 +10,7 @@ from google.auth.transport.requests import Request
 from google.auth.exceptions import RefreshError
 
 class YouTubeClient:
-    """YouTube Data API v3 client with OAuth 2.0 authentication"""
+    """YouTube Data API v3 client with Progressive Authorization (API Key + OAuth)"""
 
     # YouTube API scopes
     SCOPES = [
@@ -19,26 +19,65 @@ class YouTubeClient:
         'https://www.googleapis.com/auth/youtube'
     ]
 
-    def __init__(self):
-        self.api_key = os.getenv('YOUTUBE_API_KEY')
-        self.channel_id = os.getenv('YOUTUBE_CHANNEL_ID')
-        self.client_secrets_path = os.getenv('YOUTUBE_CLIENT_SECRETS_PATH', 'configs/client_secrets.json')
+    def __init__(self, api_key=None, client_secrets_path=None, channel_id=None):
+        # Progressive Authorization setup
+        self.api_key = api_key or os.getenv('YOUTUBE_API_KEY')
+        self.channel_id = channel_id or os.getenv('YOUTUBE_CHANNEL_ID')
+        self.client_secrets_path = client_secrets_path or os.getenv('YOUTUBE_CLIENT_SECRETS_PATH', 'configs/client_secrets.json')
         self.token_path = 'token.pickle'
 
-        # Validate required environment variables
-        if not self.channel_id:
-            raise ValueError("YOUTUBE_CHANNEL_ID environment variable is required")
-
-        if not Path(self.client_secrets_path).exists():
-            raise FileNotFoundError(f"Client secrets file not found: {self.client_secrets_path}")
-
+        # Determine authorization level
+        self.auth_level = self._determine_auth_level()
+        
         # Initialize credentials and service
         self.credentials = None
         self.service = None
-        self._authenticate()
+        self.read_only = True  # Default to read-only
+        
+        self._initialize_service()
 
-    def _authenticate(self) -> None:
-        """Handle OAuth 2.0 authentication flow"""
+    def _determine_auth_level(self):
+        """Determine what level of authorization is available"""
+        has_api_key = bool(self.api_key)
+        has_oauth_config = bool(self.client_secrets_path and Path(self.client_secrets_path).exists())
+        
+        if has_api_key and has_oauth_config:
+            return "full"  # Level 2: Full OAuth
+        elif has_api_key:
+            return "api_key_only"  # Level 1: API Key only
+        elif has_oauth_config:
+            return "oauth_only"  # OAuth without API key
+        else:
+            return "none"  # No credentials
+    
+    def _initialize_service(self):
+        """Initialize YouTube service based on available credentials"""
+        try:
+            if self.auth_level == "api_key_only":
+                # Level 1: API Key only (read-only)
+                self.service = build('youtube', 'v3', developerKey=self.api_key)
+                self.read_only = True
+                print("🔑 YouTube service initialized with API Key (read-only)")
+                
+            elif self.auth_level in ["full", "oauth_only"]:
+                # Level 2: Try OAuth authentication
+                self._authenticate_oauth()
+                
+            else:
+                raise ValueError("No valid YouTube credentials available")
+                
+        except Exception as e:
+            print(f"⚠️ YouTube service initialization warning: {e}")
+            # Fall back to API key if available
+            if self.api_key:
+                self.service = build('youtube', 'v3', developerKey=self.api_key)
+                self.read_only = True
+                print("🔄 Fallback to API Key service (read-only)")
+            else:
+                raise
+
+    def _authenticate_oauth(self) -> None:
+        """Handle OAuth 2.0 authentication flow (Level 2)"""
         try:
             # Load existing credentials if available
             if Path(self.token_path).exists():
@@ -50,11 +89,21 @@ class YouTubeClient:
                 try:
                     self.credentials.refresh(Request())
                 except RefreshError:
-                    print("❌ Failed to refresh credentials, starting new authentication")
+                    print("❌ Failed to refresh credentials, authentication required")
                     self.credentials = None
 
-            # Start new authentication if no valid credentials
+            # Check if we need new authentication
             if not self.credentials or not self.credentials.valid:
+                if not Path(self.client_secrets_path).exists():
+                    # No OAuth config - fall back to API key if available
+                    if self.api_key:
+                        print("⚠️ No OAuth config, using API Key only (read-only)")
+                        self.service = build('youtube', 'v3', developerKey=self.api_key)
+                        self.read_only = True
+                        return
+                    else:
+                        raise FileNotFoundError(f"Client secrets file not found: {self.client_secrets_path}")
+
                 print("🔐 Starting YouTube OAuth 2.0 authentication...")
                 print("📋 A browser window will open for you to authorize the application")
 
@@ -70,15 +119,22 @@ class YouTubeClient:
                 with open(self.token_path, 'wb') as token:
                     pickle.dump(self.credentials, token)
 
-                print("✅ Authentication successful! Credentials saved.")
+                print("✅ OAuth authentication successful! Credentials saved.")
 
-            # Build YouTube API service
+            # Build YouTube API service with full permissions
             self.service = build('youtube', 'v3', credentials=self.credentials)
-            print("🎥 YouTube API service initialized successfully")
+            self.read_only = False
+            print("🎥 YouTube API service initialized with full permissions")
 
         except Exception as e:
-            print(f"❌ Authentication failed: {e}")
-            raise
+            print(f"❌ OAuth authentication failed: {e}")
+            # Fall back to API key if available
+            if self.api_key:
+                print("🔄 Falling back to API Key (read-only)")
+                self.service = build('youtube', 'v3', developerKey=self.api_key)
+                self.read_only = True
+            else:
+                raise
 
     def get_channel_statistics(self) -> Optional[Dict[str, Any]]:
         """Get basic channel statistics"""
@@ -117,6 +173,21 @@ class YouTubeClient:
             print(f"❌ Failed to get channel statistics: {e}")
             return None
 
+    def can_upload(self) -> bool:
+        """Check if upload is possible with current authorization level"""
+        return not self.read_only and self.credentials is not None
+
+    def get_auth_status(self) -> dict:
+        """Get current authorization status and capabilities"""
+        return {
+            'auth_level': self.auth_level,
+            'read_only': self.read_only,
+            'can_upload': self.can_upload(),
+            'has_api_key': bool(self.api_key),
+            'has_oauth': bool(self.credentials),
+            'service_initialized': bool(self.service)
+        }
+
     def upload_video(self, video_path: str, title: str, description: str,
                     tags: list = None, category_id: str = '10',
                     privacy_status: str = 'private') -> Optional[str]:
@@ -135,6 +206,9 @@ class YouTubeClient:
             Video ID if successful, None otherwise
         """
         try:
+            if self.read_only:
+                raise Exception("Upload requires OAuth authorization. Current setup only supports read-only operations.")
+
             if not self.service:
                 raise Exception("YouTube service not initialized")
 

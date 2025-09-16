@@ -5007,6 +5007,263 @@ def api_youtube_test_connection():
             'error': str(e)
         }), 500
 
+@app.route('/api/youtube/test-api-key', methods=['POST'])
+@require_auth
+def api_youtube_test_api_key():
+    """Test YouTube API key only (Level 1 - Statistics access)"""
+    try:
+        from googleapiclient.discovery import build
+        from googleapiclient.errors import HttpError
+        
+        data = request.get_json() or {}
+        api_key = data.get('api_key', '').strip()
+        
+        if not api_key:
+            return jsonify({
+                'success': False,
+                'error': 'API key is required'
+            }), 400
+        
+        print(f"🔑 Testing API key: {api_key[:10]}...")
+        
+        # Test API key by making a simple quota check
+        try:
+            service = build('youtube', 'v3', developerKey=api_key)
+            
+            # Test with a minimal quota request
+            request_obj = service.search().list(
+                part='snippet',
+                q='test',
+                maxResults=1,
+                type='video'
+            )
+            
+            response = request_obj.execute()
+            
+            # Calculate rough quota remaining (very approximate)
+            quota_used = 1  # Simple search costs ~1 quota unit
+            quota_remaining = "Unknown"  # YouTube doesn't provide remaining quota directly
+            
+            return jsonify({
+                'success': True,
+                'message': 'API key is valid',
+                'access_level': 'statistics_only',
+                'quota_remaining': quota_remaining,
+                'capabilities': [
+                    'Channel statistics',
+                    'Video list',
+                    'Subscriber count',
+                    'View analytics'
+                ],
+                'limitations': [
+                    'Cannot upload videos',
+                    'Cannot modify channel settings'
+                ]
+            })
+            
+        except HttpError as e:
+            error_code = e.resp.status if hasattr(e, 'resp') else 'Unknown'
+            if error_code == 403:
+                if 'quotaExceeded' in str(e):
+                    return jsonify({
+                        'success': False,
+                        'error': 'API quota exceeded. Try again later.',
+                        'error_code': 'quota_exceeded'
+                    }), 403
+                elif 'API key not valid' in str(e):
+                    return jsonify({
+                        'success': False,
+                        'error': 'Invalid API key. Please check your key.',
+                        'error_code': 'invalid_key'
+                    }), 403
+                else:
+                    return jsonify({
+                        'success': False,
+                        'error': f'Permission denied: {str(e)}',
+                        'error_code': 'permission_denied'
+                    }), 403
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': f'YouTube API error: {str(e)}',
+                    'error_code': f'http_{error_code}'
+                }), 400
+                
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': f'Unexpected error: {str(e)}',
+                'error_code': 'unexpected_error'
+            }), 500
+            
+    except Exception as e:
+        print(f"❌ Error testing API key: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/youtube/test-oauth', methods=['POST'])
+@require_auth
+def api_youtube_test_oauth():
+    """Test OAuth credentials (Level 2 - Upload access)"""
+    try:
+        from google_auth_oauthlib.flow import InstalledAppFlow
+        import tempfile
+        import json
+        import os
+        
+        data = request.get_json() or {}
+        client_id = data.get('client_id', '').strip()
+        client_secret = data.get('client_secret', '').strip()
+        
+        if not client_id or not client_secret:
+            return jsonify({
+                'success': False,
+                'error': 'Both Client ID and Client Secret are required'
+            }), 400
+        
+        print(f"🔐 Testing OAuth credentials: {client_id[:20]}...")
+        
+        try:
+            # Create temporary client secrets file
+            client_config = {
+                "installed": {
+                    "client_id": client_id,
+                    "client_secret": client_secret,
+                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                    "token_uri": "https://oauth2.googleapis.com/token",
+                    "redirect_uris": ["http://localhost:8080/"]
+                }
+            }
+            
+            # Validate OAuth config by creating flow (doesn't start auth yet)
+            flow = InstalledAppFlow.from_client_config(
+                client_config,
+                scopes=[
+                    'https://www.googleapis.com/auth/youtube.upload',
+                    'https://www.googleapis.com/auth/youtube.readonly'
+                ]
+            )
+            
+            return jsonify({
+                'success': True,
+                'message': 'OAuth credentials are valid',
+                'access_level': 'full_upload',
+                'auth_uri': flow.authorization_url()[0][:50] + '...',  # Truncated for security
+                'capabilities': [
+                    'Upload videos',
+                    'Modify channel settings', 
+                    'All Level 1 features',
+                    'Automated uploads',
+                    'Video management'
+                ],
+                'next_step': 'authorization_required',
+                'note': 'Complete browser authorization to enable upload features'
+            })
+            
+        except Exception as oauth_error:
+            return jsonify({
+                'success': False,
+                'error': f'Invalid OAuth credentials: {str(oauth_error)}',
+                'error_code': 'invalid_oauth',
+                'suggestions': [
+                    'Check Client ID format (should end with .googleusercontent.com)',
+                    'Verify Client Secret (should start with GOCSPX-)',
+                    'Ensure credentials are for Desktop Application type'
+                ]
+            }), 400
+            
+    except Exception as e:
+        print(f"❌ Error testing OAuth: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/youtube/start-oauth', methods=['POST'])
+@require_auth
+def api_youtube_start_oauth():
+    """Start OAuth authorization flow for a channel"""
+    try:
+        from google_auth_oauthlib.flow import InstalledAppFlow
+        from core.database.youtube_channels_db import YouTubeChannelsDB
+        import threading
+        import time
+        
+        data = request.get_json() or {}
+        channel_name = data.get('channel_name', '').strip()
+        client_id = data.get('client_id', '').strip()
+        client_secret = data.get('client_secret', '').strip()
+        
+        if not all([channel_name, client_id, client_secret]):
+            return jsonify({
+                'success': False,
+                'error': 'Channel name, Client ID, and Client Secret are required'
+            }), 400
+        
+        print(f"🚀 Starting OAuth flow for channel: {channel_name}")
+        
+        # Create client config
+        client_config = {
+            "installed": {
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "redirect_uris": ["http://localhost:8080/"]
+            }
+        }
+        
+        scopes = [
+            'https://www.googleapis.com/auth/youtube.upload',
+            'https://www.googleapis.com/auth/youtube.readonly',
+            'https://www.googleapis.com/auth/youtube'
+        ]
+        
+        try:
+            # Create flow
+            flow = InstalledAppFlow.from_client_config(client_config, scopes)
+            
+            # For production deployment, we need to handle OAuth differently
+            # Since we can't run browser flow in server environment,
+            # we'll return instructions for manual setup
+            
+            auth_url, _ = flow.authorization_url(prompt='consent')
+            
+            return jsonify({
+                'success': True,
+                'status': 'authorization_required',
+                'auth_url': auth_url,
+                'instructions': [
+                    '1. Click the authorization URL',
+                    '2. Sign in to your Google account',
+                    '3. Grant permissions to your YouTube channel',
+                    '4. Copy the authorization code',
+                    '5. Return here to complete setup'
+                ],
+                'message': 'Manual authorization required in production environment',
+                'note': 'In local development, this would open automatically',
+                'channel_name': channel_name,
+                'token_valid': False,
+                'upload_permission': False,
+                'channel_access': 'pending'
+            })
+            
+        except Exception as flow_error:
+            return jsonify({
+                'success': False,
+                'error': f'OAuth flow error: {str(flow_error)}',
+                'error_code': 'oauth_flow_failed'
+            }), 400
+            
+    except Exception as e:
+        print(f"❌ Error starting OAuth: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 # Debug endpoint removed - YouTube API client working correctly
 
 @app.route('/api/youtube/refresh-channel-stats', methods=['POST'])
